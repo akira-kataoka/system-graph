@@ -134,6 +134,61 @@
   .node.pinned .pin { opacity:1; }
   .grp { cursor:grab; }
   .grp.dragging { cursor:grabbing; }
+  .alert-badge .ab-t { font-size:10px; font-weight:800; pointer-events:none; }
+  .alert-badge.down circle { animation:pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+
+  /* mode control */
+  .segmented { display:inline-flex; background:var(--panel-2); border-radius:9px; padding:2px; gap:2px; }
+  .segmented button { border:none; background:transparent; color:var(--text-dim); font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:7px; cursor:pointer; font-family:inherit; transition:background .12s,color .12s; }
+  .segmented button.on { background:var(--glass-solid); color:var(--text); box-shadow:var(--shadow-sm); }
+
+  /* overview drawer */
+  .overview {
+    position:absolute; top:12px; left:12px; bottom:12px; width:320px; z-index:24;
+    background:var(--glass); backdrop-filter:blur(24px) saturate(1.5); -webkit-backdrop-filter:blur(24px) saturate(1.5);
+    border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+    transform:translateX(calc(-100% - 22px)); transition:transform .34s cubic-bezier(.22,1,.36,1);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .overview.open { transform:translateX(0); }
+  .overview .oh { display:flex; align-items:center; gap:9px; padding:15px 16px 10px; font-weight:750; font-size:14px; }
+  .overview .oh .close { margin-left:auto; cursor:pointer; color:var(--text-dim); width:30px; height:30px; border-radius:9px; border:none; background:var(--panel-2); display:grid; place-items:center; }
+  .overview .ob { padding:0 16px 16px; overflow-y:auto; flex:1; }
+  .overview .ob::-webkit-scrollbar { width:8px; } .overview .ob::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:8px; }
+  .kpis { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px; }
+  .kpi { background:var(--panel-2); border-radius:11px; padding:11px 12px; }
+  .kpi .kv { font-size:21px; font-weight:750; line-height:1; }
+  .kpi .kl { font-size:10.5px; color:var(--text-dim); margin-top:4px; font-weight:600; }
+  .osec { font-size:10.5px; font-weight:750; letter-spacing:.5px; text-transform:uppercase; color:var(--text-mute); margin:16px 0 8px; }
+  .statusbar { display:flex; height:10px; border-radius:6px; overflow:hidden; margin-bottom:8px; background:var(--panel-2); }
+  .statusbar span { height:100%; }
+  .statuslegend { display:flex; flex-wrap:wrap; gap:8px 12px; }
+  .statuslegend .sl { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim); }
+  .statuslegend .sd { width:9px; height:9px; border-radius:3px; }
+  .attn { display:flex; flex-direction:column; gap:6px; }
+  .attn-item { display:flex; align-items:center; gap:9px; padding:9px 11px; background:var(--panel-2); border:1px solid transparent; border-left-width:3px; border-radius:9px; cursor:pointer; transition:border-color .14s, transform .1s; }
+  .attn-item:hover { transform:translateX(2px); }
+  .attn-item .ai-ic { width:8px; height:8px; border-radius:50%; flex:none; }
+  .attn-item .ai-body { min-width:0; flex:1; }
+  .attn-item .ai-t { font-size:12.5px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .attn-item .ai-s { font-size:10.5px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .attn-item .ai-sev { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:20px; color:#fff; flex:none; }
+  .empty-note { font-size:12px; color:var(--text-mute); padding:10px 2px; }
+
+  /* incident / column editors */
+  .subhead { display:flex; align-items:center; margin:14px 0 6px; }
+  .subhead label { margin:0; }
+  .subhead .add-mini { margin-left:auto; font-size:11px; font-weight:600; color:var(--accent); cursor:pointer; padding:3px 8px; border-radius:7px; background:var(--accent-soft); }
+  .rowlist { display:flex; flex-direction:column; gap:6px; }
+  .erow { display:flex; align-items:center; gap:6px; background:var(--panel-2); border:1px solid var(--border); border-radius:9px; padding:6px 8px; }
+  .erow input, .erow select { padding:5px 7px; border-radius:6px; font-size:11.5px; border:1px solid transparent; background:var(--glass-solid); }
+  .erow input.grow { flex:1; min-width:0; }
+  .erow .sev-sel { width:64px; } .erow .st-sel { width:58px; } .erow .ty { width:78px; }
+  .erow .rm { cursor:pointer; color:var(--text-mute); border:none; background:none; font-size:15px; padding:0 2px; flex:none; }
+  .erow .pk { display:flex; align-items:center; gap:3px; font-size:10.5px; color:var(--text-dim); flex:none; }
+  .impact-btns { display:flex; gap:8px; margin-top:6px; }
+  .impact-btns .btn { flex:1; justify-content:center; padding:8px; font-size:12px; }
 
   /* ---------- Inspector ---------- */
   aside {
@@ -237,6 +292,7 @@
     </div>
     <button class="btn" id="linkBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-6-6l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 6 6l1.5-1.5"/></svg>リンク</button>
     <div class="sep"></div>
+    <button class="btn" id="overviewBtn" title="概要 / 要対応"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>概要</button>
     <button class="btn icon" id="relayoutBtn" title="再整列 (R)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
     <button class="btn icon" id="exportBtn" title="JSONエクスポート"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
     <button class="btn icon" id="importBtn" title="JSON読込"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
@@ -277,6 +333,14 @@
     <div class="dock">
       <div class="panel minimap-wrap"><svg id="minimap" width="180" height="112"></svg></div>
       <div class="panel legend" id="legend">
+        <div class="lt">表示モード（色分け）</div>
+        <div class="segmented" id="modeSeg" style="margin-bottom:8px">
+          <button data-mode="type" class="on">種別</button>
+          <button data-mode="status">ステータス</button>
+          <button data-mode="health">ヘルス</button>
+        </div>
+        <div id="modeLegend"></div>
+        <div id="legendBody">
         <div class="lt">グループ</div>
         <div class="row" data-t="system"><span class="swatch" style="background:var(--c-system)"></span> システム</div>
         <div class="row" data-t="database"><span class="swatch" style="background:var(--c-database)"></span> データベース</div>
@@ -285,7 +349,14 @@
         <div class="row" data-t="table"><span class="swatch round" style="background:var(--c-table)"></span> テーブル</div>
         <div class="row" data-t="job"><span class="swatch round" style="background:var(--c-job)"></span> ジョブ / パイプライン</div>
         <div class="row" data-t="external"><span class="swatch round" style="background:var(--c-external)"></span> 外部サービス</div>
+        </div>
       </div>
+    </div>
+
+    <div class="overview" id="overview">
+      <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>システム概要
+        <button class="close" id="ovClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ob" id="ovBody"></div>
     </div>
 
     <aside id="inspector">
@@ -311,9 +382,40 @@
         <div class="fld" id="fldSchema"><label>スキーマ / データセット</label><input id="fSchema" type="text" placeholder="例: sales, public, mart"></div>
         <div class="fld" id="fldSchedule"><label>実行タイミング</label><input id="fSchedule" type="text" placeholder="例: 毎日 02:00, 5分毎, リアルタイム"></div>
         <div class="fld"><label>説明</label><textarea id="fDesc" placeholder="役割・目的など"></textarea></div>
+        <div class="fld" id="fldStatus"><label>稼働ステータス</label><select id="fStatus">
+          <option value="">（未設定）</option>
+          <option value="planning">計画中</option><option value="active">稼働中</option>
+          <option value="maintenance">保守 / 更改中</option><option value="deprecated">廃止予定</option><option value="retired">廃止済</option>
+        </select></div>
+        <div class="fld" id="fldCrit"><label>重要度</label><select id="fCrit">
+          <option value="">（未設定）</option><option value="low">低</option><option value="mid">中</option><option value="high">高</option><option value="critical">最重要</option>
+        </select></div>
+        <div class="fld" id="fldHealth"><label>ヘルス（現在の状態）</label><select id="fHealth">
+          <option value="">（自動 / 未設定）</option><option value="ok">正常</option><option value="warn">注意</option><option value="down">障害</option>
+        </select></div>
+        <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
+        <div class="fld" id="fldVendor"><label>ベンダー / 提供元</label><input id="fVendor" type="text" placeholder="例: 自社開発, Salesforce社"></div>
+        <div class="fld" id="fldDates" style="display:flex;gap:8px">
+          <div style="flex:1"><label>導入日</label><input id="fIntro" type="date"></div>
+          <div style="flex:1"><label>更改 / EOSL予定</label><input id="fRenewal" type="date"></div>
+        </div>
         <div class="fld"><label>所有者 / 担当</label><input id="fOwner" type="text" placeholder="例: 情シス / 営業部"></div>
         <div class="fld"><label>技術 / 接続情報</label><input id="fTech" type="text" placeholder="例: REST API, JDBC, gRPC"></div>
         <div class="fld"><label>タグ（カンマ区切り）</label><input id="fTags" type="text" placeholder="例: 基幹, 顧客, PII"><div class="tagbox" id="tagbox"></div></div>
+        <div class="fld" id="fldCols">
+          <div class="subhead"><label>カラム定義</label><span class="add-mini" id="addCol">＋ 列を追加</span></div>
+          <div class="rowlist" id="colList"></div>
+        </div>
+        <div class="fld">
+          <div class="subhead"><label>障害 / 課題（インシデント）</label><span class="add-mini" id="addInc">＋ 追加</span></div>
+          <div class="rowlist" id="incList"></div>
+        </div>
+        <div class="fld"><label>影響分析 <span style="text-transform:none;font-weight:500;color:var(--text-mute)">（更改・障害の波及）</span></label>
+          <div class="impact-btns">
+            <button class="btn" id="impDown">下流の影響範囲</button>
+            <button class="btn" id="impUp">上流の依存元</button>
+          </div>
+        </div>
         <div class="fld"><label>データの流れ / 接続 <span style="text-transform:none;font-weight:500;color:var(--text-mute)">（クリックで移動）</span></label><div class="conn-list" id="connList"></div></div>
       </div>
       <div class="aside-actions">
@@ -347,7 +449,26 @@
   };
   const isLeaf = (n) => TYPE[n.type] && TYPE[n.type].kind === "leaf";
   const isContainer = (n) => TYPE[n.type] && TYPE[n.type].kind === "container";
-  const STORE_KEY = "systemGraph.v2";
+  const STATUS = {
+    planning:    { label:"計画中",      color:"#3b82f6" },
+    active:      { label:"稼働中",      color:"#22c55e" },
+    maintenance: { label:"保守 / 更改中", color:"#f59e0b" },
+    deprecated:  { label:"廃止予定",    color:"#f97316" },
+    retired:     { label:"廃止済",      color:"#94a3b8" },
+  };
+  const HEALTH = {
+    ok:   { label:"正常", color:"#22c55e" },
+    warn: { label:"注意", color:"#f59e0b" },
+    down: { label:"障害", color:"#ef4444" },
+  };
+  const SEVERITY = {
+    low:      { label:"低",   color:"#3b82f6", rank:1 },
+    mid:      { label:"中",   color:"#f59e0b", rank:2 },
+    high:     { label:"高",   color:"#f97316", rank:3 },
+    critical: { label:"重大", color:"#ef4444", rank:4 },
+  };
+  const STORE_KEY = "systemGraph.v3";
+  let colorMode = "type"; // type | status | health
   const SVG_NS = "http://www.w3.org/2000/svg";
   const $ = (s) => document.querySelector(s);
 
@@ -355,9 +476,10 @@
   const SEED = {
     nodes: [
       // systems
-      { id:"sys_sf", type:"system", label:"Salesforce", desc:"営業支援・顧客管理 (CRM/SFA)", owner:"営業企画" },
-      { id:"sys_erp",type:"system", label:"基幹システム", desc:"受注・請求・在庫を管理する社内ERP", owner:"情シス" },
-      { id:"sys_dp", type:"system", label:"データ基盤", desc:"全社データ分析基盤", owner:"情シス" },
+      { id:"sys_sf", type:"system", label:"Salesforce", desc:"営業支援・顧客管理 (CRM/SFA)", owner:"営業企画", status:"active", criticality:"high", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2021-04-01", renewal:"2027-03-31" },
+      { id:"sys_erp",type:"system", label:"基幹システム", desc:"受注・請求・在庫を管理する社内ERP", owner:"情シス", status:"maintenance", criticality:"critical", env:"オンプレ / 自社DC", vendor:"自社開発 + A社保守", introduced:"2014-10-01", renewal:"2026-09-30",
+        incidents:[ {severity:"high", title:"夜間バッチが処理時間超過（月末に遅延）", status:"open"}, {severity:"mid", title:"EOSL に伴う更改検討中", status:"open"} ] },
+      { id:"sys_dp", type:"system", label:"データ基盤", desc:"全社データ分析基盤", owner:"情シス", status:"active", criticality:"mid", env:"GCP (本番)", vendor:"自社構築", introduced:"2023-01-15" },
       // databases
       { id:"db_sf",  type:"database", parent:"sys_sf",  label:"Salesforce Objects", engine:"Salesforce", desc:"標準/カスタムオブジェクト" },
       { id:"db_erp", type:"database", parent:"sys_erp", label:"ERP-DB", engine:"Oracle 19c", desc:"基幹業務データベース" },
@@ -367,18 +489,21 @@
       { id:"pf_sfdmu",type:"platform",label:"SFDMU", kind:"Reverse-ETL", desc:"Salesforce へのデータ書戻し" },
       { id:"pf_mkt", type:"platform", label:"Marketo", kind:"MA / iPaaS", desc:"マーケ自動化・双方向同期", owner:"マーケ" },
       // tables (Salesforce)
-      { id:"t_account", type:"table", parent:"db_sf", label:"Account", desc:"取引先マスタ", schema:"sObject", tags:["顧客"] },
+      { id:"t_account", type:"table", parent:"db_sf", label:"Account", desc:"取引先マスタ", schema:"sObject", tags:["顧客"],
+        columns:[ {name:"Id", type:"id", pk:true}, {name:"Name", type:"text"}, {name:"Industry", type:"picklist"}, {name:"AnnualRevenue", type:"currency"} ] },
       { id:"t_opp", type:"table", parent:"db_sf", label:"Opportunity", desc:"商談", schema:"sObject" },
       { id:"t_lead", type:"table", parent:"db_sf", label:"Lead", desc:"見込み客", schema:"sObject" },
       // tables (ERP)
-      { id:"t_order", type:"table", parent:"db_erp", label:"ORDERS", desc:"受注明細", schema:"SALES" },
+      { id:"t_order", type:"table", parent:"db_erp", label:"ORDERS", desc:"受注明細", schema:"SALES",
+        columns:[ {name:"ORDER_ID", type:"NUMBER", pk:true}, {name:"ACCOUNT_CD", type:"VARCHAR2"}, {name:"AMOUNT", type:"NUMBER"}, {name:"ORDER_DATE", type:"DATE"} ] },
       { id:"t_bill", type:"table", parent:"db_erp", label:"BILLING", desc:"請求", schema:"SALES", tags:["PII"] },
       { id:"t_inv", type:"table", parent:"db_erp", label:"INVENTORY", desc:"在庫", schema:"WMS" },
       // tables (DWH)
       { id:"t_fact", type:"table", parent:"db_dwh", label:"fact_sales", desc:"売上ファクト", schema:"mart" },
       { id:"t_dim", type:"table", parent:"db_dwh", label:"dim_customer", desc:"顧客ディメンション", schema:"mart" },
       // jobs
-      { id:"j_night", type:"job", parent:"pf_air", label:"nightly_sales_etl", desc:"ERP → DWH 日次連携", schedule:"毎日 02:00", tech:"Python / SQL" },
+      { id:"j_night", type:"job", parent:"pf_air", label:"nightly_sales_etl", desc:"ERP → DWH 日次連携", schedule:"毎日 02:00", tech:"Python / SQL", status:"active", health:"warn",
+        incidents:[ {severity:"mid", title:"処理時間が閾値(60分)を超過", status:"open"} ] },
       { id:"j_cust", type:"job", parent:"pf_air", label:"customer_sync", desc:"顧客ディメンション更新", schedule:"毎日 03:00" },
       { id:"j_back", type:"job", parent:"pf_sfdmu", label:"sales_writeback", desc:"受注実績を Salesforce へ", schedule:"毎日 05:00", tech:"REST Bulk API" },
       { id:"j_lead", type:"job", parent:"pf_mkt", label:"lead_sync", desc:"Lead 双方向同期", schedule:"15分毎", tech:"Marketo REST" },
@@ -454,6 +579,36 @@
   function pathOf(n){ const arr=[]; let c=n, guard=0; while(c && guard++<6){ arr.unshift(c); c=c.parent?byId[c.parent]:null; } return arr; }
   function ancestorIds(n){ const s=[]; let c=n, g=0; while(c && c.parent && byId[c.parent] && g++<6){ c=byId[c.parent]; s.push(c.id); } return s; }
   function descendantLeaves(cid){ return leaves().filter(n=>ancestorIds(n).includes(cid)); }
+  function openIncidents(n){ return (n.incidents||[]).filter(i=>i.status!=="closed"); }
+  function maxSeverity(list){ let best=null; for(const i of list){ const s=SEVERITY[i.severity]; if(s&&(!best||s.rank>best.rank)) best=s; } return best; }
+  function daysUntil(dateStr){ if(!dateStr) return null; const d=new Date(dateStr); if(isNaN(d)) return null; return Math.ceil((d-new Date())/86400000); }
+  // returns {level:'down'|'warn', color, reason} or null — problems that must pop at a glance
+  function alertOf(n){
+    const inc=openIncidents(n); const sev=maxSeverity(inc);
+    if(n.health==="down" || (sev&&sev.rank>=4)) return { level:"down", color:HEALTH.down.color, reason: sev?`障害/重大インシデント ${inc.length}件`:"障害中" };
+    const du=daysUntil(n.renewal);
+    if(n.health==="warn" || (sev&&sev.rank>=2) || (du!=null&&du<=90))
+      return { level:"warn", color:HEALTH.warn.color, reason: inc.length?`未解決 ${inc.length}件`:(du!=null?`更改まで${du<0?"超過":du+"日"}`:"注意") };
+    if(inc.length) return { level:"warn", color:HEALTH.warn.color, reason:`未解決 ${inc.length}件` };
+    return null;
+  }
+  // container alert = its own + worst of descendants
+  function groupAlert(c){
+    let best=alertOf(c);
+    for(const k of descendantLeaves(c.id)){ const a=alertOf(k); if(a&&(!best||(a.level==="down"&&best.level!=="down"))) best=a; }
+    return best;
+  }
+  function nodeColor(n){
+    if(colorMode==="status"){ const s=STATUS[n.status]; return s?s.color:"#94a3b8"; }
+    if(colorMode==="health"){ const a=alertOf(n); return a?a.color:HEALTH.ok.color; }
+    return TYPE[n.type].color;
+  }
+  function nodeFill(n){ return colorMode==="type" ? (TYPE[n.type].grad||TYPE[n.type].color) : nodeColor(n); }
+  function containerColor(c){
+    if(colorMode==="status"){ const s=STATUS[c.status]; return s?s.color:TYPE[c.type].color; }
+    if(colorMode==="health"){ const a=groupAlert(c); return a?a.color:TYPE[c.type].color; }
+    return TYPE[c.type].color;
+  }
 
   // ---------------- Physics (leaves only) ----------------
   let alpha=1;
@@ -512,14 +667,19 @@
 
     // container elements
     for(const c of containers()){
-      const t=TYPE[c.type], layer = t.depth===0? gOuter : gInner;
+      const t=TYPE[c.type], layer = t.depth===0? gOuter : gInner, col=containerColor(c);
       const g=el("g",{class:"grp","data-id":c.id}, layer);
       g._node=c;
-      el("rect",{class:"g-rect", rx:14, fill:t.color, "fill-opacity": t.depth===0?0.06:0.1, stroke:t.color, "stroke-opacity":0.55, "stroke-width":1.5, "stroke-dasharray": c.type==="platform"?"7 5":"0"}, g);
-      const ico=iconG(t.icon,15,g,t.color); ico.classList.add("g-ico"); ico._role="ico";
-      const lab=el("text",{class:"g-label", fill:t.color}, g); lab.textContent=c.label; lab._role="label";
-      const badge=el("text",{class:"g-badge", fill:t.color, "fill-opacity":0.75}, g); badge._role="badge";
-      badge.textContent = c.type==="database" ? (c.engine||"DB") : c.type==="platform" ? (c.kind||"ETL") : "SYSTEM";
+      el("rect",{class:"g-rect", rx:14, fill:col, "fill-opacity": t.depth===0?0.06:0.1, stroke:col, "stroke-opacity":0.55, "stroke-width":1.5, "stroke-dasharray": c.type==="platform"?"7 5":"0"}, g);
+      const ico=iconG(t.icon,15,g,col); ico.classList.add("g-ico"); ico._role="ico";
+      const lab=el("text",{class:"g-label", fill:col}, g); lab.textContent=c.label; lab._role="label";
+      const badge=el("text",{class:"g-badge", fill:col, "fill-opacity":0.8}, g); badge._role="badge";
+      const st=STATUS[c.status]; const baseBadge = c.type==="database" ? (c.engine||"DB") : c.type==="platform" ? (c.kind||"ETL") : "SYSTEM";
+      badge.textContent = st ? baseBadge+" · "+st.label : baseBadge;
+      const ga=groupAlert(c);
+      if(ga){ const ab=el("g",{class:"alert-badge"}, g); ab._role="alert"; ab._alert=ga;
+        el("circle",{r:8, fill:ga.color, stroke:"var(--bg)", "stroke-width":2}, ab);
+        const tx=el("text",{class:"ab-t","text-anchor":"middle", y:3.2, fill:"#fff"}, ab); tx.textContent="!"; }
       attachGroup(g,c);
     }
 
@@ -537,15 +697,19 @@
     // leaf nodes
     for(const n of leaves()){
       const g=el("g",{class:"node","data-id":n.id}, gNodes); g._node=n; if(isHiddenNode(n)) g.style.display="none";
-      const t=TYPE[n.type], r=radius(n);
-      el("circle",{class:"halo", r:r+6, fill:"none", stroke:t.color, "stroke-width":2.4, "stroke-opacity":0.5}, g);
-      el("circle",{class:"core", r:r, fill:t.grad||t.color}, g);
-      if(n.type==="external") el("circle",{class:"ext-ring", r:r+3.5, stroke:t.color}, g);
+      const t=TYPE[n.type], r=radius(n), col=nodeColor(n);
+      el("circle",{class:"halo", r:r+6, fill:"none", stroke:col, "stroke-width":2.4, "stroke-opacity":0.5}, g);
+      el("circle",{class:"core", r:r, fill:nodeFill(n)}, g);
+      if(n.type==="external") el("circle",{class:"ext-ring", r:r+3.5, stroke:col}, g);
       const ico=iconG(t.icon, Math.round(r*1.05), g, "#fff"); ico.classList.add("nico");
       const lab=el("text",{class:"label", y:r+14}, g); lab.textContent=n.label||"(無題)";
       const subTxt = subtitleOf(n);
       if(subTxt){ const sub=el("text",{class:"sub", y:r+25}, g); sub.textContent=subTxt; }
       el("circle",{class:"pin", cx:r*0.72, cy:-r*0.72, r:3, fill:"var(--accent)", stroke:"#fff", "stroke-width":1.4}, g);
+      const na=alertOf(n);
+      if(na){ const ab=el("g",{class:"alert-badge"+(na.level==="down"?" down":"")}, g); ab.setAttribute("transform",`translate(${-r*0.72},${-r*0.72})`);
+        el("circle",{r:7, fill:na.color, stroke:"#fff", "stroke-width":1.6}, ab);
+        const tx=el("text",{class:"ab-t","text-anchor":"middle", y:2.8, fill:"#fff"}, ab); tx.textContent="!"; }
       if(n.pinned) g.classList.add("pinned");
       attachNode(g,n);
     }
@@ -607,6 +771,7 @@
       const lab=[...g.children].find(x=>x._role==="label"); if(lab){ lab.setAttribute("x",b.x+30); lab.setAttribute("y",b.y+20); }
       const badge=[...g.children].find(x=>x._role==="badge");
       if(badge){ const lw=(lab&&lab.getComputedTextLength)?lab.getComputedTextLength():60; badge.setAttribute("x",b.x+30+lw+8); badge.setAttribute("y",b.y+20); }
+      const alert=[...g.children].find(x=>x._role==="alert"); if(alert) alert.setAttribute("transform",`translate(${b.x+b.w-15},${b.y+15})`);
     }
     // edges
     for(const p of gLinks.children){
@@ -637,24 +802,31 @@
 
   // ---------------- Highlight ----------------
   function updateHighlight(){
-    const focus=selectedId||hoverId, neigh=new Set();
-    if(focus){ neigh.add(focus); for(const e of data.edges){ if(e.source===focus)neigh.add(e.target); if(e.target===focus)neigh.add(e.source);} }
+    const focus=selectedId||hoverId;
+    // active = set of nodes to keep bright; when impactSet is on, it takes over
+    let active=null;
+    if(impactSet) active=impactSet;
+    else if(focus){ active=new Set([focus]); for(const e of data.edges){ if(e.source===focus)active.add(e.target); if(e.target===focus)active.add(e.source); } }
+    const dimAll=!!active;
     for(const g of gNodes.children){ const id=g._node.id;
       g.classList.toggle("selected",id===selectedId); g.classList.toggle("hover",id===hoverId);
-      g.classList.toggle("dim", !!focus && !neigh.has(id));
+      g.classList.toggle("dim", dimAll && !active.has(id));
     }
     for(const layer of [gOuter,gInner]) for(const g of layer.children){
-      g.classList.toggle("faded", !!focus && g._node.id!==selectedId && !neigh.has(g._node.id));
+      const cid=g._node.id, kids=descendantLeaves(cid).map(k=>k.id);
+      const inActive = active && (active.has(cid) || kids.some(k=>active.has(k)));
+      g.classList.toggle("faded", dimAll && cid!==selectedId && !inActive);
     }
-    for(const p of gLinks.children){ const e=p._edge, on=focus&&(e.source===focus||e.target===focus);
-      p.classList.toggle("hl",!!on); p.classList.toggle("faded",!!focus&&!on); p.setAttribute("marker-end",on?"url(#arrow-hl)":"url(#arrow)");
+    for(const p of gLinks.children){ const e=p._edge;
+      const on = active ? (active.has(e.source)&&active.has(e.target)) : false;
+      p.classList.toggle("hl",!!on); p.classList.toggle("faded",dimAll&&!on); p.setAttribute("marker-end",on?"url(#arrow-hl)":"url(#arrow)");
     }
-    for(const l of gLabels.children){ const e=l._edge, on=focus&&(e.source===focus||e.target===focus); l.classList.toggle("faded",!!focus&&!on); }
+    for(const l of gLabels.children){ const e=l._edge; const on=active?(active.has(e.source)&&active.has(e.target)):false; l.classList.toggle("faded",dimAll&&!on); }
   }
 
   // ---------------- Inspector ----------------
   const ins=$("#inspector");
-  function select(id){ selectedId=id; updateHighlight(); renderMinimap(); if(id) openInspector(id); else ins.classList.remove("open"); }
+  function select(id){ impactSet=null; selectedId=id; updateHighlight(); renderMinimap(); if(id) openInspector(id); else ins.classList.remove("open"); }
   function openInspector(id){
     const n=byId[id]; if(!n) return; ins.classList.add("open"); const t=TYPE[n.type];
     const bi=$("#insIcon"); bi.innerHTML=""; bi.style.background=t.color; iconG(t.icon,21,bi,"#fff");
@@ -671,10 +843,14 @@
     $("#fName").value=n.label||""; $("#fType").value=n.type; $("#fDesc").value=n.desc||"";
     $("#fOwner").value=n.owner||""; $("#fTech").value=n.tech||""; $("#fTags").value=(n.tags||[]).join(", ");
     $("#fEngine").value=n.engine||""; $("#fKind").value=n.kind||""; $("#fSchema").value=n.schema||""; $("#fSchedule").value=n.schedule||"";
-    toggleFields(n.type); populateParent(n); renderTags(n); renderConns(n);
+    $("#fStatus").value=n.status||""; $("#fCrit").value=n.criticality||""; $("#fHealth").value=n.health||"";
+    $("#fEnv").value=n.env||""; $("#fVendor").value=n.vendor||""; $("#fIntro").value=n.introduced||""; $("#fRenewal").value=n.renewal||"";
+    toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderIncidents(n); renderConns(n);
   }
   function toggleFields(type){
-    const map={ fldParent:["table","database","job"], fldEngine:["database"], fldKind:["platform"], fldSchema:["table"], fldSchedule:["job"] };
+    const map={ fldParent:["table","database","job"], fldEngine:["database"], fldKind:["platform"], fldSchema:["table"], fldSchedule:["job"],
+      fldEnv:["system","database","platform","external"], fldVendor:["system","database","platform","external"], fldDates:["system","database","platform","external"],
+      fldCols:["table"] };
     for(const id in map){ $("#"+id).classList.toggle("hide", !map[id].includes(type)); }
     const pl={ table:"所属データベース", database:"所属システム", job:"所属連携基盤" };
     if(pl[type]) $("#lblParent").textContent=pl[type];
@@ -710,6 +886,70 @@
   $("#fParent").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; n.parent=$("#fParent").value||null; save(); render(); reheat(.4); openInspector(n.id); });
   $("#fType").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; n.type=$("#fType").value; if(!TYPE[n.type].parent) n.parent=null; save(); render(); reheat(.4); openInspector(n.id); });
   function softRefresh(){ render(); }
+  bindField("#fEnv",(n,v)=>n.env=v);
+  bindField("#fVendor",(n,v)=>n.vendor=v);
+  bindField("#fIntro",(n,v)=>n.introduced=v);
+  bindField("#fRenewal",(n,v)=>{ n.renewal=v; softRefresh(); });
+  $("#fStatus").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.status=$("#fStatus").value||null; save(); render(); });
+  $("#fCrit").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.criticality=$("#fCrit").value||null; save(); });
+  $("#fHealth").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.health=$("#fHealth").value||null; save(); render(); });
+
+  // columns editor (tables)
+  function renderCols(n){
+    const list=$("#colList"); list.innerHTML=""; const cols=n.columns||(n.columns=[]);
+    cols.forEach((col,i)=>{
+      const row=document.createElement("div"); row.className="erow";
+      row.innerHTML=`<input class="grow cn" placeholder="列名" value="${esc(col.name||"")}">`+
+        `<input class="ty tt" placeholder="型" value="${esc(col.type||"")}">`+
+        `<label class="pk"><input type="checkbox" class="pkc" ${col.pk?"checked":""}>PK</label>`+
+        `<button class="rm">×</button>`;
+      row.querySelector(".cn").oninput=e=>{ col.name=e.target.value; save(); };
+      row.querySelector(".tt").oninput=e=>{ col.type=e.target.value; save(); };
+      row.querySelector(".pkc").onchange=e=>{ col.pk=e.target.checked; save(); };
+      row.querySelector(".rm").onclick=()=>{ cols.splice(i,1); save(); renderCols(n); };
+      list.appendChild(row);
+    });
+  }
+  $("#addCol").onclick=()=>{ const n=byId[selectedId]; if(!n)return; (n.columns||(n.columns=[])).push({name:"",type:"",pk:false}); save(); renderCols(n); };
+
+  // incidents editor
+  function renderIncidents(n){
+    const list=$("#incList"); list.innerHTML=""; const incs=n.incidents||(n.incidents=[]);
+    if(!incs.length){ list.innerHTML='<div style="font-size:11.5px;color:var(--text-mute)">未登録</div>'; }
+    incs.forEach((inc,i)=>{
+      const row=document.createElement("div"); row.className="erow";
+      row.innerHTML=`<select class="sev-sel sv">`+
+        Object.keys(SEVERITY).map(k=>`<option value="${k}" ${inc.severity===k?"selected":""}>${SEVERITY[k].label}</option>`).join("")+`</select>`+
+        `<input class="grow tl" placeholder="事象・課題" value="${esc(inc.title||"")}">`+
+        `<select class="st-sel ss"><option value="open" ${inc.status!=="closed"?"selected":""}>未</option><option value="closed" ${inc.status==="closed"?"selected":""}>済</option></select>`+
+        `<button class="rm">×</button>`;
+      row.querySelector(".sv").onchange=e=>{ inc.severity=e.target.value; save(); render(); };
+      row.querySelector(".tl").oninput=e=>{ inc.title=e.target.value; save(); };
+      row.querySelector(".ss").onchange=e=>{ inc.status=e.target.value; save(); render(); renderIncidents(n); };
+      row.querySelector(".rm").onclick=()=>{ incs.splice(i,1); save(); render(); renderIncidents(n); };
+      list.appendChild(row);
+    });
+  }
+  $("#addInc").onclick=()=>{ const n=byId[selectedId]; if(!n)return; (n.incidents||(n.incidents=[])).push({severity:"mid",title:"",status:"open"}); if(!n.health)n.health=null; save(); render(); renderIncidents(n); };
+
+  // impact analysis
+  let impactSet=null;
+  function seedsOf(id){ const n=byId[id]; return isContainer(n) ? new Set([id, ...descendantLeaves(id).map(k=>k.id)]) : new Set([id]); }
+  function impact(id,dir){
+    const seeds=seedsOf(id); const set=new Set(seeds); const q=[...seeds];
+    while(q.length){ const cur=q.shift();
+      for(const e of data.edges){
+        const nxt = dir==="down" ? (e.source===cur?e.target:null) : (e.target===cur?e.source:null);
+        if(nxt && !set.has(nxt)){ set.add(nxt); q.push(nxt); }
+      }
+    }
+    return set;
+  }
+  $("#impDown").onclick=()=>runImpact("down");
+  $("#impUp").onclick=()=>runImpact("up");
+  function runImpact(dir){ if(!selectedId) return; const seeds=seedsOf(selectedId); impactSet=impact(selectedId,dir);
+    const affected=[...impactSet].filter(x=>!seeds.has(x)).length; updateHighlight();
+    toast((dir==="down"?"下流の影響範囲":"上流の依存元")+`: ${affected} 件`+(affected?"":"（なし）")); }
 
   $("#insClose").onclick=()=>select(null);
   $("#delBtn").onclick=()=>{ if(!selectedId) return; const n=byId[selectedId];
@@ -879,6 +1119,72 @@
     if(hidden.has(t)) hidden.delete(t); else hidden.add(t); syncLegend(); render(); }; });
   function syncLegend(){ $("#legend").querySelectorAll(".row").forEach(r=>r.classList.toggle("off",hidden.has(r.getAttribute("data-t")))); }
 
+  // ---------------- Color mode ----------------
+  $("#modeSeg").querySelectorAll("button").forEach(b=>{ b.onclick=()=>{
+    colorMode=b.getAttribute("data-mode");
+    $("#modeSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    renderModeLegend(); render();
+  }; });
+  function renderModeLegend(){
+    const ml=$("#modeLegend"); ml.innerHTML="";
+    if(colorMode==="type"){ ml.style.display="none"; return; } ml.style.display="block";
+    const src = colorMode==="status"? STATUS : HEALTH;
+    let html='<div class="statuslegend" style="margin-bottom:6px">';
+    for(const k in src) html+=`<span class="sl"><span class="sd" style="background:${src[k].color}"></span>${src[k].label}</span>`;
+    if(colorMode==="health") html+=`<span class="sl" style="color:var(--text-mute)">※障害/更改の警告は常時 ! で表示</span>`;
+    html+='</div>'; ml.innerHTML=html;
+  }
+
+  // ---------------- Overview drawer ----------------
+  const overview=$("#overview");
+  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
+  $("#ovClose").onclick=closeOverview;
+  function closeOverview(){ overview.classList.remove("open"); $("#overviewBtn").classList.remove("active"); }
+  function buildOverview(){
+    const body=$("#ovBody"); const c={}; for(const n of data.nodes) c[n.type]=(c[n.type]||0)+1;
+    const sysList=data.nodes.filter(n=>n.type==="system");
+    // attention items: nodes with open incidents or renewal soon/overdue
+    const attn=[];
+    for(const n of data.nodes){
+      const inc=openIncidents(n); const du=daysUntil(n.renewal);
+      if(inc.length){ const sev=maxSeverity(inc); attn.push({n, kind:"incident", sev, sort: 100+(sev?sev.rank:0), text:`${inc.length}件の未解決課題`, color:(sev||SEVERITY.mid).color, sevLabel:(sev||SEVERITY.mid).label}); }
+      if(du!=null && du<=180){ attn.push({n, kind:"renewal", sort: du<0?95:80-du/10, text: du<0?`更改予定を ${-du}日 超過`:`更改まで ${du}日`, color: du<0?HEALTH.down.color:HEALTH.warn.color, sevLabel: du<0?"超過":"更改" }); }
+      if(n.health==="down" && !inc.length){ attn.push({n, kind:"health", sort:99, text:"障害中", color:HEALTH.down.color, sevLabel:"障害"}); }
+    }
+    attn.sort((a,b)=>b.sort-a.sort);
+    // status distribution among systems
+    const stCount={}; for(const s of sysList){ const k=s.status||"unknown"; stCount[k]=(stCount[k]||0)+1; }
+    let bar='', slg='';
+    for(const k in STATUS){ if(!stCount[k]) continue; const w=stCount[k]/Math.max(sysList.length,1)*100;
+      bar+=`<span style="width:${w}%;background:${STATUS[k].color}"></span>`;
+      slg+=`<span class="sl"><span class="sd" style="background:${STATUS[k].color}"></span>${STATUS[k].label} ${stCount[k]}</span>`; }
+    if(stCount.unknown){ const w=stCount.unknown/Math.max(sysList.length,1)*100; bar+=`<span style="width:${w}%;background:var(--text-mute)"></span>`; slg+=`<span class="sl"><span class="sd" style="background:var(--text-mute)"></span>未設定 ${stCount.unknown}</span>`; }
+
+    body.innerHTML =
+      `<div class="kpis">
+        <div class="kpi"><div class="kv">${c.system||0}</div><div class="kl">システム</div></div>
+        <div class="kpi"><div class="kv">${(c.database||0)}</div><div class="kl">データベース</div></div>
+        <div class="kpi"><div class="kv">${c.table||0}</div><div class="kl">テーブル</div></div>
+        <div class="kpi"><div class="kv">${(c.platform||0)}</div><div class="kl">連携基盤</div></div>
+        <div class="kpi"><div class="kv">${c.job||0}</div><div class="kl">ジョブ</div></div>
+        <div class="kpi"><div class="kv">${data.edges.length}</div><div class="kl">データ連携</div></div>
+      </div>
+      <div class="osec">システム稼働ステータス</div>
+      <div class="statusbar">${bar||'<span style="width:100%;background:var(--text-mute)"></span>'}</div>
+      <div class="statuslegend">${slg||'<span class="sl">未登録</span>'}</div>
+      <div class="osec">要対応（障害・更改）<span style="color:var(--text-mute);font-weight:600">　${attn.length}件</span></div>
+      <div class="attn" id="attnList"></div>`;
+
+    const al=$("#attnList");
+    if(!attn.length){ al.innerHTML='<div class="empty-note">未解決の障害・直近の更改予定はありません 🎉</div>'.replace("🎉",""); }
+    else attn.slice(0,30).forEach(a=>{
+      const path=pathOf(a.n).map(p=>p.label).join(" › ");
+      const d=document.createElement("div"); d.className="attn-item"; d.style.borderLeftColor=a.color;
+      d.innerHTML=`<span class="ai-ic" style="background:${a.color}"></span><div class="ai-body"><div class="ai-t">${esc(a.n.label)}</div><div class="ai-s">${esc(path)} · ${esc(a.text)}</div></div><span class="ai-sev" style="background:${a.color}">${esc(a.sevLabel)}</span>`;
+      d.onclick=()=>{ select(a.n.id); centerOn(a.n); }; al.appendChild(d);
+    });
+  }
+
   // ---------------- Search ----------------
   $("#search").addEventListener("input",(ev)=>{ const q=ev.target.value.trim().toLowerCase();
     for(const g of gNodes.children){ const n=g._node; const par=n.parent?byId[n.parent]:null;
@@ -891,7 +1197,7 @@
   window.addEventListener("keydown",(ev)=>{
     if(ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
-    if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else select(null); closeAddMenu(); }
+    if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else if(overview.classList.contains("open")) closeOverview(); else select(null); closeAddMenu(); }
     if(ev.key==="l"||ev.key==="L") setLinkMode(!linkMode);
     if(ev.key==="f"||ev.key==="F") zoomFit();
     if(ev.key==="r"||ev.key==="R") $("#relayoutBtn").click();
@@ -905,7 +1211,7 @@
   function loop(){ physics(); if(alpha>=0.004) positionAll(); animateFlow(); if(alpha>=0.004) renderMinimap(); requestAnimationFrame(loop); }
 
   // ---------------- Init ----------------
-  syncLegend(); render(); applyViewport(); reheat(1); requestAnimationFrame(loop); setTimeout(zoomFit,800);
+  syncLegend(); renderModeLegend(); render(); applyViewport(); reheat(1); requestAnimationFrame(loop); setTimeout(zoomFit,800);
 })();
 </script>
 </body>
