@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Graph — 社内システム / テーブル / データ連携マップ</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --panel: #ffffff;
+    --panel-2: #f1f3f6;
+    --border: #e2e5ea;
+    --text: #1c2330;
+    --text-dim: #667085;
+    --accent: #4c6ef5;
+    --edge: #b3bccb;
+    --edge-label: #8a94a6;
+    --shadow: 0 4px 20px rgba(20,30,60,.10);
+    --sys: #4c6ef5;   /* システム */
+    --tbl: #12b886;   /* テーブル */
+    --intg: #f59f00;  /* データ連携 */
+    --ext: #e64980;   /* 外部サービス */
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151c;
+    --panel: #1a1e28;
+    --panel-2: #232836;
+    --border: #2d3342;
+    --text: #e6e9ef;
+    --text-dim: #98a2b3;
+    --accent: #5c7cfa;
+    --edge: #414a5c;
+    --edge-label: #6b7688;
+    --shadow: 0 4px 24px rgba(0,0,0,.4);
+    --sys: #5c7cfa;
+    --tbl: #20c997;
+    --intg: #fab005;
+    --ext: #f06595;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151c; --panel: #1a1e28; --panel-2: #232836; --border: #2d3342;
+      --text: #e6e9ef; --text-dim: #98a2b3; --accent: #5c7cfa; --edge: #414a5c;
+      --edge-label: #6b7688; --shadow: 0 4px 24px rgba(0,0,0,.4);
+      --sys: #5c7cfa; --tbl: #20c997; --intg: #fab005; --ext: #f06595;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN",
+                 "Yu Gothic", Meiryo, sans-serif;
+    background: var(--bg); color: var(--text); overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ---------- Toolbar ---------- */
+  header {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 8px 14px; background: var(--panel);
+    border-bottom: 1px solid var(--border); z-index: 20;
+  }
+  header .title { font-weight: 700; font-size: 15px; letter-spacing: .3px; margin-right: 6px; white-space: nowrap; }
+  header .title small { color: var(--text-dim); font-weight: 400; font-size: 11px; margin-left: 6px; }
+  .spacer { flex: 1 1 auto; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 11px; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); border-radius: 8px; font-size: 12.5px; cursor: pointer;
+    white-space: nowrap; transition: background .12s, border-color .12s;
+  }
+  .btn:hover { background: var(--border); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.active { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .search {
+    display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+    border: 1px solid var(--border); background: var(--panel-2); border-radius: 8px;
+  }
+  .search input { border: none; background: transparent; color: var(--text); outline: none; font-size: 12.5px; width: 150px; }
+
+  /* ---------- Main ---------- */
+  main { flex: 1 1 auto; position: relative; overflow: hidden; }
+  svg#graph { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  svg#graph.panning { cursor: grabbing; }
+  svg#graph.linking { cursor: crosshair; }
+
+  .link { stroke: var(--edge); stroke-width: 1.6; fill: none; }
+  .link.hl { stroke: var(--accent); stroke-width: 2.4; }
+  .link-label { fill: var(--edge-label); font-size: 10px; pointer-events: none; }
+
+  .node { cursor: pointer; }
+  .node .shape { stroke-width: 2; transition: filter .12s; }
+  .node text.label { fill: var(--text); font-size: 12px; font-weight: 600; pointer-events: none; }
+  .node text.sub { fill: var(--text-dim); font-size: 9.5px; pointer-events: none; }
+  .node.dim { opacity: .18; }
+  .node.selected .shape { filter: drop-shadow(0 0 0 2px var(--text)); }
+  .node .ring { fill: none; stroke: var(--text); stroke-width: 2.5; opacity: 0; }
+  .node.selected .ring { opacity: .9; }
+
+  /* ---------- Inspector ---------- */
+  aside {
+    position: absolute; top: 0; right: 0; height: 100%; width: 340px;
+    background: var(--panel); border-left: 1px solid var(--border);
+    box-shadow: var(--shadow); transform: translateX(100%); transition: transform .22s ease;
+    display: flex; flex-direction: column; z-index: 15;
+  }
+  aside.open { transform: translateX(0); }
+  aside .head { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  aside .head .type-chip { font-size: 11px; padding: 3px 9px; border-radius: 20px; color: #fff; font-weight: 600; }
+  aside .head .close { margin-left: auto; cursor: pointer; color: var(--text-dim); font-size: 20px; line-height: 1; background: none; border: none; }
+  aside .body { padding: 14px 16px; overflow-y: auto; flex: 1; }
+  aside label { display: block; font-size: 11px; color: var(--text-dim); margin: 12px 0 4px; font-weight: 600; letter-spacing: .3px; }
+  aside label:first-child { margin-top: 0; }
+  aside input, aside textarea, aside select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--text); border-radius: 7px; font-size: 13px; font-family: inherit; outline: none;
+  }
+  aside input:focus, aside textarea:focus, aside select:focus { border-color: var(--accent); }
+  aside textarea { resize: vertical; min-height: 62px; }
+  .conn-list { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+  .conn {
+    display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 6px 9px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 7px; cursor: pointer;
+  }
+  .conn:hover { border-color: var(--accent); }
+  .conn .arrow { color: var(--text-dim); font-size: 11px; }
+  .conn small { color: var(--text-dim); margin-left: auto; }
+  .aside-actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+  .aside-actions .btn { flex: 1; justify-content: center; }
+  .btn.danger { color: #e03131; }
+  :root[data-theme="dark"] .btn.danger { color: #ff8787; }
+
+  /* ---------- Legend ---------- */
+  .legend {
+    position: absolute; left: 14px; bottom: 14px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 11.5px;
+    box-shadow: var(--shadow); z-index: 10;
+  }
+  .legend .row { display: flex; align-items: center; gap: 7px; margin: 3px 0; color: var(--text-dim); }
+  .legend .dot { width: 11px; height: 11px; border-radius: 3px; }
+  .legend .dot.round { border-radius: 50%; }
+
+  /* ---------- Hint / status ---------- */
+  .status {
+    position: absolute; right: 14px; bottom: 14px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; font-size: 11px;
+    color: var(--text-dim); box-shadow: var(--shadow); z-index: 10; max-width: 260px;
+  }
+  aside.open ~ .status { right: 354px; }
+  .status b { color: var(--text); }
+
+  .toast {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%) translateY(-16px);
+    background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 12.5px;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 30; font-weight: 500;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  input[type=file] { display: none; }
+  .zoom-ctl { position: absolute; right: 14px; top: 14px; display: flex; flex-direction: column; gap: 6px; z-index: 10; }
+  aside.open ~ .zoom-ctl { right: 354px; }
+  .zoom-ctl .btn { width: 34px; height: 34px; justify-content: center; padding: 0; font-size: 16px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title">🕸️ System Graph <small>社内システム / テーブル / データ連携マップ</small></div>
+    <div class="search">
+      🔍 <input id="search" type="text" placeholder="ノードを検索…" autocomplete="off">
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" data-add="system"><span class="dot" style="background:var(--sys)"></span>システム</button>
+    <button class="btn" data-add="table"><span class="dot" style="background:var(--tbl)"></span>テーブル</button>
+    <button class="btn" data-add="integration"><span class="dot" style="background:var(--intg)"></span>連携</button>
+    <button class="btn" data-add="external"><span class="dot" style="background:var(--ext)"></span>外部</button>
+    <button class="btn" id="linkBtn">🔗 リンク作成</button>
+    <button class="btn" id="relayoutBtn">🎯 整列</button>
+    <button class="btn" id="exportBtn">⬇ JSON</button>
+    <button class="btn" id="importBtn">⬆ 読込</button>
+    <button class="btn" id="themeBtn">🌓</button>
+    <input type="file" id="fileInput" accept="application/json,.json">
+  </header>
+  <main>
+    <svg id="graph">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"></path>
+        </marker>
+        <marker id="arrow-hl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+        </marker>
+      </defs>
+      <g id="viewport">
+        <g id="links"></g>
+        <g id="linkLabels"></g>
+        <g id="nodes"></g>
+      </g>
+    </svg>
+
+    <div class="zoom-ctl">
+      <button class="btn" id="zoomIn">＋</button>
+      <button class="btn" id="zoomOut">－</button>
+      <button class="btn" id="zoomFit">⊡</button>
+    </div>
+
+    <div class="legend">
+      <div class="row"><span class="dot round" style="background:var(--sys)"></span> システム</div>
+      <div class="row"><span class="dot" style="background:var(--tbl)"></span> テーブル / データ</div>
+      <div class="row"><span class="dot" style="background:var(--intg);border-radius:50% 50% 50% 0"></span> データ連携 / ジョブ</div>
+      <div class="row"><span class="dot round" style="background:var(--ext)"></span> 外部サービス</div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <!-- Inspector -->
+    <aside id="inspector">
+      <div class="head">
+        <span class="type-chip" id="insChip">システム</span>
+        <span id="insTitle" style="font-weight:700;font-size:13px;"></span>
+        <button class="close" id="insClose">×</button>
+      </div>
+      <div class="body">
+        <label>名前</label>
+        <input id="fName" type="text">
+        <label>種別</label>
+        <select id="fType">
+          <option value="system">システム</option>
+          <option value="table">テーブル / データ</option>
+          <option value="integration">データ連携 / ジョブ</option>
+          <option value="external">外部サービス</option>
+        </select>
+        <label>説明</label>
+        <textarea id="fDesc" placeholder="役割・目的など"></textarea>
+        <label>所有者 / 担当</label>
+        <input id="fOwner" type="text" placeholder="例: 情シス / 営業部">
+        <label>技術スタック / DB</label>
+        <input id="fTech" type="text" placeholder="例: PostgreSQL, Salesforce, Python">
+        <label>タグ（カンマ区切り）</label>
+        <input id="fTags" type="text" placeholder="例: 基幹, 顧客, バッチ">
+        <label>接続 <small style="color:var(--text-dim)">（クリックで移動）</small></label>
+        <div class="conn-list" id="connList"></div>
+      </div>
+      <div class="aside-actions">
+        <button class="btn danger" id="delBtn">🗑 削除</button>
+        <button class="btn" id="focusBtn">🎯 中央へ</button>
+      </div>
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+(function () {
+  // ---------------- Sample seed data ----------------
+  const SEED = {
+    nodes: [
+      { id: "sfdc",     type: "system",      label: "Salesforce",         desc: "営業支援・顧客管理の基幹SFA/CRM", owner: "営業企画", tech: "Salesforce Sales Cloud" },
+      { id: "kikan",    type: "system",      label: "基幹システム",        desc: "受注・請求・在庫を管理する社内基幹", owner: "情シス", tech: "Oracle / Java" },
+      { id: "ma",       type: "system",      label: "MAツール",            desc: "メール配信・リード育成", owner: "マーケ", tech: "Marketo" },
+      { id: "bi",       type: "system",      label: "BI / DWH",           desc: "全社データ分析基盤", owner: "情シス", tech: "BigQuery / Looker" },
+      { id: "t_account",type: "table",       label: "Account",            desc: "取引先マスタ", owner: "営業企画", tech: "Salesforce" },
+      { id: "t_opp",    type: "table",       label: "Opportunity",        desc: "商談データ", owner: "営業企画", tech: "Salesforce" },
+      { id: "t_order",  type: "table",       label: "受注テーブル",        desc: "受注明細", owner: "情シス", tech: "Oracle" },
+      { id: "t_lead",   type: "table",       label: "Lead",               desc: "見込み客", owner: "マーケ", tech: "Salesforce" },
+      { id: "etl_night",type: "integration", label: "夜間ETLバッチ",       desc: "基幹→DWH 日次連携", owner: "情シス", tech: "Airflow / Python" },
+      { id: "sync_sf",  type: "integration", label: "SF連携ジョブ",        desc: "受注実績をSalesforceへ書き戻し", owner: "情シス", tech: "SFDMU / REST API" },
+      { id: "ma_sync",  type: "integration", label: "MA同期",             desc: "LeadをMAへ双方向同期", owner: "マーケ", tech: "Marketo API" },
+      { id: "ext_free", type: "external",    label: "freee 会計",         desc: "外部会計SaaS", owner: "経理", tech: "freee API" },
+    ],
+    edges: [
+      { id:"e1", source:"sfdc",   target:"t_account", label:"保持" },
+      { id:"e2", source:"sfdc",   target:"t_opp",     label:"保持" },
+      { id:"e3", source:"sfdc",   target:"t_lead",    label:"保持" },
+      { id:"e4", source:"kikan",  target:"t_order",   label:"保持" },
+      { id:"e5", source:"etl_night", target:"t_order", label:"抽出" },
+      { id:"e6", source:"etl_night", target:"bi",     label:"ロード" },
+      { id:"e7", source:"t_opp",  target:"sync_sf",   label:"参照" },
+      { id:"e8", source:"sync_sf",target:"t_order",   label:"更新" },
+      { id:"e9", source:"ma_sync",target:"t_lead",    label:"同期" },
+      { id:"e10",source:"ma",     target:"ma_sync",   label:"実行" },
+      { id:"e11",source:"kikan",  target:"ext_free",  label:"仕訳連携" },
+      { id:"e12",source:"bi",     target:"t_account", label:"分析" },
+    ]
+  };
+
+  const TYPE = {
+    system:      { color: "var(--sys)",  chip: "システム",         label: "システム" },
+    table:       { color: "var(--tbl)",  chip: "テーブル",         label: "テーブル / データ" },
+    integration: { color: "var(--intg)", chip: "データ連携",       label: "データ連携 / ジョブ" },
+    external:    { color: "var(--ext)",  chip: "外部サービス",     label: "外部サービス" },
+  };
+  const STORE_KEY = "systemGraph.v1";
+
+  // ---------------- State ----------------
+  let data = load();
+  let selectedId = null;
+  let linkMode = false;
+  let linkSource = null;
+  const view = { x: 0, y: 0, k: 1 };
+
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const $ = (s) => document.querySelector(s);
+  const svg = $("#graph");
+  const gViewport = $("#viewport");
+  const gNodes = $("#nodes");
+  const gLinks = $("#links");
+  const gLabels = $("#linkLabels");
+
+  // ---------------- Persistence ----------------
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) return normalize(JSON.parse(raw));
+    } catch (e) {}
+    return normalize(JSON.parse(JSON.stringify(SEED)));
+  }
+  function normalize(d) {
+    d.nodes = (d.nodes || []).map(n => ({
+      tags: [], desc: "", owner: "", tech: "", ...n,
+      x: typeof n.x === "number" ? n.x : (Math.cos(Math.random()*6.28)*220),
+      y: typeof n.y === "number" ? n.y : (Math.sin(Math.random()*6.28)*220),
+      vx: 0, vy: 0
+    }));
+    d.edges = (d.edges || []).filter(e =>
+      d.nodes.some(n=>n.id===e.source) && d.nodes.some(n=>n.id===e.target)
+    );
+    return d;
+  }
+  function save() {
+    const out = {
+      nodes: data.nodes.map(({vx,vy,fx,fy,...rest}) => ({...rest, x:Math.round(rest.x), y:Math.round(rest.y)})),
+      edges: data.edges
+    };
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(out)); } catch(e) {}
+  }
+
+  // ---------------- Force simulation ----------------
+  let alpha = 1;
+  const nodeById = () => Object.fromEntries(data.nodes.map(n => [n.id, n]));
+
+  function tick() {
+    if (alpha < 0.005) { requestAnimationFrame(tick); return; }
+    alpha *= 0.985;
+    const byId = nodeById();
+    const N = data.nodes;
+
+    // repulsion (charge)
+    for (let i = 0; i < N.length; i++) {
+      for (let j = i + 1; j < N.length; j++) {
+        const a = N[i], b = N[j];
+        let dx = a.x - b.x, dy = a.y - b.y;
+        let d2 = dx*dx + dy*dy || 0.01;
+        let d = Math.sqrt(d2);
+        const rep = 5200 / d2;
+        const fx = (dx/d)*rep, fy = (dy/d)*rep;
+        a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+      }
+    }
+    // link springs
+    const LINK = 130;
+    for (const e of data.edges) {
+      const a = byId[e.source], b = byId[e.target];
+      if (!a || !b) continue;
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d = Math.sqrt(dx*dx + dy*dy) || 0.01;
+      const f = (d - LINK) * 0.03;
+      const fx = (dx/d)*f, fy = (dy/d)*f;
+      a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+    }
+    // centering + integrate
+    for (const n of N) {
+      n.vx += (-n.x) * 0.002;
+      n.vy += (-n.y) * 0.002;
+      if (n.fx != null) { n.x = n.fx; n.y = n.fy; n.vx = 0; n.vy = 0; continue; }
+      n.vx *= 0.82; n.vy *= 0.82;
+      n.x += n.vx * alpha * 1.4;
+      n.y += n.vy * alpha * 1.4;
+    }
+    positionNodes();
+    requestAnimationFrame(tick);
+  }
+  function reheat(a = 0.9) { alpha = a; }
+
+  // ---------------- Rendering ----------------
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(SVG_NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  function render() {
+    gNodes.innerHTML = ""; gLinks.innerHTML = ""; gLabels.innerHTML = "";
+
+    for (const e of data.edges) {
+      const path = el("path", { class: "link", "marker-end": "url(#arrow)", "data-edge": e.id }, gLinks);
+      path._edge = e;
+      const lbl = el("text", { class: "link-label", "text-anchor": "middle", "data-edge": e.id }, gLabels);
+      lbl.textContent = e.label || "";
+      lbl._edge = e;
+    }
+
+    for (const n of data.nodes) {
+      const g = el("g", { class: "node", "data-id": n.id }, gNodes);
+      g._node = n;
+      const t = TYPE[n.type] || TYPE.system;
+      // shape by type
+      if (n.type === "table") {
+        el("rect", { class:"ring", x:-34, y:-20, width:68, height:40, rx:7 }, g);
+        el("rect", { class:"shape", x:-30, y:-16, width:60, height:32, rx:6, fill:t.color, stroke:"#fff", "fill-opacity":".92" }, g);
+      } else if (n.type === "integration") {
+        el("path", { class:"ring", d: diamond(26) }, g);
+        el("path", { class:"shape", d: diamond(22), fill:t.color, stroke:"#fff" }, g);
+      } else {
+        el("circle", { class:"ring", r: 26 }, g);
+        el("circle", { class:"shape", r: 22, fill:t.color, stroke:"#fff" }, g);
+      }
+      const lab = el("text", { class:"label", "text-anchor":"middle", y: n.type==="table"? 4 : 40 }, g);
+      lab.textContent = n.label || "(無題)";
+      if (n.type !== "table") lab.setAttribute("y", 42);
+      else lab.setAttribute("y", 4);
+      // sub label (owner) below for non-table
+      if (n.type !== "table" && n.owner) {
+        const sub = el("text", { class:"sub", "text-anchor":"middle", y: 55 }, g);
+        sub.textContent = n.owner;
+      }
+      attachNodeEvents(g, n);
+    }
+    positionNodes();
+    updateSelectionVisuals();
+    updateStatus();
+  }
+  function diamond(r) { return `M0,${-r} L${r},0 L0,${r} L${-r},0 Z`; }
+
+  function positionNodes() {
+    const byId = nodeById();
+    for (const g of gNodes.children) {
+      const n = g._node;
+      g.setAttribute("transform", `translate(${n.x},${n.y})`);
+    }
+    for (const p of gLinks.children) {
+      const e = p._edge;
+      const a = byId[e.source], b = byId[e.target];
+      if (!a || !b) continue;
+      // shorten to node edge
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.sqrt(dx*dx+dy*dy) || 1;
+      const rA = nodeRadius(a), rB = nodeRadius(b);
+      const ax = a.x + dx/d*rA, ay = a.y + dy/d*rA;
+      const bx = b.x - dx/d*(rB+7), by = b.y - dy/d*(rB+7);
+      p.setAttribute("d", `M${ax},${ay} L${bx},${by}`);
+    }
+    for (const l of gLabels.children) {
+      const e = l._edge;
+      const a = byId[e.source], b = byId[e.target];
+      if (!a || !b) continue;
+      l.setAttribute("x", (a.x+b.x)/2);
+      l.setAttribute("y", (a.y+b.y)/2 - 4);
+    }
+  }
+  function nodeRadius(n) { return n.type === "table" ? 32 : n.type === "integration" ? 24 : 24; }
+
+  function applyViewport() {
+    gViewport.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+  }
+
+  // ---------------- Selection / Inspector ----------------
+  function select(id) {
+    selectedId = id;
+    updateSelectionVisuals();
+    if (id) openInspector(id); else closeInspector();
+  }
+  function updateSelectionVisuals() {
+    const neigh = new Set();
+    if (selectedId) {
+      neigh.add(selectedId);
+      for (const e of data.edges) {
+        if (e.source === selectedId) neigh.add(e.target);
+        if (e.target === selectedId) neigh.add(e.source);
+      }
+    }
+    for (const g of gNodes.children) {
+      g.classList.toggle("selected", g._node.id === selectedId);
+      g.classList.toggle("dim", !!selectedId && !neigh.has(g._node.id));
+    }
+    for (const p of gLinks.children) {
+      const e = p._edge;
+      const on = selectedId && (e.source === selectedId || e.target === selectedId);
+      p.classList.toggle("hl", !!on);
+      p.setAttribute("marker-end", on ? "url(#arrow-hl)" : "url(#arrow)");
+    }
+  }
+
+  const ins = $("#inspector");
+  function openInspector(id) {
+    const n = data.nodes.find(x => x.id === id);
+    if (!n) return;
+    ins.classList.add("open");
+    const t = TYPE[n.type] || TYPE.system;
+    $("#insChip").textContent = t.chip;
+    $("#insChip").style.background = t.color;
+    $("#insTitle").textContent = n.label;
+    $("#fName").value = n.label || "";
+    $("#fType").value = n.type;
+    $("#fDesc").value = n.desc || "";
+    $("#fOwner").value = n.owner || "";
+    $("#fTech").value = n.tech || "";
+    $("#fTags").value = (n.tags || []).join(", ");
+    renderConnections(n);
+  }
+  function closeInspector() { ins.classList.remove("open"); }
+
+  function renderConnections(n) {
+    const list = $("#connList");
+    list.innerHTML = "";
+    const byId = nodeById();
+    const conns = [];
+    for (const e of data.edges) {
+      if (e.source === n.id) conns.push({ other: byId[e.target], dir: "→", label: e.label });
+      else if (e.target === n.id) conns.push({ other: byId[e.source], dir: "←", label: e.label });
+    }
+    if (!conns.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">接続なし</div>'; return; }
+    for (const c of conns) {
+      if (!c.other) continue;
+      const d = document.createElement("div");
+      d.className = "conn";
+      d.innerHTML = `<span class="arrow">${c.dir}</span>
+        <span class="dot" style="width:9px;height:9px;border-radius:50%;background:${(TYPE[c.other.type]||TYPE.system).color}"></span>
+        <span>${escapeHtml(c.other.label)}</span><small>${escapeHtml(c.label||"")}</small>`;
+      d.onclick = () => { select(c.other.id); centerOn(c.other); };
+      list.appendChild(d);
+    }
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+
+  // live editing
+  function bindField(sel, apply) {
+    $(sel).addEventListener("input", () => {
+      const n = data.nodes.find(x => x.id === selectedId);
+      if (!n) return;
+      apply(n, $(sel).value);
+      save();
+    });
+  }
+  bindField("#fName", (n,v) => { n.label = v; $("#insTitle").textContent = v; updateNodeLabel(n); });
+  bindField("#fDesc", (n,v) => n.desc = v);
+  bindField("#fOwner",(n,v) => { n.owner = v; updateNodeLabel(n); });
+  bindField("#fTech", (n,v) => n.tech = v);
+  bindField("#fTags", (n,v) => n.tags = v.split(",").map(s=>s.trim()).filter(Boolean));
+  $("#fType").addEventListener("change", () => {
+    const n = data.nodes.find(x => x.id === selectedId);
+    if (!n) return;
+    n.type = $("#fType").value;
+    save(); render(); openInspector(n.id);
+  });
+  function updateNodeLabel(n) {
+    const g = [...gNodes.children].find(x => x._node.id === n.id);
+    if (!g) return;
+    const lab = g.querySelector("text.label");
+    if (lab) lab.textContent = n.label || "(無題)";
+    const sub = g.querySelector("text.sub");
+    if (sub) sub.textContent = n.owner || "";
+  }
+
+  $("#insClose").onclick = () => select(null);
+  $("#delBtn").onclick = () => {
+    if (!selectedId) return;
+    if (!confirm("このノードと接続を削除しますか?")) return;
+    data.edges = data.edges.filter(e => e.source !== selectedId && e.target !== selectedId);
+    data.nodes = data.nodes.filter(n => n.id !== selectedId);
+    select(null); save(); render(); toast("削除しました");
+  };
+  $("#focusBtn").onclick = () => {
+    const n = data.nodes.find(x => x.id === selectedId);
+    if (n) centerOn(n);
+  };
+
+  // ---------------- Node interaction (drag / click / link) ----------------
+  function attachNodeEvents(g, n) {
+    let moved = false, startX, startY, dragging = false;
+    g.addEventListener("pointerdown", (ev) => {
+      ev.stopPropagation();
+      if (linkMode) return;
+      dragging = true; moved = false;
+      startX = ev.clientX; startY = ev.clientY;
+      g.setPointerCapture(ev.pointerId);
+      n.fx = n.x; n.fy = n.y;
+      reheat(0.3);
+    });
+    g.addEventListener("pointermove", (ev) => {
+      if (!dragging) return;
+      if (Math.abs(ev.clientX-startX) + Math.abs(ev.clientY-startY) > 3) moved = true;
+      const pt = toWorld(ev.clientX, ev.clientY);
+      n.fx = pt.x; n.fy = pt.y; n.x = pt.x; n.y = pt.y;
+      positionNodes();
+    });
+    g.addEventListener("pointerup", (ev) => {
+      dragging = false;
+      n.fx = null; n.fy = null;
+      if (!moved) handleNodeClick(n);
+      else { save(); reheat(0.15); }
+    });
+  }
+  function handleNodeClick(n) {
+    if (linkMode) {
+      if (!linkSource) { linkSource = n.id; toast("リンク元: " + n.label + " → 対象をクリック"); highlightSource(); }
+      else if (linkSource === n.id) { toast("同じノードです"); }
+      else { createEdge(linkSource, n.id); linkSource = null; setLinkMode(false); }
+      return;
+    }
+    select(n.id);
+  }
+  function highlightSource() {
+    for (const g of gNodes.children) g.classList.toggle("selected", g._node.id === linkSource);
+  }
+  function createEdge(source, target) {
+    if (data.edges.some(e => e.source===source && e.target===target)) { toast("既に接続されています"); return; }
+    const label = prompt("接続ラベル（データフローの内容など）", "連携") ?? "";
+    data.edges.push({ id: "e"+Date.now(), source, target, label });
+    save(); render(); reheat(0.3); toast("リンクを作成しました");
+  }
+
+  // ---------------- Pan / Zoom ----------------
+  let panning = false, panStart;
+  svg.addEventListener("pointerdown", (ev) => {
+    if (ev.target.closest(".node")) return;
+    panning = true; svg.classList.add("panning");
+    panStart = { x: ev.clientX - view.x, y: ev.clientY - view.y };
+    svg.setPointerCapture(ev.pointerId);
+    if (!linkMode) select(null);
+  });
+  svg.addEventListener("pointermove", (ev) => {
+    if (!panning) return;
+    view.x = ev.clientX - panStart.x;
+    view.y = ev.clientY - panStart.y;
+    applyViewport();
+  });
+  svg.addEventListener("pointerup", () => { panning = false; svg.classList.remove("panning"); });
+  svg.addEventListener("wheel", (ev) => {
+    ev.preventDefault();
+    const factor = ev.deltaY < 0 ? 1.12 : 1/1.12;
+    zoomAt(ev.clientX, ev.clientY, factor);
+  }, { passive: false });
+
+  function zoomAt(cx, cy, factor) {
+    const rect = svg.getBoundingClientRect();
+    const px = cx - rect.left, py = cy - rect.top;
+    const wx = (px - view.x) / view.k, wy = (py - view.y) / view.k;
+    view.k = Math.max(0.2, Math.min(3, view.k * factor));
+    view.x = px - wx * view.k;
+    view.y = py - wy * view.k;
+    applyViewport();
+  }
+  function toWorld(cx, cy) {
+    const rect = svg.getBoundingClientRect();
+    return { x: (cx - rect.left - view.x) / view.k, y: (cy - rect.top - view.y) / view.k };
+  }
+  function centerOn(n) {
+    const rect = svg.getBoundingClientRect();
+    view.k = Math.max(view.k, 0.9);
+    view.x = rect.width/2 - n.x * view.k;
+    view.y = rect.height/2 - n.y * view.k;
+    applyViewport();
+  }
+  function zoomFit() {
+    if (!data.nodes.length) return;
+    const xs = data.nodes.map(n=>n.x), ys = data.nodes.map(n=>n.y);
+    const minX=Math.min(...xs)-80, maxX=Math.max(...xs)+80;
+    const minY=Math.min(...ys)-80, maxY=Math.max(...ys)+80;
+    const rect = svg.getBoundingClientRect();
+    const k = Math.min(rect.width/(maxX-minX), rect.height/(maxY-minY), 2);
+    view.k = Math.max(0.2, k);
+    view.x = rect.width/2 - (minX+maxX)/2 * view.k;
+    view.y = rect.height/2 - (minY+maxY)/2 * view.k;
+    applyViewport();
+  }
+
+  $("#zoomIn").onclick = () => { const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.2); };
+  $("#zoomOut").onclick = () => { const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.2); };
+  $("#zoomFit").onclick = zoomFit;
+
+  // ---------------- Toolbar actions ----------------
+  document.querySelectorAll("[data-add]").forEach(btn => {
+    btn.onclick = () => addNode(btn.getAttribute("data-add"));
+  });
+  function addNode(type) {
+    const center = toWorld(svg.getBoundingClientRect().left + svg.getBoundingClientRect().width/2,
+                           svg.getBoundingClientRect().top + svg.getBoundingClientRect().height/2);
+    const n = {
+      id: "n" + Date.now(),
+      type,
+      label: TYPE[type].chip + "（新規）",
+      desc: "", owner: "", tech: "", tags: [],
+      x: center.x + (Math.random()-0.5)*60, y: center.y + (Math.random()-0.5)*60, vx:0, vy:0
+    };
+    data.nodes.push(n);
+    save(); render(); reheat(0.4); select(n.id);
+    setTimeout(() => $("#fName").select(), 60);
+  }
+
+  const linkBtn = $("#linkBtn");
+  linkBtn.onclick = () => setLinkMode(!linkMode);
+  function setLinkMode(on) {
+    linkMode = on; linkSource = null;
+    linkBtn.classList.toggle("active", on);
+    svg.classList.toggle("linking", on);
+    if (on) { select(null); toast("リンク作成: 元ノード → 対象ノードの順にクリック"); }
+    else updateSelectionVisuals();
+  }
+
+  $("#relayoutBtn").onclick = () => {
+    for (const n of data.nodes) { n.fx=null; n.fy=null; }
+    reheat(1); toast("再整列中…");
+    setTimeout(zoomFit, 600);
+  };
+
+  // Export / Import
+  $("#exportBtn").onclick = () => {
+    const out = {
+      nodes: data.nodes.map(({vx,vy,fx,fy,...r}) => ({...r, x:Math.round(r.x), y:Math.round(r.y)})),
+      edges: data.edges
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "system-graph.json"; a.click();
+    URL.revokeObjectURL(url);
+    toast("JSON をエクスポートしました");
+  };
+  $("#importBtn").onclick = () => $("#fileInput").click();
+  $("#fileInput").addEventListener("change", (ev) => {
+    const file = ev.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = normalize(JSON.parse(reader.result));
+        data = parsed; selectedId = null; save(); render(); zoomFit();
+        toast("読み込みました（" + data.nodes.length + " ノード）");
+      } catch (e) { toast("JSON の読み込みに失敗しました"); }
+    };
+    reader.readAsText(file);
+    ev.target.value = "";
+  });
+
+  // Theme
+  $("#themeBtn").onclick = () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const next = cur === "dark" ? "light" : cur === "light" ? "dark"
+      : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark");
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("systemGraph.theme", next); } catch(e){}
+  };
+  (function initTheme(){
+    try { const t = localStorage.getItem("systemGraph.theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch(e){}
+  })();
+
+  // Search
+  $("#search").addEventListener("input", (ev) => {
+    const q = ev.target.value.trim().toLowerCase();
+    for (const g of gNodes.children) {
+      const n = g._node;
+      const hay = (n.label + " " + n.desc + " " + n.owner + " " + n.tech + " " + (n.tags||[]).join(" ")).toLowerCase();
+      const match = q === "" ? null : hay.includes(q);
+      g.classList.toggle("dim", q !== "" && !match);
+    }
+    if (q) {
+      const first = data.nodes.find(n => (n.label+" "+n.desc+" "+n.owner+" "+n.tech).toLowerCase().includes(q));
+      if (first) centerOn(first);
+    } else if (!selectedId) {
+      for (const g of gNodes.children) g.classList.remove("dim");
+    }
+  });
+
+  // keyboard
+  window.addEventListener("keydown", (ev) => {
+    if (ev.target.matches("input, textarea, select")) {
+      if (ev.key === "Escape") ev.target.blur();
+      return;
+    }
+    if (ev.key === "Delete" && selectedId) $("#delBtn").click();
+    if (ev.key === "Escape") { if (linkMode) setLinkMode(false); else select(null); }
+    if (ev.key === "l" || ev.key === "L") setLinkMode(!linkMode);
+    if (ev.key === "f" || ev.key === "F") zoomFit();
+  });
+
+  function updateStatus() {
+    const c = { system:0, table:0, integration:0, external:0 };
+    for (const n of data.nodes) c[n.type] = (c[n.type]||0)+1;
+    $("#status").innerHTML =
+      `<b>${data.nodes.length}</b> ノード / <b>${data.edges.length}</b> 接続　`+
+      `<span style="color:var(--sys)">●</span>${c.system} `+
+      `<span style="color:var(--tbl)">●</span>${c.table} `+
+      `<span style="color:var(--intg)">◆</span>${c.integration} `+
+      `<span style="color:var(--ext)">●</span>${c.external}`;
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("#toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  // ---------------- Init ----------------
+  render();
+  applyViewport();
+  reheat(1);
+  requestAnimationFrame(tick);
+  setTimeout(zoomFit, 700);
+})();
+</script>
+</body>
+</html>
