@@ -110,16 +110,16 @@
   .grp .g-ico svg { fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   .grp.faded { opacity:.4; }
 
-  .link { fill:none; stroke:var(--edge); stroke-width:1.5; transition:stroke .2s, stroke-width .2s, opacity .2s; }
-  .link.hl { stroke:var(--edge-hl); stroke-width:2.3; }
-  .link.ref { stroke-dasharray:5 4; stroke-width:1.3; }
+  .link { fill:none; stroke:var(--lk, var(--edge)); stroke-width:1.6; transition:stroke .2s, stroke-width .2s, opacity .2s; }
+  .link.hl { stroke:var(--edge-hl); stroke-width:2.3; stroke-opacity:1; }
+  .link.ref { stroke-dasharray:5 4; stroke-width:1.4; }
   .link.faded { opacity:.1; }
   .link-label { fill:var(--text-dim); font-size:9.5px; font-weight:600; pointer-events:none; paint-order:stroke; stroke:var(--bg); stroke-width:3px; stroke-linejoin:round; transition:opacity .2s; }
   .link-label.faded { opacity:.07; }
   .flow circle { pointer-events:none; }
   .link-hit { stroke:transparent; stroke-width:16; fill:none; pointer-events:stroke; cursor:pointer; }
-  .link.sel { stroke:var(--edge-hl); stroke-width:3; }
-  .link.emph { stroke:var(--edge-hl); stroke-width:2.6; }
+  .link.sel { stroke:var(--edge-hl); stroke-width:3; stroke-opacity:1; }
+  .link.emph { stroke:var(--edge-hl); stroke-width:2.6; stroke-opacity:1; }
 
   .tooltip {
     position:absolute; z-index:50; pointer-events:none; max-width:280px;
@@ -386,7 +386,7 @@
         <div class="row" data-t="table"><span class="swatch round" style="background:var(--c-table)"></span> テーブル</div>
         <div class="row" data-t="job"><span class="swatch round" style="background:var(--c-job)"></span> ジョブ / パイプライン</div>
         <div class="row" data-t="external"><span class="swatch round" style="background:var(--c-external)"></span> 外部サービス</div>
-        <div class="lt" style="margin-top:8px">データの流れ（色＝連携種別）</div>
+        <div class="lt" style="margin-top:8px">データの流れ（色＝種別 / ●大きさ＝データ量）</div>
         <div class="statuslegend" id="modeLegend2"></div>
         </div>
       </div>
@@ -481,6 +481,16 @@
           <option value="">（未設定）</option><option value="full">全件</option><option value="incremental">差分</option>
           <option value="cdc">CDC（変更検知）</option><option value="upsert">UPSERT</option><option value="realtime">リアルタイム</option>
         </select></div>
+        <div class="fld" id="eldSched" style="display:flex;gap:8px">
+          <div style="flex:1"><label>連携間隔</label><input id="eInterval" type="text" placeholder="例: 日次 / 5分毎 / 随時"></div>
+          <div style="flex:1"><label>実行時間帯</label><input id="eWindow" type="text" placeholder="例: 02:00-04:00 / 営業時間内"></div>
+        </div>
+        <div class="fld" id="eldVol" style="display:flex;gap:8px">
+          <div style="flex:1.4"><label>連携データ量</label><input id="eVolume" type="text" placeholder="例: 約12万件/日, 500MB"></div>
+          <div style="flex:1"><label>規模（●サイズ）</label><select id="eScale">
+            <option value="">自動</option><option value="xs">極小</option><option value="s">小</option><option value="m">中</option><option value="l">大</option><option value="xl">特大</option>
+          </select></div>
+        </div>
         <div class="fld" id="eldCond"><label>抽出条件（WHERE / フィルタ）</label><textarea id="eCond" placeholder="例: WHERE updated_at >= :last_run AND status = 'CONFIRMED'"></textarea></div>
         <div class="fld" id="eldKey"><label>増分キー / 更新キー</label><input id="eKey" type="text" placeholder="例: updated_at, id"></div>
         <div class="fld" id="eldTrans"><label>変換ロジック（概要）</label><textarea id="eTrans" placeholder="例: 通貨をJPYに統一 / 勘定科目マッピング適用"></textarea></div>
@@ -547,13 +557,16 @@
     upsert:      { label:"UPSERT", color:"#10b981" },
     realtime:    { label:"リアルタイム", color:"#f43f5e" },
   };
-  // データの流れの色（読取＝抽出 / 書込＝ロード）
+  // データの流れ / 連携の色（読取・書込・参照）
   const KIND = {
     read:  { label:"読取（抽出）",  color:"#3b82f6" },
     write: { label:"書込（ロード）", color:"#22c55e" },
-    ref:   { label:"参照 (FK/JOIN)", color:"#94a3b8" },
+    ref:   { label:"参照 (FK/JOIN)", color:"#a855f7" },
   };
   const kindColor = (e)=> (KIND[e.kind]||KIND.write).color;
+  // 連携データ量の規模 → 流れる●の大きさ倍率
+  const SCALE = { xs:{label:"極小",mul:0.55}, s:{label:"小",mul:0.78}, m:{label:"中",mul:1.0}, l:{label:"大",mul:1.4}, xl:{label:"特大",mul:1.95} };
+  const scaleMul = (e)=> (e.scale&&SCALE[e.scale])?SCALE[e.scale].mul:1;
   const STORE_KEY = "systemGraph.v3";
   let colorMode = "type"; // type | status | health
   const SVG_NS = "http://www.w3.org/2000/svg";
@@ -601,10 +614,12 @@
     ],
     edges: [
       { id:"e1", source:"t_order", target:"j_night", label:"抽出", kind:"read", mode:"incremental", key:"ORDER_DATE",
+        interval:"日次", window:"02:00-02:30", volume:"約12万件/日", scale:"l",
         condition:"WHERE ORDER_DATE >= :last_run AND STATUS = 'CONFIRMED'", transform:"通貨をJPYに統一 / 取消明細を除外" },
       { id:"e2", source:"t_inv",  target:"j_night", label:"抽出", kind:"read", mode:"full",
         condition:"WHERE WAREHOUSE_CD IN ('T01','O01')  -- 全件洗い替え", transform:"在庫スナップショットを日次で取得" },
       { id:"e3", source:"j_night",target:"t_fact",  label:"ロード", kind:"write", mode:"upsert", key:"sales_key",
+        interval:"日次", window:"02:30-04:00", volume:"約12万件/日", scale:"xl",
         transform:"受注×在庫を結合し fact_sales へ UPSERT" },
       { id:"e4", source:"t_account", target:"j_cust", label:"抽出", kind:"read", mode:"incremental", key:"LastModifiedDate",
         condition:"WHERE LastModifiedDate > :watermark" },
@@ -614,10 +629,12 @@
       { id:"e7", source:"j_back", target:"t_opp",   label:"実績更新", kind:"write", mode:"upsert", key:"External_Id__c",
         transform:"商談の実績金額フィールドを更新（Bulk API）" },
       { id:"e8", source:"t_lead", target:"j_lead",  label:"同期", kind:"read", mode:"cdc",
+        interval:"15分毎", window:"終日", volume:"約2千件/日", scale:"xs",
         condition:"変更検知（新規/更新リード）", transform:"メール・会社名を正規化" },
       { id:"e9", source:"j_lead", target:"t_lead",  label:"書戻し", kind:"write", mode:"upsert", key:"Email",
         transform:"MAのスコアを Lead に書戻し" },
       { id:"e10",source:"t_bill", target:"ext_freee", label:"仕訳連携", kind:"write", mode:"incremental", key:"BILL_ID",
+        interval:"日次", window:"06:00-06:15", volume:"約8千件/日", scale:"m",
         condition:"WHERE CLOSED_FLAG = 1 AND BILL_DATE >= :last_run", transform:"勘定科目マッピングを適用",
         mappings:[ {from:"ACCOUNT_CD", to:"勘定科目コード", rule:"社内→freeeコード変換表"}, {from:"AMOUNT", to:"金額", rule:"税抜→税込 ×1.1"}, {from:"BILL_DATE", to:"発生日", rule:"YYYY-MM-DD"} ] },
       { id:"e11",source:"t_opp",  target:"t_account", label:"FK", kind:"ref" },
@@ -791,14 +808,14 @@
       const a=byId[e.source], b=byId[e.target]; const hide=a&&b&&(isHiddenNode(a)||isHiddenNode(b));
       const kc=kindColor(e);
       const p=el("path",{class:"link"+(e.kind==="ref"?" ref":""),"marker-end":"url(#arrow)"}, gLinks); p._edge=e; if(hide)p.style.display="none";
-      if(e.kind!=="ref"){ p.setAttribute("stroke",kc); p.setAttribute("stroke-opacity","0.35"); }
+      p.style.setProperty("--lk",kc); p.setAttribute("stroke-opacity", e.kind==="ref"?"0.6":"0.4");
       const hit=el("path",{class:"link-hit","data-edge":e.id}, gLinks); hit._edge=e; if(hide)hit.style.display="none";
       attachEdge(hit,e);
       const lbl=el("text",{class:"link-label","text-anchor":"middle"}, gLabels); lbl._edge=e; if(hide)lbl.style.display="none";
       lbl.textContent=e.label||"";
       if(e.kind!=="ref"){
         const wrap=el("g",{class:"flow"}, gFlow); wrap._edge=e; wrap._path=p; if(hide)wrap.style.display="none";
-        wrap._col=kc; wrap.setAttribute("filter","url(#glow)");
+        wrap._col=kc; wrap.setAttribute("filter","url(#glow)"); wrap._scale=scaleMul(e);
         wrap._speed = e.mode==="realtime"?0.0032 : e.mode==="cdc"?0.0024 : e.mode==="full"?0.0012 : 0.0018;
         const N=3; for(let i=0;i<N;i++){ const fc=el("circle",{r:3.4, fill:kc}, wrap); fc._t=i/N; }
       }
@@ -922,10 +939,10 @@
         fc._t+=sp; if(fc._t>1) fc._t-=1;
         let pt; try{ pt=wrap._path.getPointAtLength(len*fc._t); }catch(err){ continue; }
         fc.setAttribute("cx",pt.x); fc.setAttribute("cy",pt.y);
-        // lead particle brighter/bigger for a comet feel
-        const lead = i===0;
+        // lead particle brighter/bigger for a comet feel。半径はデータ量(規模)で変化
+        const lead = i===0, sc=wrap._scale||1;
         fc.setAttribute("opacity", dim?0.07 : on?1 : (lead?1:0.9));
-        fc.setAttribute("r", (on?1.3:1) * (lead?4.4:3.2));
+        fc.setAttribute("r", (on?1.3:1) * (lead?4.4:3.2) * sc);
         fc.setAttribute("fill", wrap._col||"var(--edge-hl)");
       }
     }
@@ -1131,8 +1148,9 @@
     $("#eiIcon").style.background = kindColor(e);
     $("#eLabel").value=e.label||""; $("#eKind").value=e.kind||"read"; $("#eMode").value=e.mode||"";
     $("#eCond").value=e.condition||""; $("#eKey").value=e.key||""; $("#eTrans").value=e.transform||"";
+    $("#eInterval").value=e.interval||""; $("#eWindow").value=e.window||""; $("#eVolume").value=e.volume||""; $("#eScale").value=e.scale||"";
     const ref = e.kind==="ref";
-    $("#eldMode").classList.toggle("hide",ref); $("#eldCond").classList.toggle("hide",ref); $("#eldKey").classList.toggle("hide",ref); $("#eldTrans").classList.toggle("hide",ref); $("#eldMaps").classList.toggle("hide",ref);
+    $("#eldMode").classList.toggle("hide",ref); $("#eldSched").classList.toggle("hide",ref); $("#eldVol").classList.toggle("hide",ref); $("#eldCond").classList.toggle("hide",ref); $("#eldKey").classList.toggle("hide",ref); $("#eldTrans").classList.toggle("hide",ref); $("#eldMaps").classList.toggle("hide",ref);
     renderEdgeFlow(e); renderMappings(e); renderEndpoints(e);
   }
   // データ連携の項目マッピング / 加工
@@ -1176,6 +1194,10 @@
   bindEdge("#eCond",(e,v)=>e.condition=v);
   bindEdge("#eKey",(e,v)=>e.key=v);
   bindEdge("#eTrans",(e,v)=>e.transform=v);
+  bindEdge("#eInterval",(e,v)=>e.interval=v);
+  bindEdge("#eWindow",(e,v)=>e.window=v);
+  bindEdge("#eVolume",(e,v)=>e.volume=v);
+  $("#eScale").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.scale=$("#eScale").value||null; save(); render(); });
   $("#eKind").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.kind=$("#eKind").value; save(); render(); openEdgeInspector(e.id); });
   $("#eMode").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.mode=$("#eMode").value||null; save(); render(); openEdgeInspector(e.id); });
   $("#eiClose").onclick=()=>{ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); };
@@ -1209,6 +1231,9 @@
     const a=byId[e.source], b=byId[e.target], md=e.mode&&MODE[e.mode];
     let h=`<div class="tt-h"><span class="tt-dot" style="background:${kindColor(e)}"></span>${esc(a?a.label:"?")} → ${esc(b?b.label:"?")}</div>`;
     h+=`<div class="tt-r"><b style="color:${kindColor(e)}">${(KIND[e.kind]||{}).label||"連携"}</b>${md?` · ${md.label}`:""}${e.key?` · キー ${esc(e.key)}`:""}</div>`;
+    const sched=[e.interval&&("間隔 "+e.interval), e.window&&("時間帯 "+e.window)].filter(Boolean).join(" · ");
+    if(sched) h+=`<div class="tt-r">${esc(sched)}</div>`;
+    if(e.volume) h+=`<div class="tt-r">データ量: <b>${esc(e.volume)}</b>${e.scale&&SCALE[e.scale]?` (${SCALE[e.scale].label})`:""}</div>`;
     if(e.condition) h+=`<div class="tt-cond">${esc(e.condition)}</div>`;
     if(e.transform) h+=`<div class="tt-r" style="margin-top:3px">変換: ${esc(e.transform)}</div>`;
     const mp=(e.mappings||[]).length; if(mp) h+=`<div class="tt-r">項目マッピング ${mp}件</div>`;
@@ -1232,21 +1257,23 @@
     g.addEventListener("dblclick",(ev)=>{ ev.stopPropagation(); n.pinned=false; n.fx=null; n.fy=null; g.classList.remove("pinned"); save(); reheat(.5); toast("固定を解除しました"); });
   }
   function attachGroup(g,c){
-    let dragging=false, moved=false, sx, sy, last, kids=[];
+    let dragging=false, moved=false, sx, sy, last, movers=[];
     g.addEventListener("pointerdown",(ev)=>{
       if(ev.target.closest(".node")) return; ev.stopPropagation(); if(linkMode) return;
       dragging=true; moved=false; sx=ev.clientX; sy=ev.clientY; g.classList.add("dragging");
       try{ g.setPointerCapture(ev.pointerId); }catch(e){}
-      last=toWorld(ev.clientX,ev.clientY); kids=descendantLeaves(c.id);
-      for(const k of kids){ k.fx=k.x; k.fy=k.y; } reheat(.2);
+      last=toWorld(ev.clientX,ev.clientY);
+      // 自分自身 + 配下すべて（テーブルが無い空の箱でも動かせるよう、コンテナ自身の座標も動かす）
+      movers=[c, ...data.nodes.filter(n=>ancestorIds(n).includes(c.id))];
+      for(const m of movers){ if(isLeaf(m)){ m.fx=m.x; m.fy=m.y; } } reheat(.2);
     });
     g.addEventListener("pointermove",(ev)=>{ if(!dragging) return;
       if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true;
       const p=toWorld(ev.clientX,ev.clientY); const dx=p.x-last.x, dy=p.y-last.y; last=p;
-      for(const k of kids){ k.x+=dx; k.y+=dy; k.fx=k.x; k.fy=k.y; } positionAll(); });
+      for(const m of movers){ m.x=(m.x||0)+dx; m.y=(m.y||0)+dy; if(isLeaf(m)){ m.fx=m.x; m.fy=m.y; } } positionAll(); });
     g.addEventListener("pointerup",()=>{ if(!dragging) return; dragging=false; g.classList.remove("dragging");
-      if(!moved){ for(const k of kids){ if(!k.pinned){ k.fx=null; k.fy=null; } } if(!linkMode) select(c.id); }
-      else { for(const k of kids){ k.pinned=true; } markPins(); save(); } });
+      if(!moved){ for(const m of movers){ if(isLeaf(m)&&!m.pinned){ m.fx=null; m.fy=null; } } if(!linkMode) select(c.id); }
+      else { for(const m of movers){ if(isLeaf(m)) m.pinned=true; } markPins(); save(); } });
     g.addEventListener("dblclick",(ev)=>{ ev.stopPropagation();
       for(const k of descendantLeaves(c.id)){ k.pinned=false; k.fx=null; k.fy=null; } markPins(); save(); reheat(.6); toast("グループの固定を解除しました"); });
   }
@@ -1386,9 +1413,10 @@
       const incs=openIncidents(sys); if(incs.length){ L.push("","**未解決の課題**"); for(const i of incs) L.push(`- [${(SEVERITY[i.severity]||{}).label||""}] ${i.title||""}`); }
       L.push("");
     }
-    L.push("## 🔄 データ連携（抽出条件）","","| 元 | → | 先 | 種別 | 方式 | 抽出条件 | 変換 | キー |","|---|---|---|---|---|---|---|---|");
+    L.push("## 🔄 データ連携（抽出条件）","","| 元 | → | 先 | 種別 | 方式 | 間隔 | 時間帯 | データ量 | 抽出条件 | 変換 | キー |","|---|---|---|---|---|---|---|---|---|---|---|");
     for(const e of data.edges){ const a=byId[e.source], b=byId[e.target]; if(!a||!b) continue;
-      L.push(`| ${a.label} | ${e.kind==="ref"?"⋯":"→"} | ${b.label} | ${(KIND[e.kind]||{}).label||""} | ${e.mode&&MODE[e.mode]?MODE[e.mode].label:""} | ${(e.condition||"").replace(/\|/g,"\\|")||""} | ${(e.transform||"").replace(/\|/g,"\\|")||""} | ${e.key||""} |`);
+      const vol=(e.volume||"")+(e.scale&&SCALE[e.scale]?` (${SCALE[e.scale].label})`:"");
+      L.push(`| ${a.label} | ${e.kind==="ref"?"⋯":"→"} | ${b.label} | ${(KIND[e.kind]||{}).label||""} | ${e.mode&&MODE[e.mode]?MODE[e.mode].label:""} | ${e.interval||""} | ${e.window||""} | ${vol.replace(/\|/g,"\\|")} | ${(e.condition||"").replace(/\|/g,"\\|")||""} | ${(e.transform||"").replace(/\|/g,"\\|")||""} | ${e.key||""} |`);
     }
     const mapped=data.edges.filter(e=>(e.mappings||[]).length);
     if(mapped.length){ L.push("","### 項目マッピング / 加工");
