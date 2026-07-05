@@ -19,6 +19,7 @@
     --c-table:#4f46e5;   --c-table-2:#a5b4fc;
     --c-job:#e0820a;     --c-job-2:#fcd34d;
     --c-external:#e11d5b;--c-external-2:#fda4af;
+    --c-connector:#c026d3;--c-connector-2:#f0abfc;
   }
   :root[data-theme="dark"] {
     --bg:#0a0d15; --bg-2:#0d121c; --grid:rgba(150,175,220,.09);
@@ -32,6 +33,7 @@
     --c-table:#818cf8;   --c-table-2:#c7d2fe;
     --c-job:#fbbf24;     --c-job-2:#fde68a;
     --c-external:#fb7185;--c-external-2:#fecdd3;
+    --c-connector:#e879f9;--c-connector-2:#f5d0fe;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -41,7 +43,7 @@
       --accent:#818cf8;--accent-soft:rgba(129,140,248,.16);--edge:rgba(150,170,210,.34);--edge-hl:#a5b4fc;
       --shadow:0 12px 44px rgba(0,0,0,.55);--shadow-sm:0 3px 14px rgba(0,0,0,.42);
       --c-system:#94a3b8;--c-database:#2dd4bf;--c-platform:#a78bfa;
-      --c-table:#818cf8;--c-table-2:#c7d2fe;--c-job:#fbbf24;--c-job-2:#fde68a;--c-external:#fb7185;--c-external-2:#fecdd3;
+      --c-table:#818cf8;--c-table-2:#c7d2fe;--c-job:#fbbf24;--c-job-2:#fde68a;--c-external:#fb7185;--c-external-2:#fecdd3;--c-connector:#e879f9;--c-connector-2:#f5d0fe;
     }
   }
   * { box-sizing:border-box; }
@@ -300,6 +302,74 @@
   input[type=file] { display:none; }
   #nodesG { transition:opacity .5s; }
 
+  /* ---------- Empty state ---------- */
+  .empty-state {
+    position:absolute; inset:0; z-index:8; display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; pointer-events:none;
+  }
+  .empty-state.show { display:flex; }
+  .empty-state .es-card { pointer-events:auto; background:var(--glass); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--border); border-radius:18px; padding:30px 34px; box-shadow:var(--shadow); max-width:400px; }
+  .empty-state h2 { margin:0 0 6px; font-size:17px; }
+  .empty-state p { margin:0 0 16px; color:var(--text-dim); font-size:13px; line-height:1.7; }
+  .empty-state .btn { display:inline-flex; }
+
+  /* ---------- Modal (help) ---------- */
+  .modal-backdrop { position:fixed; inset:0; z-index:60; background:rgba(10,14,22,.5); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; padding:20px; }
+  .modal-backdrop.open { display:flex; }
+  .modal { background:var(--glass-solid); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow);
+    width:min(560px,100%); max-height:86vh; display:flex; flex-direction:column; overflow:hidden; }
+  .modal-h { display:flex; align-items:center; padding:16px 18px; border-bottom:1px solid var(--border); font-size:15px; font-weight:750; }
+  .modal-h .close { margin-left:auto; cursor:pointer; border:none; background:var(--panel-2); width:30px; height:30px; border-radius:9px; display:grid; place-items:center; color:var(--text-dim); }
+  .modal-b { padding:18px; overflow-y:auto; }
+  .help-sec { margin-bottom:16px; } .help-sec:last-child { margin-bottom:0; }
+  .help-sec h4 { margin:0 0 7px; font-size:12.5px; color:var(--accent); font-weight:750; }
+  .help-sec .hrow { display:flex; gap:10px; font-size:12.5px; padding:3px 0; color:var(--text-dim); }
+  .help-sec .hrow b { color:var(--text); font-weight:600; }
+  .help-sec kbd { background:var(--panel-2); border:1px solid var(--border); border-bottom-width:2px; border-radius:6px; padding:1px 7px; font-size:11px; font-family:inherit; color:var(--text); white-space:nowrap; }
+
+  /* ---------- Table / Report view ---------- */
+  .tableview { position:absolute; inset:12px; z-index:26; background:var(--glass); backdrop-filter:blur(24px) saturate(1.4); -webkit-backdrop-filter:blur(24px) saturate(1.4);
+    border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); display:none; flex-direction:column; overflow:hidden; }
+  .tableview.open { display:flex; }
+  .tv-head { display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .tv-title { font-weight:750; font-size:14px; display:flex; align-items:center; gap:8px; }
+  .tv-tabs { display:inline-flex; background:var(--panel-2); border-radius:9px; padding:2px; gap:2px; }
+  .tv-tabs button { border:none; background:transparent; color:var(--text-dim); font-size:12.5px; font-weight:600; padding:6px 13px; border-radius:7px; cursor:pointer; font-family:inherit; }
+  .tv-tabs button.on { background:var(--glass-solid); color:var(--text); box-shadow:var(--shadow-sm); }
+  .tv-search { display:flex; align-items:center; gap:6px; padding:5px 11px; background:var(--panel-2); border-radius:9px; color:var(--text-dim); }
+  .tv-search input { border:none; background:transparent; outline:none; color:var(--text); font-size:12.5px; width:150px; font-family:inherit; }
+  .tv-body { flex:1; overflow:auto; padding:0; }
+  .tv-body::-webkit-scrollbar { width:10px; height:10px; } .tv-body::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:8px; }
+  table.dt { border-collapse:separate; border-spacing:0; width:100%; font-size:12.5px; }
+  table.dt thead th { position:sticky; top:0; z-index:2; background:var(--glass-solid); text-align:left; font-weight:700; font-size:11px; color:var(--text-dim);
+    padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none; }
+  table.dt thead th.nosort { cursor:default; }
+  table.dt thead th .arw { opacity:.5; font-size:9px; margin-left:3px; }
+  table.dt tbody td { padding:7px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  table.dt tbody tr:hover { background:var(--panel-2); }
+  table.dt .tv-name { display:flex; align-items:center; gap:8px; }
+  table.dt .tv-ic { width:22px; height:22px; border-radius:6px; display:grid; place-items:center; flex:none; }
+  table.dt .tv-ic svg { width:13px; height:13px; stroke:#fff; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  table.dt .tv-dot { width:9px; height:9px; border-radius:50%; flex:none; }
+  table.dt .depth1 { padding-left:22px; } table.dt .depth2 { padding-left:44px; }
+  table.dt .tree-line { color:var(--text-mute); margin-right:2px; }
+  table.dt input.cell, table.dt select.cell { width:100%; min-width:80px; border:1px solid transparent; background:transparent; color:var(--text); border-radius:6px; padding:5px 7px; font-size:12.5px; font-family:inherit; }
+  table.dt input.cell:hover, table.dt select.cell:hover { border-color:var(--border); background:var(--panel-2); }
+  table.dt input.cell:focus, table.dt select.cell:focus { border-color:var(--accent); background:var(--glass-solid); outline:none; }
+  table.dt .typechip { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; color:#fff; white-space:nowrap; }
+  table.dt .stchip { font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:20px; white-space:nowrap; }
+  table.dt .rowact { display:flex; gap:4px; opacity:0; transition:opacity .12s; }
+  table.dt tr:hover .rowact { opacity:1; }
+  table.dt .rowact button { border:none; background:var(--panel-2); color:var(--text-dim); width:26px; height:26px; border-radius:7px; cursor:pointer; display:grid; place-items:center; }
+  table.dt .rowact button:hover { background:var(--accent-soft); color:var(--text); }
+  table.dt .rowact button svg { width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .tv-addbar { display:flex; gap:7px; padding:11px 14px; border-top:1px solid var(--border); flex-wrap:wrap; align-items:center; }
+  .tv-addbar .lbl { font-size:11px; color:var(--text-mute); font-weight:600; }
+  .badgeN { font-size:10px; font-weight:700; padding:1px 7px; border-radius:20px; background:var(--panel-2); color:var(--text-dim); }
+  .cond-cell { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:var(--text-dim); max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
   @media (max-width:760px) {
     .brand small { display:none; }
     aside { width:calc(100% - 24px); }
@@ -325,11 +395,13 @@
     <button class="btn" id="linkBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-6-6l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 6 6l1.5-1.5"/></svg>リンク</button>
     <div class="sep"></div>
     <button class="btn" id="overviewBtn" title="概要 / 要対応"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>概要</button>
+    <button class="btn" id="tableBtn" title="テーブル / 一覧・階層編集"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>テーブル</button>
     <button class="btn icon" id="relayoutBtn" title="再整列 (R)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
     <button class="btn icon" id="exportBtn" title="JSONエクスポート"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
     <button class="btn icon" id="importBtn" title="JSON読込"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
     <button class="btn icon" id="mdBtn" title="台帳(Markdown)出力"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M16 9v6M16 15l-1.5-2M16 15l1.5-2"/></svg></button>
     <button class="btn icon" id="themeBtn" title="テーマ切替"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg></button>
+    <button class="btn icon" id="helpBtn" title="使い方 (?)"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.7-2 2-2 3.5"/><circle cx="12" cy="17" r="0.5"/></svg></button>
     <input type="file" id="fileInput" accept="application/json,.json">
   </header>
 
@@ -339,9 +411,14 @@
         <radialGradient id="g-table" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-table-2)"/><stop offset="100%" stop-color="var(--c-table)"/></radialGradient>
         <radialGradient id="g-job" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-job-2)"/><stop offset="100%" stop-color="var(--c-job)"/></radialGradient>
         <radialGradient id="g-external" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-external-2)"/><stop offset="100%" stop-color="var(--c-external)"/></radialGradient>
+        <radialGradient id="g-connector" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-connector-2)"/><stop offset="100%" stop-color="var(--c-connector)"/></radialGradient>
+        <marker id="arrow-sync" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#06b6d4" fill-opacity="0.8"/></marker>
         <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1.4" fill="var(--grid)"/></pattern>
         <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/></marker>
         <marker id="arrow-hl" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--edge-hl)"/></marker>
+        <marker id="arrow-read" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b82f6" fill-opacity="0.75"/></marker>
+        <marker id="arrow-write" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e" fill-opacity="0.75"/></marker>
+        <marker id="arrow-ref" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7" fill-opacity="0.75"/></marker>
         <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
           <feGaussianBlur stdDeviation="2.4" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
@@ -385,6 +462,7 @@
         <div class="lt" style="margin-top:8px">ノード</div>
         <div class="row" data-t="table"><span class="swatch round" style="background:var(--c-table)"></span> テーブル</div>
         <div class="row" data-t="job"><span class="swatch round" style="background:var(--c-job)"></span> ジョブ / パイプライン</div>
+        <div class="row" data-t="connector"><span class="swatch round" style="background:var(--c-connector)"></span> コネクタ（双方向）</div>
         <div class="row" data-t="external"><span class="swatch round" style="background:var(--c-external)"></span> 外部サービス</div>
         <div class="lt" style="margin-top:8px">データの流れ（色＝種別 / ●大きさ＝データ量）</div>
         <div class="statuslegend" id="modeLegend2"></div>
@@ -406,6 +484,7 @@
       </div>
       <div class="breadcrumb" id="breadcrumb"></div>
       <div class="body">
+        <div class="fld" id="fldAddChild" style="margin-top:2px"><button class="btn primary" id="addChildBtn" style="width:100%;justify-content:center;padding:9px"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span id="addChildLbl">子要素を追加</span></button></div>
         <div class="fld"><label>名前</label><input id="fName" type="text"></div>
         <div class="fld"><label>種別</label><select id="fType">
           <option value="system">システム</option>
@@ -413,6 +492,7 @@
           <option value="table">テーブル</option>
           <option value="platform">連携基盤 / ETL</option>
           <option value="job">ジョブ / パイプライン</option>
+          <option value="connector">コネクタ（双方向同期）</option>
           <option value="external">外部サービス</option>
         </select></div>
         <div class="fld" id="fldParent"><label id="lblParent">所属</label><select id="fParent"></select></div>
@@ -475,7 +555,7 @@
         <div class="flowmap" id="eiFlow"></div>
         <div class="fld"><label>ラベル</label><input id="eLabel" type="text" placeholder="例: 抽出, ロード"></div>
         <div class="fld"><label>種別</label><select id="eKind">
-          <option value="read">読取（抽出）</option><option value="write">書込（ロード）</option><option value="ref">参照（FK / JOIN）</option>
+          <option value="read">読取（抽出）</option><option value="write">書込（ロード）</option><option value="sync">双方向同期</option><option value="ref">参照（FK / JOIN）</option>
         </select></div>
         <div class="fld" id="eldMode"><label>連携方式</label><select id="eMode">
           <option value="">（未設定）</option><option value="full">全件</option><option value="incremental">差分</option>
@@ -507,6 +587,59 @@
     </aside>
   </main>
 </div>
+<!-- Empty state -->
+<div class="empty-state" id="emptyState">
+  <div class="es-card">
+    <h2>システム構成マップを作りましょう</h2>
+    <p>まだノードがありません。<br>上部の <b>＋ 追加</b> からシステム・データベース・テーブルを登録するか、<br>サンプルを読み込んで始められます。</p>
+    <button class="btn primary" id="esLoadSample"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>サンプルを読み込む</button>
+  </div>
+</div>
+
+<!-- Help modal -->
+<div class="modal-backdrop" id="helpModal">
+  <div class="modal">
+    <div class="modal-h">使い方・ショートカット<button class="close" id="helpClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="modal-b">
+      <div class="help-sec"><h4>基本操作</h4>
+        <div class="hrow"><b>追加</b>：上部「＋ 追加」から種別を選択。コンテナ選択中は右パネルの「子要素を追加」でも可</div>
+        <div class="hrow"><b>編集</b>：ノード/線をクリック → 右パネルで編集（自動保存）</div>
+        <div class="hrow"><b>移動</b>：ノードや箱をドラッグ（箱はテーブルが無くても移動可）。背景ドラッグでパン、ホイールでズーム</div>
+      </div>
+      <div class="help-sec"><h4>親子関係（階層）の定義</h4>
+        <div class="hrow">① 右パネルの<b>「所属」</b>ドロップダウンで親を選ぶ（テーブル→DB、DB→システム、ジョブ→基盤）</div>
+        <div class="hrow">② コンテナ選択中の<b>「◯◯を追加」</b>ボタンで、親付きの子を直接作成</div>
+        <div class="hrow">③ <b>「テーブル」ビュー</b>の所属列で一括編集（表形式で親子を定義）</div>
+        <div class="hrow"><b>テーブル間の参照(FK)</b>は「リンク」で線を引く（参照＝紫）</div>
+      </div>
+      <div class="help-sec"><h4>データ連携の色</h4>
+        <div class="hrow"><b style="color:#3b82f6">■</b>読取（抽出）　<b style="color:#22c55e">■</b>書込（ロード）　<b style="color:#06b6d4">■</b>双方向同期（コネクタ）　<b style="color:#a855f7">■</b>参照。●の大きさ＝データ量</div>
+      </div>
+      <div class="help-sec"><h4>ショートカット</h4>
+        <div class="hrow"><kbd>L</kbd> リンク　<kbd>F</kbd> 全体表示　<kbd>R</kbd> 再整列　<kbd>Delete</kbd> 削除　<kbd>Ctrl+Z</kbd> 元に戻す　<kbd>Esc</kbd> 解除/閉じる　<kbd>?</kbd> ヘルプ</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Table / Report view -->
+<div class="tableview" id="tableView">
+  <div class="tv-head">
+    <div class="tv-title"><svg class="ui-ic" viewBox="0 0 24 24" style="width:17px;height:17px"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>テーブル / 一覧</div>
+    <div class="tv-tabs" id="tvTabs">
+      <button data-tab="tree" class="on">システム階層</button>
+      <button data-tab="flat">全ノード一覧</button>
+      <button data-tab="edges">データ連携</button>
+    </div>
+    <div class="tv-search"><svg class="ui-ic" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="tvSearch" placeholder="絞り込み…" autocomplete="off"></div>
+    <div class="spacer"></div>
+    <button class="btn" id="tvExport"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>台帳</button>
+    <button class="close" id="tvClose" style="border:none;background:var(--panel-2);width:32px;height:32px;border-radius:9px;cursor:pointer;display:grid;place-items:center;color:var(--text-dim)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="tv-body" id="tvBody"></div>
+  <div class="tv-addbar" id="tvAddbar"></div>
+</div>
+
 <div class="tooltip" id="tooltip"></div>
 <div class="toast" id="toast"></div>
 
@@ -521,6 +654,7 @@
     platform:'<path d="M12 3l8.5 4.7L12 12.4 3.5 7.7 12 3z"/><path d="M3.5 12l8.5 4.7L20.5 12"/><path d="M3.5 16.3l8.5 4.7 8.5-4.7"/>',
     job:     '<circle cx="5.5" cy="12" r="2"/><path d="M7.5 12h7.5"/><path d="M12.5 7.5l4.5 4.5-4.5 4.5"/>',
     external:'<path d="M17.5 19H7a4.5 4.5 0 0 1-1-8.9A5.5 5.5 0 0 1 18.9 11 3.8 3.8 0 0 1 17.5 19z"/>',
+    connector:'<path d="M4 8a8 8 0 0 1 13.5-2.5L20 8"/><path d="M20 5.5V8h-2.5"/><path d="M20 16a8 8 0 0 1-13.5 2.5L4 16"/><path d="M4 18.5V16h2.5"/>',
   };
   const TYPE = {
     system:  { chip:"システム",          color:"var(--c-system)",   kind:"container", depth:0, icon:"system",   desc:"アプリケーション / 業務システム" },
@@ -528,6 +662,7 @@
     table:   { chip:"テーブル",           color:"var(--c-table)",    grad:"url(#g-table)",    kind:"leaf", icon:"table",    parent:"database", desc:"DB内のテーブル / オブジェクト" },
     platform:{ chip:"連携基盤 / ETL",     color:"var(--c-platform)", kind:"container", depth:0, icon:"platform", desc:"ETL / iPaaS / データ連携基盤" },
     job:     { chip:"ジョブ / パイプライン",color:"var(--c-job)",     grad:"url(#g-job)",      kind:"leaf", icon:"job",      parent:"platform", desc:"基盤上で動く個別のデータ連携" },
+    connector:{chip:"コネクタ",          color:"var(--c-connector)",grad:"url(#g-connector)",kind:"leaf", icon:"connector", desc:"システム間の双方向同期コネクタ（例: SF–Account Engagement）" },
     external:{ chip:"外部サービス",        color:"var(--c-external)", grad:"url(#g-external)", kind:"leaf", icon:"external", desc:"外部SaaS / 外部システム" },
   };
   const isLeaf = (n) => TYPE[n.type] && TYPE[n.type].kind === "leaf";
@@ -561,6 +696,7 @@
   const KIND = {
     read:  { label:"読取（抽出）",  color:"#3b82f6" },
     write: { label:"書込（ロード）", color:"#22c55e" },
+    sync:  { label:"双方向同期",    color:"#06b6d4" },
     ref:   { label:"参照 (FK/JOIN)", color:"#a855f7" },
   };
   const kindColor = (e)=> (KIND[e.kind]||KIND.write).color;
@@ -609,6 +745,11 @@
       { id:"j_cust", type:"job", parent:"pf_air", label:"customer_sync", desc:"顧客ディメンション更新", schedule:"毎日 03:00" },
       { id:"j_back", type:"job", parent:"pf_sfdmu", label:"sales_writeback", desc:"受注実績を Salesforce へ", schedule:"毎日 05:00", tech:"REST Bulk API" },
       { id:"j_lead", type:"job", parent:"pf_mkt", label:"lead_sync", desc:"Lead 双方向同期", schedule:"15分毎", tech:"Marketo REST" },
+      // Account Engagement（MA）と SF–AE コネクタ（双方向同期の例）
+      { id:"sys_ae", type:"system", label:"Account Engagement", desc:"MA（旧 Pardot）", owner:"マーケ部", dept:"マーケティング部", ops:"マーケ運用 / SF社サポート", status:"active", criticality:"mid", env:"SaaS (本番)", vendor:"Salesforce社" },
+      { id:"db_ae", type:"database", parent:"sys_ae", label:"AE Objects", engine:"Account Engagement", desc:"AE標準オブジェクト" },
+      { id:"t_prospect", type:"table", parent:"db_ae", label:"Prospect", desc:"見込み客（AE）", schema:"AE" },
+      { id:"conn_ae", type:"connector", label:"SF–AE コネクタ", desc:"Salesforce ⇄ Account Engagement の双方向同期コネクタ", owner:"マーケ部", vendor:"Salesforce社", status:"active", tech:"標準コネクタ v2" },
       // external
       { id:"ext_freee", type:"external", label:"freee 会計", desc:"外部会計 SaaS", tech:"freee API", owner:"経理", tags:["外部"] },
     ],
@@ -641,6 +782,10 @@
       { id:"e12",source:"t_dim",  target:"t_fact",  label:"JOIN", kind:"ref" },
       { id:"e13",source:"t_order",target:"t_stg",   label:"レプリケーション", kind:"write", mode:"cdc", key:"ORDER_ID",
         condition:"Oracle → PostgreSQL の変更を CDC で反映", transform:"文字コードを UTF-8 に変換" },
+      { id:"e14",source:"t_lead", target:"conn_ae", label:"リード同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s",
+        transform:"項目マッピング（Lead⇔Prospect）",
+        mappings:[ {from:"Email", to:"email", rule:"小文字化"}, {from:"Company", to:"company", rule:"—"}, {from:"Status", to:"grade", rule:"ステータス変換表"} ] },
+      { id:"e15",source:"conn_ae",target:"t_prospect", label:"プロスペクト同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s" },
     ]
   };
 
@@ -673,10 +818,17 @@
     d.edges=(d.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target));
     return d;
   }
-  function save(){
-    try{ localStorage.setItem(STORE_KEY, JSON.stringify({
-      nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges
-    })); }catch(e){}
+  function serialize(){ return JSON.stringify({ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges }); }
+  function save(){ try{ localStorage.setItem(STORE_KEY, serialize()); }catch(e){} }
+  // ---- Undo（構造変更の直前スナップショット）----
+  const undoStack=[];
+  function snapshot(){ try{ undoStack.push(serialize()); if(undoStack.length>40) undoStack.shift(); }catch(e){} }
+  function undo(){
+    if(!undoStack.length){ toast("元に戻す履歴がありません"); return; }
+    const s=undoStack.pop();
+    data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null;
+    ins.classList.remove("open"); edgeIns.classList.remove("open");
+    save(); render(); toast("元に戻しました（残り "+undoStack.length+"）");
   }
 
   // ---------------- Derived ----------------
@@ -807,8 +959,9 @@
     for(const e of data.edges){
       const a=byId[e.source], b=byId[e.target]; const hide=a&&b&&(isHiddenNode(a)||isHiddenNode(b));
       const kc=kindColor(e);
-      const p=el("path",{class:"link"+(e.kind==="ref"?" ref":""),"marker-end":"url(#arrow)"}, gLinks); p._edge=e; if(hide)p.style.display="none";
+      const p=el("path",{class:"link"+(e.kind==="ref"?" ref":""),"marker-end":"url(#arrow-"+(e.kind||"write")+")"}, gLinks); p._edge=e; if(hide)p.style.display="none";
       p.style.setProperty("--lk",kc); p.setAttribute("stroke-opacity", e.kind==="ref"?"0.6":"0.4");
+      if(e.kind==="sync") p.setAttribute("marker-start","url(#arrow-sync)"); // 双方向は両端に矢印
       const hit=el("path",{class:"link-hit","data-edge":e.id}, gLinks); hit._edge=e; if(hide)hit.style.display="none";
       attachEdge(hit,e);
       const lbl=el("text",{class:"link-label","text-anchor":"middle"}, gLabels); lbl._edge=e; if(hide)lbl.style.display="none";
@@ -818,6 +971,7 @@
         wrap._col=kc; wrap.setAttribute("filter","url(#glow)"); wrap._scale=scaleMul(e);
         wrap._speed = e.mode==="realtime"?0.0032 : e.mode==="cdc"?0.0024 : e.mode==="full"?0.0012 : 0.0018;
         const N=3; for(let i=0;i<N;i++){ const fc=el("circle",{r:3.4, fill:kc}, wrap); fc._t=i/N; }
+        if(e.kind==="sync"){ for(let i=0;i<N;i++){ const fc=el("circle",{r:3.4, fill:kc}, wrap); fc._t=i/N; fc._rev=true; } } // 逆方向の粒子
       }
     }
 
@@ -841,9 +995,11 @@
       if(n.pinned) g.classList.add("pinned");
       attachNode(g,n);
     }
-    positionAll(); updateHighlight(); updateStatus(); renderMinimap();
+    positionAll(); updateHighlight(); updateStatus(); renderMinimap(); updateEmptyState();
+    if($("#tableView").classList.contains("open")) buildTable();
     gNodes.style.opacity=0; requestAnimationFrame(()=>gNodes.style.opacity=1);
   }
+  function updateEmptyState(){ const es=$("#emptyState"); if(es) es.classList.toggle("show", data.nodes.length===0); }
   function subtitleOf(n){
     if(n.type==="table"){ const db=n.parent?byId[n.parent]:null; return db?db.label:(n.schema||""); }
     if(n.type==="job"){ const pf=n.parent?byId[n.parent]:null; return pf?pf.label:""; }
@@ -937,10 +1093,11 @@
       const kids=wrap.childNodes; const cnt=kids.length;
       for(let i=0;i<cnt;i++){ const fc=kids[i];
         fc._t+=sp; if(fc._t>1) fc._t-=1;
-        let pt; try{ pt=wrap._path.getPointAtLength(len*fc._t); }catch(err){ continue; }
+        const tt=fc._rev? (1-fc._t) : fc._t;   // 双方向同期は逆向きの粒子も流す
+        let pt; try{ pt=wrap._path.getPointAtLength(len*tt); }catch(err){ continue; }
         fc.setAttribute("cx",pt.x); fc.setAttribute("cy",pt.y);
         // lead particle brighter/bigger for a comet feel。半径はデータ量(規模)で変化
-        const lead = i===0, sc=wrap._scale||1;
+        const lead = (i===0||fc._rev&&i===Math.floor(cnt/2)), sc=wrap._scale||1;
         fc.setAttribute("opacity", dim?0.07 : on?1 : (lead?1:0.9));
         fc.setAttribute("r", (on?1.3:1) * (lead?4.4:3.2) * sc);
         fc.setAttribute("fill", wrap._col||"var(--edge-hl)");
@@ -972,7 +1129,7 @@
       const on = isThis || (activeEdgeId? false : (active ? (active.has(e.source)&&active.has(e.target)) : false));
       p.classList.toggle("sel", e.id===selectedEdge);
       p.classList.toggle("hl",!!on && !isThis); p.classList.toggle("emph",!!isThis);
-      p.classList.toggle("faded",dimAll&&!on&&e.id!==selectedEdge); p.setAttribute("marker-end",(on||isThis)?"url(#arrow-hl)":"url(#arrow)");
+      p.classList.toggle("faded",dimAll&&!on&&e.id!==selectedEdge); p.setAttribute("marker-end",(on||isThis)?"url(#arrow-hl)":"url(#arrow-"+(e.kind||"write")+")");
     }
     for(const l of gLabels.children){ const e=l._edge; const on=activeEdgeId? e.id===activeEdgeId : (active?(active.has(e.source)&&active.has(e.target)):false); l.classList.toggle("faded",dimAll&&!on); }
   }
@@ -1001,14 +1158,29 @@
     $("#fDept").value=n.dept||""; $("#fOps").value=n.ops||"";
     toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderIncidents(n); renderConns(n);
   }
+  const CHILD_OF={ system:"database", database:"table", platform:"job" };
   function toggleFields(type){
     const map={ fldParent:["table","database","job"], fldEngine:["database"], fldKind:["platform"], fldSchema:["table"], fldSchedule:["job"],
       fldEnv:["system","database","platform","external"], fldVendor:["system","database","platform","external"], fldDates:["system","database","platform","external"],
-      fldCols:["table"] };
+      fldCols:["table"], fldAddChild:["system","database","platform"] };
     for(const id in map){ $("#"+id).classList.toggle("hide", !map[id].includes(type)); }
     const pl={ table:"所属データベース", database:"所属システム", job:"所属連携基盤" };
     if(pl[type]) $("#lblParent").textContent=pl[type];
+    if(CHILD_OF[type]) $("#addChildLbl").textContent=TYPE[CHILD_OF[type]].chip+"を追加";
   }
+  function addChild(){
+    const parent=byId[selectedId]; if(!parent) return; const ct=CHILD_OF[parent.type]; if(!ct) return;
+    snapshot();
+    const b=groupBoxes[parent.id]; const cx=b?b.x+b.w/2:parent.x||0, cy=b?b.y+b.h/2:parent.y||0;
+    const n={ id:"n"+Date.now()+Math.floor(Math.random()*99), type:ct, label:TYPE[ct].chip+"（新規）",
+      desc:"", owner:"", tech:"", tags:[], parent:parent.id, x:cx+(Math.random()-.5)*40, y:cy+(Math.random()-.5)*40, vx:0, vy:0 };
+    if(hidden.has(ct)){ hidden.delete(ct); syncLegend(); }
+    data.nodes.push(n); save(); render(); reheat(.4);
+    if(isLeaf(n)){ select(n.id); } else { selectedId=n.id; selectedEdge=null; impactSet=null; updateHighlight(); openInspector(n.id); }
+    centerOn(n); toast(TYPE[ct].chip+"を「"+parent.label+"」に追加しました");
+    setTimeout(()=>{ const f=$("#fName"); if(f) f.select(); },90);
+  }
+  $("#addChildBtn").onclick=addChild;
   function populateParent(n){
     const need = TYPE[n.type].parent; const sel=$("#fParent"); sel.innerHTML="";
     if(!need) return;
@@ -1048,8 +1220,8 @@
   bindField("#fSchema",(n,v)=>n.schema=v);
   bindField("#fSchedule",(n,v)=>n.schedule=v);
   bindField("#fTags",(n,v)=>{ n.tags=v.split(",").map(s=>s.trim()).filter(Boolean); renderTags(n); });
-  $("#fParent").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; n.parent=$("#fParent").value||null; save(); render(); reheat(.4); openInspector(n.id); });
-  $("#fType").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; n.type=$("#fType").value; if(!TYPE[n.type].parent) n.parent=null; save(); render(); reheat(.4); openInspector(n.id); });
+  $("#fParent").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; snapshot(); n.parent=$("#fParent").value||null; save(); render(); reheat(.4); openInspector(n.id); });
+  $("#fType").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; snapshot(); n.type=$("#fType").value; if(!TYPE[n.type].parent) n.parent=null; save(); render(); reheat(.4); openInspector(n.id); });
   function softRefresh(){ render(); }
   bindField("#fEnv",(n,v)=>n.env=v);
   bindField("#fVendor",(n,v)=>n.vendor=v);
@@ -1122,6 +1294,7 @@
   $("#delBtn").onclick=()=>{ if(!selectedId) return; const n=byId[selectedId];
     const kids=data.nodes.filter(x=>x.parent===selectedId).length;
     if(!confirm(kids?`「${n.label}」と配下 ${kids} 件・接続を削除しますか?`:`「${n.label}」と接続を削除しますか?`)) return;
+    snapshot();
     const rm=new Set([selectedId]); let changed=true;
     while(changed){ changed=false; for(const x of data.nodes){ if(x.parent&&rm.has(x.parent)&&!rm.has(x.id)){ rm.add(x.id); changed=true; } } }
     data.edges=data.edges.filter(e=>!rm.has(e.source)&&!rm.has(e.target));
@@ -1202,7 +1375,7 @@
   $("#eMode").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.mode=$("#eMode").value||null; save(); render(); openEdgeInspector(e.id); });
   $("#eiClose").onclick=()=>{ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); };
   $("#eDelBtn").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; if(!confirm("このデータ連携を削除しますか?")) return;
-    data.edges=data.edges.filter(x=>x.id!==e.id); selectedEdge=null; edgeIns.classList.remove("open"); save(); render(); toast("連携を削除しました"); };
+    snapshot(); data.edges=data.edges.filter(x=>x.id!==e.id); selectedEdge=null; edgeIns.classList.remove("open"); save(); render(); toast("連携を削除しました"); };
   $("#eFocusBtn").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; const a=byId[e.source],b=byId[e.target]; if(a&&b){ const mid={id:e.id}; const r=svg.getBoundingClientRect(); const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2; view.x=r.width/2-cx*view.k; view.y=r.height/2-cy*view.k; applyViewport(); } };
 
   // ---------------- Tooltip ----------------
@@ -1290,9 +1463,11 @@
   function markSource(){ for(const g of gNodes.children) g.classList.toggle("selected",g._node.id===linkSource); }
   function createEdge(s,t){
     if(data.edges.some(e=>e.source===s&&e.target===t)){ toast("既に接続されています"); return; }
+    snapshot();
     const label=prompt("データの流れ・接続内容","連携") ?? "";
     let kind="write"; const su=byId[s], tu=byId[t];
-    if(su&&tu&&su.type==="table"&&tu.type==="job") kind="read";
+    if(su&&tu&&(su.type==="connector"||tu.type==="connector")) kind="sync";
+    else if(su&&tu&&su.type==="table"&&tu.type==="job") kind="read";
     else if(su&&tu&&su.type==="table"&&tu.type==="table") kind="ref";
     data.edges.push({id:"e"+Date.now(),source:s,target:t,label,kind});
     save(); render(); reheat(.3); toast("リンクを作成しました");
@@ -1343,7 +1518,7 @@
   // ---------------- Add menu ----------------
   const addMenu=$("#addMenu");
   (function buildAddMenu(){
-    const order=["system","database","table","platform","job","external"];
+    const order=["system","database","table","platform","job","connector","external"];
     order.forEach((type,i)=>{
       if(type==="platform"){ const d=document.createElement("div"); d.className="mdiv"; addMenu.appendChild(d); }
       const t=TYPE[type], mi=document.createElement("div"); mi.className="mi";
@@ -1358,6 +1533,7 @@
   document.addEventListener("click",(ev)=>{ if(!ev.target.closest(".menu-wrap")) closeAddMenu(); });
 
   function addNode(type){
+    snapshot();
     const r=svg.getBoundingClientRect(), c=toWorld(r.left+r.width/2,r.top+r.height/2);
     const need=TYPE[type].parent; let parent=null;
     if(need){ const sel=byId[selectedId];
@@ -1388,7 +1564,7 @@
     a.href=URL.createObjectURL(blob); a.download="system-graph.json"; a.click(); URL.revokeObjectURL(a.href); toast("JSON をエクスポートしました"); };
   $("#importBtn").onclick=()=>$("#fileInput").click();
   $("#fileInput").addEventListener("change",(ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader();
-    rd.onload=()=>{ try{ data=normalize(JSON.parse(rd.result)); selectedId=null; selectedEdge=null; edgeIns.classList.remove("open"); ins.classList.remove("open"); save(); render(); zoomFit(); toast("読み込みました（"+data.nodes.length+" ノード）"); }catch(e){ toast("JSON の読み込みに失敗しました"); } };
+    rd.onload=()=>{ try{ snapshot(); data=normalize(JSON.parse(rd.result)); selectedId=null; selectedEdge=null; edgeIns.classList.remove("open"); ins.classList.remove("open"); save(); render(); zoomFit(); toast("読み込みました（"+data.nodes.length+" ノード）"); }catch(e){ toast("JSON の読み込みに失敗しました"); } };
     rd.readAsText(f); ev.target.value=""; });
 
   // ---------------- Markdown 台帳 export ----------------
@@ -1478,6 +1654,16 @@
       bar+=`<span style="width:${w}%;background:${STATUS[k].color}"></span>`;
       slg+=`<span class="sl"><span class="sd" style="background:${STATUS[k].color}"></span>${STATUS[k].label} ${stCount[k]}</span>`; }
     if(stCount.unknown){ const w=stCount.unknown/Math.max(sysList.length,1)*100; bar+=`<span style="width:${w}%;background:var(--text-mute)"></span>`; slg+=`<span class="sl"><span class="sd" style="background:var(--text-mute)"></span>未設定 ${stCount.unknown}</span>`; }
+    // 連携種別内訳
+    const kc={}; for(const e of data.edges) kc[e.kind]=(kc[e.kind]||0)+1;
+    let klg=''; for(const k in KIND){ if(!kc[k]) continue; klg+=`<span class="sl"><span class="sd" style="background:${KIND[k].color}"></span>${KIND[k].label} ${kc[k]}</span>`; }
+    // 重要度分布（システム）
+    const cr={}; for(const s of sysList) cr[s.criticality||"none"]=(cr[s.criticality||"none"]||0)+1;
+    let crlg=''; const crC={critical:"#ef4444",high:"#f97316",mid:"#f59e0b",low:"#3b82f6",none:"var(--text-mute)"};
+    for(const k of ["critical","high","mid","low","none"]){ if(!cr[k]) continue; crlg+=`<span class="sl"><span class="sd" style="background:${crC[k]}"></span>${critMap[k]||"未設定"} ${cr[k]}</span>`; }
+    // 管理部署別（ノード数 上位）
+    const dep={}; for(const n of data.nodes){ if(n.dept) dep[n.dept]=(dep[n.dept]||0)+1; }
+    const depTop=Object.entries(dep).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
     body.innerHTML =
       `<div class="kpis">
@@ -1486,11 +1672,18 @@
         <div class="kpi"><div class="kv">${c.table||0}</div><div class="kl">テーブル</div></div>
         <div class="kpi"><div class="kv">${(c.platform||0)}</div><div class="kl">連携基盤</div></div>
         <div class="kpi"><div class="kv">${c.job||0}</div><div class="kl">ジョブ</div></div>
+        <div class="kpi"><div class="kv">${(c.connector||0)}</div><div class="kl">コネクタ</div></div>
         <div class="kpi"><div class="kv">${data.edges.length}</div><div class="kl">データ連携</div></div>
+        <div class="kpi"><div class="kv">${data.nodes.reduce((s,n)=>s+openIncidents(n).length,0)}</div><div class="kl">未解決の課題</div></div>
       </div>
       <div class="osec">システム稼働ステータス</div>
       <div class="statusbar">${bar||'<span style="width:100%;background:var(--text-mute)"></span>'}</div>
       <div class="statuslegend">${slg||'<span class="sl">未登録</span>'}</div>
+      <div class="osec">重要度分布（システム）</div>
+      <div class="statuslegend">${crlg||'<span class="sl">未登録</span>'}</div>
+      <div class="osec">データ連携の種別</div>
+      <div class="statuslegend">${klg||'<span class="sl">未登録</span>'}</div>
+      ${depTop.length?`<div class="osec">管理部署別（登録数）</div><div class="attn">${depTop.map(([d,cnt])=>`<div class="attn-item" style="border-left-color:var(--accent);cursor:default"><div class="ai-body"><div class="ai-t">${esc(d)}</div></div><span class="badgeN">${cnt}</span></div>`).join("")}</div>`:""}
       <div class="osec">要対応（障害・更改）<span style="color:var(--text-mute);font-weight:600">　${attn.length}件</span></div>
       <div class="attn" id="attnList"></div>`;
 
@@ -1514,7 +1707,11 @@
 
   // ---------------- Keyboard ----------------
   window.addEventListener("keydown",(ev)=>{
+    if((ev.ctrlKey||ev.metaKey) && (ev.key==="z"||ev.key==="Z")){ ev.preventDefault(); undo(); return; }
+    if(ev.key==="Escape" && helpModal.classList.contains("open")){ helpModal.classList.remove("open"); return; }
+    if(ev.key==="Escape" && tableView.classList.contains("open")){ closeTable(); return; }
     if(ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
+    if(ev.key==="?"){ helpModal.classList.toggle("open"); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
     if(ev.key==="Delete"&&selectedEdge) $("#eDelBtn").click();
     if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
@@ -1527,6 +1724,143 @@
     $("#status").innerHTML=`<b>${(c.system||0)+(c.database||0)+(c.platform||0)}</b> グループ · <b>${leaves().length}</b> ノード · <b>${data.edges.length}</b> 連携`; }
 
   let tt; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2200); }
+
+  // ---------------- Help modal ----------------
+  const helpModal=$("#helpModal");
+  $("#helpBtn").onclick=()=>helpModal.classList.add("open");
+  $("#helpClose").onclick=()=>helpModal.classList.remove("open");
+  helpModal.addEventListener("click",(e)=>{ if(e.target===helpModal) helpModal.classList.remove("open"); });
+
+  // ---------------- Empty state ----------------
+  $("#esLoadSample").onclick=()=>{ snapshot(); data=normalize(JSON.parse(JSON.stringify(SEED))); selectedId=null; selectedEdge=null; save(); render(); zoomFit(); toast("サンプルを読み込みました"); };
+
+  // ---------------- Table / Report view ----------------
+  const tableView=$("#tableView"); let tvTab="tree", tvSort={col:null,dir:1};
+  $("#tableBtn").onclick=()=>{ if(tableView.classList.contains("open")) closeTable(); else openTable(); };
+  $("#tvClose").onclick=closeTable;
+  function openTable(){ tableView.classList.add("open"); $("#tableBtn").classList.add("active"); buildTable(); }
+  function closeTable(){ tableView.classList.remove("open"); $("#tableBtn").classList.remove("active"); }
+  $("#tvTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ tvTab=b.getAttribute("data-tab"); $("#tvTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); tvSort={col:null,dir:1}; buildTable(); });
+  $("#tvSearch").addEventListener("input",buildTable);
+  $("#tvExport").onclick=()=>$("#mdBtn").click();
+
+  const critMap={low:"低",mid:"中",high:"高",critical:"最重要"};
+  function optSel(map,val,blank){ let h=`<option value="">${blank||"—"}</option>`; for(const k in map) h+=`<option value="${k}" ${val===k?"selected":""}>${map[k].label||map[k]}</option>`; return h; }
+  function parentSelectHTML(n){ const need=TYPE[n.type].parent; if(!need) return '<span style="color:var(--text-mute)">—</span>';
+    let h=`<select class="cell" data-id="${n.id}" data-field="parent" data-rebuild="1"><option value="">（未設定）</option>`;
+    for(const c of data.nodes.filter(x=>x.type===need)) h+=`<option value="${c.id}" ${n.parent===c.id?"selected":""}>${esc(c.label)}</option>`;
+    return h+"</select>"; }
+  function nodeRowHTML(n, depth){
+    const t=TYPE[n.type], inc=openIncidents(n).length, du=daysUntil(n.renewal);
+    const stColor = n.status&&STATUS[n.status]?STATUS[n.status].color:"var(--text-mute)";
+    return `<tr data-node="${n.id}">`+
+      `<td><div class="tv-name depth${depth}">`+(depth?`<span class="tree-line">${depth===2?"└─":"└"}</span>`:"")+
+        `<span class="tv-ic" style="background:${nodeColor(n)}"><svg viewBox="0 0 24 24">${ICON[t.icon]}</svg></span>`+
+        `<input class="cell" data-id="${n.id}" data-field="label" value="${esc(n.label||"")}" style="font-weight:600;min-width:140px">`+
+      `</div></td>`+
+      `<td><span class="typechip" style="background:${t.color}">${t.chip}</span></td>`+
+      `<td>${parentSelectHTML(n)}</td>`+
+      `<td><input class="cell" data-id="${n.id}" data-field="owner" value="${esc(n.owner||"")}" style="min-width:110px"></td>`+
+      `<td><input class="cell" data-id="${n.id}" data-field="dept" value="${esc(n.dept||"")}" style="min-width:120px"></td>`+
+      `<td><input class="cell" data-id="${n.id}" data-field="ops" value="${esc(n.ops||"")}" style="min-width:130px"></td>`+
+      `<td><select class="cell" data-id="${n.id}" data-field="status" data-rebuild="1" style="color:${stColor};font-weight:600">${optSel(STATUS,n.status)}</select></td>`+
+      `<td><select class="cell" data-id="${n.id}" data-field="criticality">${optSel(critMap,n.criticality)}</select></td>`+
+      `<td><input class="cell" type="date" data-id="${n.id}" data-field="renewal" value="${esc(n.renewal||"")}" style="min-width:140px${du!=null&&du<=90?";color:"+HEALTH.warn.color:""}"></td>`+
+      `<td>${inc?`<span class="stchip" style="background:${HEALTH.warn.color}22;color:${HEALTH.warn.color}">${inc}件</span>`:'<span style="color:var(--text-mute)">—</span>'}</td>`+
+      `<td><div class="rowact">`+
+        (CHILD_OF[n.type]?`<button data-act="addchild" data-id="${n.id}" title="子を追加"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>`:"")+
+        `<button data-act="goto" data-id="${n.id}" title="グラフで表示"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></button>`+
+        `<button data-act="del" data-id="${n.id}" title="削除"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>`+
+      `</div></td></tr>`;
+  }
+  const NODE_HEAD=`<thead><tr><th data-s="label">名前</th><th data-s="type">種別</th><th data-s="parent">所属（親）</th><th data-s="owner">オーナー</th><th data-s="dept">管理部署</th><th data-s="ops">運用保守</th><th data-s="status">稼働</th><th data-s="criticality">重要度</th><th data-s="renewal">更改予定</th><th data-s="inc">障害</th><th class="nosort">操作</th></tr></thead>`;
+  function passF(n,q){ if(!q) return true; return (n.label+" "+(n.owner||"")+" "+(n.dept||"")+" "+(n.ops||"")+" "+(n.engine||"")+" "+(n.schema||"")+" "+TYPE[n.type].chip).toLowerCase().includes(q); }
+  function buildTree(q){
+    let showSet=null;
+    if(q){ showSet=new Set(); for(const n of data.nodes){ if(passF(n,q)){ showSet.add(n.id); for(const aid of ancestorIds(n)) showSet.add(aid); } } }
+    const vis=(n)=>!showSet||showSet.has(n.id);
+    const rendered=new Set(), rows=[];
+    const push=(n,d)=>{ if(rendered.has(n.id)) return; rendered.add(n.id); if(vis(n)) rows.push(nodeRowHTML(n,d)); };
+    for(const s of data.nodes.filter(n=>n.type==="system")){ push(s,0);
+      for(const db of data.nodes.filter(n=>n.type==="database"&&n.parent===s.id)){ push(db,1);
+        for(const t of data.nodes.filter(n=>n.type==="table"&&n.parent===db.id)) push(t,2); } }
+    for(const pf of data.nodes.filter(n=>n.type==="platform")){ push(pf,0);
+      for(const j of data.nodes.filter(n=>n.type==="job"&&n.parent===pf.id)) push(j,1); }
+    for(const c of data.nodes.filter(n=>n.type==="connector")) push(c,0);
+    for(const x of data.nodes.filter(n=>n.type==="external")) push(x,0);
+    for(const n of data.nodes) push(n,0); // 親不明のノードを最後に
+    return `<table class="dt">${NODE_HEAD}<tbody>${rows.join("")||emptyRow(11)}</tbody></table>`;
+  }
+  function buildFlat(q){
+    let arr=data.nodes.filter(n=>passF(n,q));
+    const c=tvSort.col;
+    if(c){ const key=(n)=> c==="type"?TYPE[n.type].chip : c==="parent"?((n.parent&&byId[n.parent])?byId[n.parent].label:"") : c==="inc"?openIncidents(n).length : (n[c]||"");
+      arr=arr.slice().sort((a,b)=>{ const x=key(a),y=key(b); return (x>y?1:x<y?-1:0)*tvSort.dir; }); }
+    return `<table class="dt">${NODE_HEAD}<tbody>${arr.map(n=>nodeRowHTML(n,0)).join("")||emptyRow(11)}</tbody></table>`;
+  }
+  function edgeRowHTML(e){
+    const a=byId[e.source], b=byId[e.target];
+    return `<tr data-edge="${e.id}">`+
+      `<td><span class="tv-name">${a?`<span class="tv-dot" style="background:${TYPE[a.type].color}"></span>${esc(a.label)}`:"?"}</span></td>`+
+      `<td><span class="tv-name">${b?`<span class="tv-dot" style="background:${TYPE[b.type].color}"></span>${esc(b.label)}`:"?"}</span></td>`+
+      `<td><select class="cell" data-id="${e.id}" data-edge="1" data-field="kind" data-rebuild="1">${optSel(KIND,e.kind)}</select></td>`+
+      `<td><select class="cell" data-id="${e.id}" data-edge="1" data-field="mode">${optSel(MODE,e.mode)}</select></td>`+
+      `<td><input class="cell" data-id="${e.id}" data-edge="1" data-field="interval" value="${esc(e.interval||"")}" style="min-width:90px"></td>`+
+      `<td><input class="cell" data-id="${e.id}" data-edge="1" data-field="window" value="${esc(e.window||"")}" style="min-width:100px"></td>`+
+      `<td><input class="cell" data-id="${e.id}" data-edge="1" data-field="volume" value="${esc(e.volume||"")}" style="min-width:110px"></td>`+
+      `<td><input class="cell" data-id="${e.id}" data-edge="1" data-field="condition" value="${esc(e.condition||"")}" style="min-width:200px"></td>`+
+      `<td><input class="cell" data-id="${e.id}" data-edge="1" data-field="key" value="${esc(e.key||"")}" style="min-width:80px"></td>`+
+      `<td><div class="rowact">`+
+        `<button data-act="egoto" data-id="${e.id}" title="グラフで表示"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></button>`+
+        `<button data-act="edel" data-id="${e.id}" title="削除"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>`+
+      `</div></td></tr>`;
+  }
+  function buildEdges(q){
+    const arr=data.edges.filter(e=>{ if(!q) return true; const a=byId[e.source],b=byId[e.target];
+      return ((a?a.label:"")+" "+(b?b.label:"")+" "+(e.condition||"")+" "+(e.label||"")).toLowerCase().includes(q); });
+    const head=`<thead><tr><th class="nosort">元</th><th class="nosort">先</th><th class="nosort">種別</th><th class="nosort">方式</th><th class="nosort">間隔</th><th class="nosort">時間帯</th><th class="nosort">データ量</th><th class="nosort">抽出条件</th><th class="nosort">キー</th><th class="nosort">操作</th></tr></thead>`;
+    return `<table class="dt">${head}<tbody>${arr.map(edgeRowHTML).join("")||emptyRow(10)}</tbody></table>`;
+  }
+  function emptyRow(cols){ return `<tr><td colspan="${cols}" style="padding:26px;text-align:center;color:var(--text-mute)">該当なし</td></tr>`; }
+  function buildTable(){
+    const q=$("#tvSearch").value.trim().toLowerCase();
+    $("#tvBody").innerHTML = tvTab==="tree"?buildTree(q) : tvTab==="flat"?buildFlat(q) : buildEdges(q);
+    // sortable headers (flat only)
+    if(tvTab==="flat"){ $("#tvBody").querySelectorAll("th[data-s]").forEach(th=>{ const k=th.getAttribute("data-s");
+      if(tvSort.col===k) th.innerHTML+=`<span class="arw">${tvSort.dir>0?"▲":"▼"}</span>`;
+      th.onclick=()=>{ if(tvSort.col===k) tvSort.dir*=-1; else { tvSort.col=k; tvSort.dir=1; } buildTable(); }; }); }
+    buildAddbar();
+  }
+  function buildAddbar(){
+    const bar=$("#tvAddbar");
+    if(tvTab==="edges"){ bar.innerHTML='<span class="lbl">データ連携（線）の追加はグラフ上の「リンク」から。ここでは抽出条件などを直接編集できます。</span>'; return; }
+    const types=["system","database","table","platform","job","connector","external"];
+    bar.innerHTML='<span class="lbl">追加：</span>'+types.map(t=>`<button class="btn" data-addtype="${t}"><span style="width:9px;height:9px;border-radius:50%;background:${TYPE[t].color};display:inline-block;margin-right:5px"></span>${TYPE[t].chip}</button>`).join("");
+    bar.querySelectorAll("[data-addtype]").forEach(b=>b.onclick=()=>{ addNode(b.getAttribute("data-addtype")); buildTable(); });
+  }
+  // inline editing via delegation
+  function tvApply(el, isChange){
+    const id=el.dataset.id, f=el.dataset.field; if(!id||!f) return;
+    const obj = el.dataset.edge==="1"? edgeById[id] : byId[id]; if(!obj) return;
+    let v=el.value; if((f==="parent"||f==="status"||f==="criticality"||f==="mode"||f==="kind"||f==="scale")&&v==="") v=null;
+    if(isChange && (f==="parent"||f==="type"||f==="kind")) snapshot();
+    obj[f]=v;
+    if(f==="type" && v && !TYPE[v].parent) obj.parent=null;
+    save();
+    if(isChange){ render(); if(el.dataset.rebuild==="1") buildTable(); }
+  }
+  $("#tvBody").addEventListener("input",(e)=>{ if(e.target.dataset&&e.target.dataset.field) tvApply(e.target,false); });
+  $("#tvBody").addEventListener("change",(e)=>{ if(e.target.dataset&&e.target.dataset.field) tvApply(e.target,true); });
+  $("#tvBody").addEventListener("click",(e)=>{ const btn=e.target.closest("[data-act]"); if(!btn) return; const id=btn.dataset.id, act=btn.dataset.act;
+    if(act==="goto"){ closeTable(); select(id); const n=byId[id]; if(n) centerOn(n); }
+    else if(act==="egoto"){ closeTable(); selectEdge(id); const e2=edgeById[id],a=byId[e2.source],b=byId[e2.target]; if(a&&b){ const r=svg.getBoundingClientRect(); view.x=r.width/2-(a.x+b.x)/2*view.k; view.y=r.height/2-(a.y+b.y)/2*view.k; applyViewport(); } }
+    else if(act==="addchild"){ selectedId=id; addChild(); buildTable(); }
+    else if(act==="del"){ const n=byId[id]; const kids=data.nodes.filter(x=>x.parent===id).length; if(!confirm(kids?`「${n.label}」と配下 ${kids} 件・接続を削除しますか?`:`「${n.label}」と接続を削除しますか?`)) return;
+      snapshot(); const rm=new Set([id]); let ch=true; while(ch){ ch=false; for(const x of data.nodes){ if(x.parent&&rm.has(x.parent)&&!rm.has(x.id)){ rm.add(x.id); ch=true; } } }
+      data.edges=data.edges.filter(x=>!rm.has(x.source)&&!rm.has(x.target)); data.nodes=data.nodes.filter(x=>!rm.has(x.id));
+      if(selectedId===id) selectedId=null; save(); render(); buildTable(); toast("削除しました"); }
+    else if(act==="edel"){ if(!confirm("このデータ連携を削除しますか?")) return; snapshot(); data.edges=data.edges.filter(x=>x.id!==id); save(); render(); buildTable(); toast("連携を削除しました"); }
+  });
 
   function loop(){ physics(); if(alpha>=0.004) positionAll(); animateFlow(); if(alpha>=0.004) renderMinimap(); requestAnimationFrame(loop); }
 
