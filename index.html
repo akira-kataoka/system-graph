@@ -130,6 +130,10 @@
   .node { cursor:pointer; }
   .node.dim { opacity:.18; }
   .node.dim .label, .node.dim .sub { opacity:0; }
+  .node .pin { opacity:0; transition:opacity .15s; pointer-events:none; }
+  .node.pinned .pin { opacity:1; }
+  .grp { cursor:grab; }
+  .grp.dragging { cursor:grabbing; }
 
   /* ---------- Inspector ---------- */
   aside {
@@ -414,11 +418,13 @@
     return normalize(JSON.parse(JSON.stringify(SEED)));
   }
   function normalize(d){
-    d.nodes=(d.nodes||[]).map(n=>({
-      tags:[], desc:"", owner:"", tech:"", parent:null, ...n,
-      x: typeof n.x==="number"? n.x : Math.cos(Math.random()*6.28)*260,
-      y: typeof n.y==="number"? n.y : Math.sin(Math.random()*6.28)*260, vx:0, vy:0
-    }));
+    d.nodes=(d.nodes||[]).map(n=>{
+      const node={ tags:[], desc:"", owner:"", tech:"", parent:null, ...n,
+        x: typeof n.x==="number"? n.x : Math.cos(Math.random()*6.28)*260,
+        y: typeof n.y==="number"? n.y : Math.sin(Math.random()*6.28)*260, vx:0, vy:0 };
+      if(node.pinned){ node.fx=node.x; node.fy=node.y; }
+      return node;
+    });
     const ids=new Set(d.nodes.map(n=>n.id));
     d.edges=(d.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target));
     return d;
@@ -446,6 +452,8 @@
     return false;
   }
   function pathOf(n){ const arr=[]; let c=n, guard=0; while(c && guard++<6){ arr.unshift(c); c=c.parent?byId[c.parent]:null; } return arr; }
+  function ancestorIds(n){ const s=[]; let c=n, g=0; while(c && c.parent && byId[c.parent] && g++<6){ c=byId[c.parent]; s.push(c.id); } return s; }
+  function descendantLeaves(cid){ return leaves().filter(n=>ancestorIds(n).includes(cid)); }
 
   // ---------------- Physics (leaves only) ----------------
   let alpha=1;
@@ -512,8 +520,7 @@
       const lab=el("text",{class:"g-label", fill:t.color}, g); lab.textContent=c.label; lab._role="label";
       const badge=el("text",{class:"g-badge", fill:t.color, "fill-opacity":0.75}, g); badge._role="badge";
       badge.textContent = c.type==="database" ? (c.engine||"DB") : c.type==="platform" ? (c.kind||"ETL") : "SYSTEM";
-      g.addEventListener("pointerdown",(ev)=>{ if(ev.target.closest(".node")) return; });
-      g.addEventListener("click",(ev)=>{ ev.stopPropagation(); if(!linkMode) select(c.id); });
+      attachGroup(g,c);
     }
 
     // edges + flow
@@ -538,6 +545,8 @@
       const lab=el("text",{class:"label", y:r+14}, g); lab.textContent=n.label||"(無題)";
       const subTxt = subtitleOf(n);
       if(subTxt){ const sub=el("text",{class:"sub", y:r+25}, g); sub.textContent=subTxt; }
+      el("circle",{class:"pin", cx:r*0.72, cy:-r*0.72, r:3, fill:"var(--accent)", stroke:"#fff", "stroke-width":1.4}, g);
+      if(n.pinned) g.classList.add("pinned");
       attachNode(g,n);
     }
     positionAll(); updateHighlight(); updateStatus(); renderMinimap();
@@ -724,8 +733,31 @@
     g.addEventListener("pointermove",(ev)=>{ if(!dragging) return;
       if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true;
       const p=toWorld(ev.clientX,ev.clientY); n.fx=p.x; n.fy=p.y; n.x=p.x; n.y=p.y; positionAll(); });
-    g.addEventListener("pointerup",()=>{ dragging=false; n.fx=null; n.fy=null; if(!moved) nodeClick(n); else{ save(); reheat(.12);} });
+    g.addEventListener("pointerup",()=>{ dragging=false;
+      if(!moved){ if(!n.pinned){ n.fx=null; n.fy=null; } nodeClick(n); }
+      else { n.pinned=true; n.fx=n.x; n.fy=n.y; g.classList.add("pinned"); save(); } });
+    g.addEventListener("dblclick",(ev)=>{ ev.stopPropagation(); n.pinned=false; n.fx=null; n.fy=null; g.classList.remove("pinned"); save(); reheat(.5); toast("固定を解除しました"); });
   }
+  function attachGroup(g,c){
+    let dragging=false, moved=false, sx, sy, last, kids=[];
+    g.addEventListener("pointerdown",(ev)=>{
+      if(ev.target.closest(".node")) return; ev.stopPropagation(); if(linkMode) return;
+      dragging=true; moved=false; sx=ev.clientX; sy=ev.clientY; g.classList.add("dragging");
+      try{ g.setPointerCapture(ev.pointerId); }catch(e){}
+      last=toWorld(ev.clientX,ev.clientY); kids=descendantLeaves(c.id);
+      for(const k of kids){ k.fx=k.x; k.fy=k.y; } reheat(.2);
+    });
+    g.addEventListener("pointermove",(ev)=>{ if(!dragging) return;
+      if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true;
+      const p=toWorld(ev.clientX,ev.clientY); const dx=p.x-last.x, dy=p.y-last.y; last=p;
+      for(const k of kids){ k.x+=dx; k.y+=dy; k.fx=k.x; k.fy=k.y; } positionAll(); });
+    g.addEventListener("pointerup",()=>{ if(!dragging) return; dragging=false; g.classList.remove("dragging");
+      if(!moved){ for(const k of kids){ if(!k.pinned){ k.fx=null; k.fy=null; } } if(!linkMode) select(c.id); }
+      else { for(const k of kids){ k.pinned=true; } markPins(); save(); } });
+    g.addEventListener("dblclick",(ev)=>{ ev.stopPropagation();
+      for(const k of descendantLeaves(c.id)){ k.pinned=false; k.fx=null; k.fy=null; } markPins(); save(); reheat(.6); toast("グループの固定を解除しました"); });
+  }
+  function markPins(){ for(const g of gNodes.children) g.classList.toggle("pinned", !!g._node.pinned); }
   function nodeClick(n){
     if(linkMode){
       if(!linkSource){ linkSource=n.id; toast("元: "+n.label+" → 対象をクリック"); markSource(); }
@@ -748,9 +780,9 @@
 
   // ---------------- Pan / Zoom ----------------
   let panning=false, ps;
-  svg.addEventListener("pointerdown",(ev)=>{ if(ev.target.closest(".node")) return;
+  svg.addEventListener("pointerdown",(ev)=>{ if(ev.target.closest(".node")||ev.target.closest(".grp")) return;
     panning=true; svg.classList.add("panning"); ps={x:ev.clientX-view.x,y:ev.clientY-view.y}; svg.setPointerCapture(ev.pointerId);
-    if(!linkMode && !ev.target.closest(".grp")) select(null); });
+    if(!linkMode) select(null); });
   svg.addEventListener("pointermove",(ev)=>{ if(!panning) return; view.x=ev.clientX-ps.x; view.y=ev.clientY-ps.y; applyViewport(); });
   svg.addEventListener("pointerup",()=>{ panning=false; svg.classList.remove("panning"); });
   svg.addEventListener("wheel",(ev)=>{ ev.preventDefault(); zoomAt(ev.clientX,ev.clientY, ev.deltaY<0?1.12:1/1.12); },{passive:false});
@@ -825,7 +857,7 @@
   const linkBtn=$("#linkBtn"); linkBtn.onclick=()=>setLinkMode(!linkMode);
   function setLinkMode(on){ linkMode=on; linkSource=null; linkBtn.classList.toggle("active",on); svg.classList.toggle("linking",on);
     if(on){ select(null); toast("リンク作成: 元ノード → 対象ノード の順にクリック"); } else updateHighlight(); }
-  $("#relayoutBtn").onclick=()=>{ for(const n of data.nodes){ n.fx=null; n.fy=null; } reheat(1); toast("再整列中…"); setTimeout(zoomFit,700); };
+  $("#relayoutBtn").onclick=()=>{ for(const n of data.nodes){ n.fx=null; n.fy=null; n.pinned=false; } markPins(); save(); reheat(1); toast("再整列中…（固定も解除）"); setTimeout(zoomFit,700); };
 
   // ---------------- Export / Import ----------------
   $("#exportBtn").onclick=()=>{ const out={ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges };
