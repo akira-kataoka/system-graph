@@ -361,7 +361,11 @@
   table.dt thead th { position:sticky; top:0; z-index:2; background:var(--glass-solid); text-align:left; font-weight:700; font-size:11px; color:var(--text-dim);
     padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap; cursor:pointer; user-select:none; }
   table.dt thead th.nosort { cursor:default; }
-  table.dt thead th .arw { opacity:.5; font-size:9px; margin-left:3px; }
+  table.dt thead th .arw { opacity:.75; font-size:9px; color:var(--accent); }
+  table.dt thead tr.filterrow th { position:sticky; top:33px; z-index:2; background:var(--glass-solid); padding:5px 8px; cursor:default; border-bottom:1px solid var(--border); }
+  table.dt .colf { width:100%; min-width:60px; border:1px solid var(--border); background:var(--panel-2); color:var(--text); border-radius:6px; padding:3px 7px; font-size:11px; font-family:inherit; outline:none; font-weight:400; }
+  table.dt .colf:focus { border-color:var(--accent); background:var(--glass-solid); }
+  table.dt .colf::placeholder { color:var(--text-mute); font-size:10px; }
   table.dt tbody td { padding:7px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
   table.dt tbody tr:hover { background:var(--panel-2); }
   table.dt .tv-name { display:flex; align-items:center; gap:8px; }
@@ -585,7 +589,8 @@
       </div>
       <div class="body">
         <div class="flowmap" id="eiFlow"></div>
-        <div class="fld"><label>ラベル</label><input id="eLabel" type="text" placeholder="例: 抽出, ロード"></div>
+        <div class="fld"><label>連携ID / IF番号</label><input id="eIfId" type="text" placeholder="例: IF00001"></div>
+        <div class="fld"><label>連携名 / ラベル</label><input id="eLabel" type="text" placeholder="例: 受注抽出, ロード"></div>
         <div class="fld"><label>種別</label><select id="eKind">
           <option value="read">読取（抽出）</option><option value="write">書込（ロード）</option><option value="sync">双方向同期</option><option value="ref">参照（FK / JOIN）</option>
         </select></div>
@@ -786,7 +791,7 @@
       { id:"ext_freee", type:"external", label:"freee 会計", desc:"外部会計 SaaS", tech:"freee API", owner:"経理", tags:["外部"] },
     ],
     edges: [
-      { id:"e1", source:"t_order", target:"j_night", label:"抽出", kind:"read", mode:"incremental", key:"ORDER_DATE",
+      { id:"e1", source:"t_order", target:"j_night", label:"受注抽出", kind:"read", mode:"incremental", key:"ORDER_DATE", ifId:"IF00001",
         interval:"日次", window:"02:00-02:30", volume:"約12万件/日", scale:"l",
         condition:"WHERE ORDER_DATE >= :last_run AND STATUS = 'CONFIRMED'", transform:"通貨をJPYに統一 / 取消明細を除外" },
       { id:"e2", source:"t_inv",  target:"j_night", label:"抽出", kind:"read", mode:"full",
@@ -806,7 +811,7 @@
         condition:"変更検知（新規/更新リード）", transform:"メール・会社名を正規化" },
       { id:"e9", source:"j_lead", target:"t_lead",  label:"書戻し", kind:"write", mode:"upsert", key:"Email",
         transform:"MAのスコアを Lead に書戻し" },
-      { id:"e10",source:"t_bill", target:"ext_freee", label:"仕訳連携", kind:"write", mode:"incremental", key:"BILL_ID",
+      { id:"e10",source:"t_bill", target:"ext_freee", label:"仕訳連携", kind:"write", mode:"incremental", key:"BILL_ID", ifId:"IF00010",
         interval:"日次", window:"06:00-06:15", volume:"約8千件/日", scale:"m",
         condition:"WHERE CLOSED_FLAG = 1 AND BILL_DATE >= :last_run", transform:"勘定科目マッピングを適用",
         mappings:[ {from:"ACCOUNT_CD", to:"勘定科目コード", rule:"社内→freeeコード変換表"}, {from:"AMOUNT", to:"金額", rule:"税抜→税込 ×1.1"}, {from:"BILL_DATE", to:"発生日", rule:"YYYY-MM-DD"} ] },
@@ -814,7 +819,7 @@
       { id:"e12",source:"t_dim",  target:"t_fact",  label:"JOIN", kind:"ref" },
       { id:"e13",source:"t_order",target:"t_stg",   label:"レプリケーション", kind:"write", mode:"cdc", key:"ORDER_ID",
         condition:"Oracle → PostgreSQL の変更を CDC で反映", transform:"文字コードを UTF-8 に変換" },
-      { id:"e14",source:"t_lead", target:"conn_ae", label:"リード同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s",
+      { id:"e14",source:"t_lead", target:"conn_ae", label:"リード同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s", ifId:"IF00021",
         transform:"項目マッピング（Lead⇔Prospect）",
         mappings:[ {from:"Email", to:"email", rule:"小文字化"}, {from:"Company", to:"company", rule:"—"}, {from:"Status", to:"grade", rule:"ステータス変換表"} ] },
       { id:"e15",source:"conn_ae",target:"t_prospect", label:"プロスペクト同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s" },
@@ -1347,11 +1352,11 @@
   function openEdgeInspector(id){
     const e=edgeById[id]; if(!e) return; edgeIns.classList.add("open");
     const a=byId[e.source], b=byId[e.target];
-    const kindLabel={read:"読取（抽出）",write:"書込（ロード）",ref:"参照（FK / JOIN）"}[e.kind]||"データ連携";
-    $("#eiTitle").textContent = (a?a.label:"?")+" → "+(b?b.label:"?");
+    const kindLabel=(KIND[e.kind]||{}).label||"データ連携";
+    $("#eiTitle").textContent = (e.ifId?"["+e.ifId+"] ":"")+(a?a.label:"?")+" → "+(b?b.label:"?");
     $("#eiChip").textContent = kindLabel + (e.mode&&MODE[e.mode]?" · "+MODE[e.mode].label:"");
     $("#eiIcon").style.background = kindColor(e);
-    $("#eLabel").value=e.label||""; $("#eKind").value=e.kind||"read"; $("#eMode").value=e.mode||"";
+    $("#eIfId").value=e.ifId||""; $("#eLabel").value=e.label||""; $("#eKind").value=e.kind||"read"; $("#eMode").value=e.mode||"";
     $("#eCond").value=e.condition||""; $("#eKey").value=e.key||""; $("#eTrans").value=e.transform||"";
     $("#eInterval").value=e.interval||""; $("#eWindow").value=e.window||""; $("#eVolume").value=e.volume||""; $("#eScale").value=e.scale||"";
     const ref = e.kind==="ref";
@@ -1395,6 +1400,7 @@
     });
   }
   function bindEdge(sel,apply,rerender){ $(sel).addEventListener("input",()=>{ const e=edgeById[selectedEdge]; if(!e) return; apply(e,$(sel).value); save(); if(rerender) render(); }); }
+  bindEdge("#eIfId",(e,v)=>e.ifId=v,true);
   bindEdge("#eLabel",(e,v)=>e.label=v,true);
   bindEdge("#eCond",(e,v)=>e.condition=v);
   bindEdge("#eKey",(e,v)=>e.key=v);
@@ -1434,7 +1440,8 @@
   }
   function tipEdge(e){
     const a=byId[e.source], b=byId[e.target], md=e.mode&&MODE[e.mode];
-    let h=`<div class="tt-h"><span class="tt-dot" style="background:${kindColor(e)}"></span>${esc(a?a.label:"?")} → ${esc(b?b.label:"?")}</div>`;
+    let h=`<div class="tt-h"><span class="tt-dot" style="background:${kindColor(e)}"></span>${e.ifId?esc(e.ifId)+" · ":""}${esc(a?a.label:"?")} → ${esc(b?b.label:"?")}</div>`;
+    if(e.label) h+=`<div class="tt-r">${esc(e.label)}</div>`;
     h+=`<div class="tt-r"><b style="color:${kindColor(e)}">${(KIND[e.kind]||{}).label||"連携"}</b>${md?` · ${md.label}`:""}${e.key?` · キー ${esc(e.key)}`:""}</div>`;
     const sched=[e.interval&&("間隔 "+e.interval), e.window&&("時間帯 "+e.window)].filter(Boolean).join(" · ");
     if(sched) h+=`<div class="tt-r">${esc(sched)}</div>`;
@@ -1513,6 +1520,7 @@
     linkPressNode=null; if(!linkSource) hideRubber();
   });
   function markSource(){ for(const g of gNodes.children) g.classList.toggle("selected",g._node.id===linkSource); }
+  function nextIfId(){ let max=0; for(const e of data.edges){ const m=/IF0*(\d+)/i.exec(e.ifId||""); if(m) max=Math.max(max,parseInt(m[1])); } return "IF"+String(max+1).padStart(5,"0"); }
   function createEdge(s,t){
     if(data.edges.some(e=>e.source===s&&e.target===t)){ toast("既に接続されています"); return; }
     snapshot();
@@ -1521,7 +1529,7 @@
     if(su&&tu&&(su.type==="connector"||tu.type==="connector")) kind="sync";
     else if(su&&tu&&su.type==="table"&&tu.type==="job") kind="read";
     else if(su&&tu&&su.type==="table"&&tu.type==="table") kind="ref";
-    data.edges.push({id:"e"+Date.now(),source:s,target:t,label,kind});
+    data.edges.push({id:"e"+Date.now(),source:s,target:t,label,kind, ifId: kind==="ref"?"":nextIfId()});
     save(); render(); reheat(.3); toast("リンクを作成しました");
   }
 
@@ -1648,10 +1656,10 @@
       const incs=openIncidents(sys); if(incs.length){ L.push("","**未解決の課題**"); for(const i of incs) L.push(`- [${(SEVERITY[i.severity]||{}).label||""}] ${i.title||""}`); }
       L.push("");
     }
-    L.push("## 🔄 データ連携（抽出条件）","","| 元 | → | 先 | 種別 | 方式 | 間隔 | 時間帯 | データ量 | 抽出条件 | 変換 | キー |","|---|---|---|---|---|---|---|---|---|---|---|");
+    L.push("## 🔄 データ連携（抽出条件）","","| 連携ID | 連携名 | 元 | → | 先 | 種別 | 方式 | 間隔 | 時間帯 | データ量 | 抽出条件 | 変換 | キー |","|---|---|---|---|---|---|---|---|---|---|---|---|---|");
     for(const e of data.edges){ const a=byId[e.source], b=byId[e.target]; if(!a||!b) continue;
       const vol=(e.volume||"")+(e.scale&&SCALE[e.scale]?` (${SCALE[e.scale].label})`:"");
-      L.push(`| ${a.label} | ${e.kind==="ref"?"⋯":"→"} | ${b.label} | ${(KIND[e.kind]||{}).label||""} | ${e.mode&&MODE[e.mode]?MODE[e.mode].label:""} | ${e.interval||""} | ${e.window||""} | ${vol.replace(/\|/g,"\\|")} | ${(e.condition||"").replace(/\|/g,"\\|")||""} | ${(e.transform||"").replace(/\|/g,"\\|")||""} | ${e.key||""} |`);
+      L.push(`| ${e.ifId||""} | ${(e.label||"").replace(/\|/g,"\\|")} | ${a.label} | ${e.kind==="ref"?"⋯":"→"} | ${b.label} | ${(KIND[e.kind]||{}).label||""} | ${e.mode&&MODE[e.mode]?MODE[e.mode].label:""} | ${e.interval||""} | ${e.window||""} | ${vol.replace(/\|/g,"\\|")} | ${(e.condition||"").replace(/\|/g,"\\|")||""} | ${(e.transform||"").replace(/\|/g,"\\|")||""} | ${e.key||""} |`);
     }
     const mapped=data.edges.filter(e=>(e.mappings||[]).length);
     if(mapped.length){ L.push("","### 項目マッピング / 加工");
@@ -1794,13 +1802,13 @@
   $("#esLoadSample").onclick=()=>{ snapshot(); data=normalize(JSON.parse(JSON.stringify(SEED))); selectedId=null; selectedEdge=null; save(); render(); zoomFit(); toast("サンプルを読み込みました"); };
 
   // ---------------- Table / Report view ----------------
-  const tableView=$("#tableView"); let tvTab="tree", tvSort={col:null,dir:1};
+  const tableView=$("#tableView"); let tvTab="tree", tvSort={col:null,dir:1}, tvFilters={};
   $("#tableBtn").onclick=()=>{ if(tableView.classList.contains("open")) closeTable(); else openTable(); };
   $("#tvClose").onclick=closeTable;
   function openTable(){ tableView.classList.add("open"); $("#tableBtn").classList.add("active"); buildTable(); }
   function closeTable(){ tableView.classList.remove("open"); $("#tableBtn").classList.remove("active"); }
-  $("#tvTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ tvTab=b.getAttribute("data-tab"); $("#tvTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); tvSort={col:null,dir:1}; buildTable(); });
-  $("#tvSearch").addEventListener("input",buildTable);
+  $("#tvTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ tvTab=b.getAttribute("data-tab"); $("#tvTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); tvSort={col:null,dir:1}; tvFilters={}; buildTable(); });
+  $("#tvSearch").addEventListener("input",()=>{ if(tvTab==="tree") buildTable(); else rebuildBody(); });
   $("#tvExport").onclick=()=>$("#mdBtn").click();
 
   const critMap={low:"低",mid:"中",high:"高",critical:"最重要"};
@@ -1832,8 +1840,16 @@
         `<button data-act="del" data-id="${n.id}" title="削除"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>`+
       `</div></td></tr>`;
   }
-  const NODE_HEAD=`<thead><tr><th data-s="label">名前</th><th data-s="type">種別</th><th data-s="parent">所属（親）</th><th data-s="owner">オーナー</th><th data-s="dept">管理部署</th><th data-s="ops">運用保守</th><th data-s="status">稼働</th><th data-s="criticality">重要度</th><th data-s="renewal">更改予定</th><th data-s="inc">障害</th><th class="nosort">操作</th></tr></thead>`;
   function passF(n,q){ if(!q) return true; return (n.label+" "+(n.owner||"")+" "+(n.dept||"")+" "+(n.ops||"")+" "+(n.engine||"")+" "+(n.schema||"")+" "+TYPE[n.type].chip).toLowerCase().includes(q); }
+  function edgeMatchesQ(e,q){ const a=byId[e.source],b=byId[e.target]; return ((e.ifId||"")+" "+(a?a.label:"")+" "+(b?b.label:"")+" "+(e.condition||"")+" "+(e.label||"")).toLowerCase().includes(q); }
+  const NODE_COLS=[ {k:"label",label:"名前"},{k:"type",label:"種別"},{k:"parent",label:"所属"},{k:"owner",label:"オーナー"},{k:"dept",label:"管理部署"},{k:"ops",label:"運用保守"},{k:"status",label:"稼働"},{k:"criticality",label:"重要度"},{k:"renewal",label:"更改予定"},{k:"inc",label:"障害"} ];
+  const EDGE_COLS=[ {k:"ifId",label:"連携ID"},{k:"source",label:"元"},{k:"target",label:"先"},{k:"kind",label:"種別"},{k:"mode",label:"方式"},{k:"interval",label:"間隔"},{k:"window",label:"時間帯"},{k:"volume",label:"データ量"},{k:"condition",label:"抽出条件"},{k:"key",label:"キー"} ];
+  function nodeColVal(n,k){ switch(k){ case "label":return n.label||""; case "type":return TYPE[n.type].chip; case "parent":return (n.parent&&byId[n.parent])?byId[n.parent].label:""; case "status":return n.status&&STATUS[n.status]?STATUS[n.status].label:""; case "criticality":return critMap[n.criticality]||""; case "inc":return String(openIncidents(n).length||""); default:return n[k]||""; } }
+  function edgeColVal(e,k){ switch(k){ case "source":return byId[e.source]?byId[e.source].label:""; case "target":return byId[e.target]?byId[e.target].label:""; case "kind":return (KIND[e.kind]||{}).label||""; case "mode":return (MODE[e.mode]||{}).label||""; default:return e[k]||""; } }
+  function buildHead(cols){
+    return `<thead><tr>`+cols.map(c=>`<th data-s="${c.k}">${c.label}<span class="arw" data-arw="${c.k}"></span></th>`).join("")+`<th class="nosort">操作</th></tr>`+
+      `<tr class="filterrow">`+cols.map(c=>`<th><input class="colf" data-f="${c.k}" placeholder="絞込" value="${esc(tvFilters[c.k]||"")}"></th>`).join("")+`<th></th></tr></thead>`;
+  }
   function buildTree(q){
     let showSet=null;
     if(q){ showSet=new Set(); for(const n of data.nodes){ if(passF(n,q)){ showSet.add(n.id); for(const aid of ancestorIds(n)) showSet.add(aid); } } }
@@ -1847,19 +1863,13 @@
       for(const j of data.nodes.filter(n=>n.type==="job"&&n.parent===pf.id)) push(j,1); }
     for(const c of data.nodes.filter(n=>n.type==="connector")) push(c,0);
     for(const x of data.nodes.filter(n=>n.type==="external")) push(x,0);
-    for(const n of data.nodes) push(n,0); // 親不明のノードを最後に
-    return `<table class="dt">${NODE_HEAD}<tbody>${rows.join("")||emptyRow(11)}</tbody></table>`;
-  }
-  function buildFlat(q){
-    let arr=data.nodes.filter(n=>passF(n,q));
-    const c=tvSort.col;
-    if(c){ const key=(n)=> c==="type"?TYPE[n.type].chip : c==="parent"?((n.parent&&byId[n.parent])?byId[n.parent].label:"") : c==="inc"?openIncidents(n).length : (n[c]||"");
-      arr=arr.slice().sort((a,b)=>{ const x=key(a),y=key(b); return (x>y?1:x<y?-1:0)*tvSort.dir; }); }
-    return `<table class="dt">${NODE_HEAD}<tbody>${arr.map(n=>nodeRowHTML(n,0)).join("")||emptyRow(11)}</tbody></table>`;
+    for(const n of data.nodes) push(n,0);
+    return `<table class="dt"><thead><tr><th>名前（階層）</th><th>種別</th><th>所属（親）</th><th>オーナー</th><th>管理部署</th><th>運用保守</th><th>稼働</th><th>重要度</th><th>更改予定</th><th>障害</th><th class="nosort">操作</th></tr></thead><tbody>${rows.join("")||emptyRow(11)}</tbody></table>`;
   }
   function edgeRowHTML(e){
     const a=byId[e.source], b=byId[e.target];
     return `<tr data-edge="${e.id}">`+
+      `<td><input class="cell" data-id="${e.id}" data-edge="1" data-field="ifId" value="${esc(e.ifId||"")}" placeholder="IF00001" style="min-width:78px;font-weight:600"></td>`+
       `<td><span class="tv-name">${a?`<span class="tv-dot" style="background:${TYPE[a.type].color}"></span>${esc(a.label)}`:"?"}</span></td>`+
       `<td><span class="tv-name">${b?`<span class="tv-dot" style="background:${TYPE[b.type].color}"></span>${esc(b.label)}`:"?"}</span></td>`+
       `<td><select class="cell" data-id="${e.id}" data-edge="1" data-field="kind" data-rebuild="1">${optSel(KIND,e.kind)}</select></td>`+
@@ -1874,21 +1884,26 @@
         `<button data-act="edel" data-id="${e.id}" title="削除"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button>`+
       `</div></td></tr>`;
   }
-  function buildEdges(q){
-    const arr=data.edges.filter(e=>{ if(!q) return true; const a=byId[e.source],b=byId[e.target];
-      return ((a?a.label:"")+" "+(b?b.label:"")+" "+(e.condition||"")+" "+(e.label||"")).toLowerCase().includes(q); });
-    const head=`<thead><tr><th class="nosort">元</th><th class="nosort">先</th><th class="nosort">種別</th><th class="nosort">方式</th><th class="nosort">間隔</th><th class="nosort">時間帯</th><th class="nosort">データ量</th><th class="nosort">抽出条件</th><th class="nosort">キー</th><th class="nosort">操作</th></tr></thead>`;
-    return `<table class="dt">${head}<tbody>${arr.map(edgeRowHTML).join("")||emptyRow(10)}</tbody></table>`;
-  }
   function emptyRow(cols){ return `<tr><td colspan="${cols}" style="padding:26px;text-align:center;color:var(--text-mute)">該当なし</td></tr>`; }
   function buildTable(){
     const q=$("#tvSearch").value.trim().toLowerCase();
-    $("#tvBody").innerHTML = tvTab==="tree"?buildTree(q) : tvTab==="flat"?buildFlat(q) : buildEdges(q);
-    // sortable headers (flat only)
-    if(tvTab==="flat"){ $("#tvBody").querySelectorAll("th[data-s]").forEach(th=>{ const k=th.getAttribute("data-s");
-      if(tvSort.col===k) th.innerHTML+=`<span class="arw">${tvSort.dir>0?"▲":"▼"}</span>`;
-      th.onclick=()=>{ if(tvSort.col===k) tvSort.dir*=-1; else { tvSort.col=k; tvSort.dir=1; } buildTable(); }; }); }
-    buildAddbar();
+    if(tvTab==="tree"){ $("#tvBody").innerHTML=buildTree(q); buildAddbar(); return; }
+    const cols = tvTab==="edges"?EDGE_COLS:NODE_COLS;
+    $("#tvBody").innerHTML=`<table class="dt">${buildHead(cols)}<tbody id="tvTbody"></tbody></table>`;
+    $("#tvBody").querySelectorAll("th[data-s]").forEach(th=>{ th.onclick=(e)=>{ if(e.target.classList&&e.target.classList.contains("colf"))return; const k=th.getAttribute("data-s"); if(tvSort.col===k)tvSort.dir*=-1; else{tvSort.col=k;tvSort.dir=1;} rebuildBody(); }; });
+    $("#tvBody").querySelectorAll(".colf").forEach(inp=>{ inp.onclick=(e)=>e.stopPropagation(); inp.addEventListener("input",()=>{ tvFilters[inp.getAttribute("data-f")]=inp.value; rebuildBody(); }); });
+    rebuildBody(); buildAddbar();
+  }
+  function rebuildBody(){
+    if(tvTab==="tree"){ buildTable(); return; }
+    const tb=$("#tvTbody"); if(!tb) return;
+    const q=$("#tvSearch").value.trim().toLowerCase(), isEdge=tvTab==="edges", cols=isEdge?EDGE_COLS:NODE_COLS;
+    let arr = isEdge? data.edges.slice() : data.nodes.slice();
+    if(q) arr=arr.filter(o=> isEdge?edgeMatchesQ(o,q):passF(o,q));
+    for(const c of cols){ const fv=(tvFilters[c.k]||"").trim().toLowerCase(); if(!fv) continue; arr=arr.filter(o=> String(isEdge?edgeColVal(o,c.k):nodeColVal(o,c.k)).toLowerCase().includes(fv)); }
+    if(tvSort.col){ const k=tvSort.col; arr=arr.slice().sort((a,b)=>{ let x=isEdge?edgeColVal(a,k):nodeColVal(a,k), y=isEdge?edgeColVal(b,k):nodeColVal(b,k); const nx=parseFloat(x),ny=parseFloat(y),bn=x!==""&&y!==""&&!isNaN(nx)&&!isNaN(ny); const cmp=bn?nx-ny:(x>y?1:x<y?-1:0); return cmp*tvSort.dir; }); }
+    tb.innerHTML = arr.map(o=> isEdge?edgeRowHTML(o):nodeRowHTML(o,0)).join("") || emptyRow(cols.length+1);
+    $("#tvBody").querySelectorAll("[data-arw]").forEach(s=>{ s.textContent=(s.getAttribute("data-arw")===tvSort.col)?(tvSort.dir>0?" ▲":" ▼"):""; });
   }
   function buildAddbar(){
     const bar=$("#tvAddbar");
@@ -1898,6 +1913,7 @@
     bar.querySelectorAll("[data-addtype]").forEach(b=>b.onclick=()=>{ addNode(b.getAttribute("data-addtype")); buildTable(); });
   }
   // inline editing via delegation
+  const TV_NEEDS_RENDER=new Set(["label","engine","status","health","renewal","criticality","kind","mode","scale","parent","type"]);
   function tvApply(el, isChange){
     const id=el.dataset.id, f=el.dataset.field; if(!id||!f) return;
     const obj = el.dataset.edge==="1"? edgeById[id] : byId[id]; if(!obj) return;
@@ -1906,7 +1922,7 @@
     obj[f]=v;
     if(f==="type" && v && !TYPE[v].parent) obj.parent=null;
     save();
-    if(isChange){ render(); if(el.dataset.rebuild==="1") buildTable(); }
+    if(isChange){ if(TV_NEEDS_RENDER.has(f)) render(); else if(el.dataset.rebuild==="1") buildTable(); }
   }
   $("#tvBody").addEventListener("input",(e)=>{ if(e.target.dataset&&e.target.dataset.field) tvApply(e.target,false); });
   $("#tvBody").addEventListener("change",(e)=>{ if(e.target.dataset&&e.target.dataset.field) tvApply(e.target,true); });
