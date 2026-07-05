@@ -99,6 +99,7 @@
   .menu .mi .mt { font-weight:600; }
   .menu .mi .md { display:block; font-size:10.5px; color:var(--text-dim); font-weight:450; margin-top:1px; }
   .menu .mdiv { height:1px; background:var(--border); margin:4px 2px; }
+  .menu .mcap { font-size:9.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--text-mute); padding:5px 10px 3px; }
 
   /* ---------- Graph ---------- */
   main { flex:1 1 auto; position:relative; overflow:hidden; }
@@ -120,6 +121,7 @@
   .link-label.faded { opacity:.07; }
   .flow circle { pointer-events:none; }
   .link-hit { stroke:transparent; stroke-width:16; fill:none; pointer-events:stroke; cursor:pointer; }
+  #linkRubber { fill:none; stroke:var(--accent); stroke-width:2.4; stroke-dasharray:7 5; stroke-linecap:round; pointer-events:none; opacity:0; }
   .link.sel { stroke:var(--edge-hl); stroke-width:3; stroke-opacity:1; }
   .link.emph { stroke:var(--edge-hl); stroke-width:2.6; stroke-opacity:1; }
 
@@ -249,6 +251,19 @@
   aside .body::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:8px; }
   .fld { margin-top:13px; }
   .fld.hide { display:none; }
+  /* collapsible inspector sections */
+  .isec { border-top:1px solid var(--border); }
+  .isec.hide { display:none; }
+  .isec > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px; padding:11px 2px 9px;
+    font-size:11.5px; font-weight:750; letter-spacing:.3px; color:var(--text); user-select:none; }
+  .isec > summary::-webkit-details-marker { display:none; }
+  .isec > summary::before { content:""; width:6px; height:6px; border-right:1.7px solid var(--text-dim); border-bottom:1.7px solid var(--text-dim);
+    transform:rotate(-45deg); transition:transform .16s; flex:none; margin:0 1px; }
+  .isec[open] > summary::before { transform:rotate(45deg); }
+  .isec > summary:hover { color:var(--accent); }
+  .isec > summary .sec-add { margin-left:auto; font-size:10.5px; font-weight:600; color:var(--accent); background:var(--accent-soft); padding:3px 9px; border-radius:7px; }
+  .isec-body { padding-bottom:8px; }
+  .isec-body .fld:first-child { margin-top:6px; }
   aside label { display:block; font-size:10px; color:var(--text-dim); margin:0 0 5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
   aside input, aside textarea, aside select {
     width:100%; padding:9px 11px; border:1px solid var(--border); background:var(--panel-2); color:var(--text);
@@ -430,6 +445,7 @@
         <g id="groupsInner"></g>
         <g id="linksG"></g>
         <g id="flowG"></g>
+        <path id="linkRubber"></path>
         <g id="labelsG"></g>
         <g id="nodesG"></g>
       </g>
@@ -455,14 +471,15 @@
         </div>
         <div id="modeLegend"></div>
         <div id="legendBody">
-        <div class="lt">グループ</div>
+        <div class="lt">システム構成</div>
         <div class="row" data-t="system"><span class="swatch" style="background:var(--c-system)"></span> システム</div>
         <div class="row" data-t="database"><span class="swatch" style="background:var(--c-database)"></span> データベース</div>
-        <div class="row" data-t="platform"><span class="swatch" style="background:var(--c-platform)"></span> 連携基盤 / ETL</div>
-        <div class="lt" style="margin-top:8px">ノード</div>
         <div class="row" data-t="table"><span class="swatch round" style="background:var(--c-table)"></span> テーブル</div>
+        <div class="lt" style="margin-top:8px">データ連携</div>
+        <div class="row" data-t="platform"><span class="swatch" style="background:var(--c-platform)"></span> 連携基盤 / ETL</div>
         <div class="row" data-t="job"><span class="swatch round" style="background:var(--c-job)"></span> ジョブ / パイプライン</div>
         <div class="row" data-t="connector"><span class="swatch round" style="background:var(--c-connector)"></span> コネクタ（双方向）</div>
+        <div class="lt" style="margin-top:8px">外部</div>
         <div class="row" data-t="external"><span class="swatch round" style="background:var(--c-external)"></span> 外部サービス</div>
         <div class="lt" style="margin-top:8px">データの流れ（色＝種別 / ●大きさ＝データ量）</div>
         <div class="statuslegend" id="modeLegend2"></div>
@@ -484,60 +501,75 @@
       </div>
       <div class="breadcrumb" id="breadcrumb"></div>
       <div class="body">
-        <div class="fld" id="fldAddChild" style="margin-top:2px"><button class="btn primary" id="addChildBtn" style="width:100%;justify-content:center;padding:9px"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span id="addChildLbl">子要素を追加</span></button></div>
-        <div class="fld"><label>名前</label><input id="fName" type="text"></div>
-        <div class="fld"><label>種別</label><select id="fType">
-          <option value="system">システム</option>
-          <option value="database">データベース</option>
-          <option value="table">テーブル</option>
-          <option value="platform">連携基盤 / ETL</option>
-          <option value="job">ジョブ / パイプライン</option>
-          <option value="connector">コネクタ（双方向同期）</option>
-          <option value="external">外部サービス</option>
-        </select></div>
-        <div class="fld" id="fldParent"><label id="lblParent">所属</label><select id="fParent"></select></div>
-        <div class="fld" id="fldEngine"><label>DBエンジン</label><input id="fEngine" type="text" placeholder="例: PostgreSQL 16, Oracle 19c, BigQuery"></div>
-        <div class="fld" id="fldKind"><label>基盤の種別</label><input id="fKind" type="text" placeholder="例: ETL, iPaaS, Reverse-ETL, MA"></div>
-        <div class="fld" id="fldSchema"><label>スキーマ / データセット</label><input id="fSchema" type="text" placeholder="例: sales, public, mart"></div>
-        <div class="fld" id="fldSchedule"><label>実行タイミング</label><input id="fSchedule" type="text" placeholder="例: 毎日 02:00, 5分毎, リアルタイム"></div>
-        <div class="fld"><label>説明</label><textarea id="fDesc" placeholder="役割・目的など"></textarea></div>
-        <div class="fld" id="fldStatus"><label>稼働ステータス</label><select id="fStatus">
-          <option value="">（未設定）</option>
-          <option value="planning">計画中</option><option value="active">稼働中</option>
-          <option value="maintenance">保守 / 更改中</option><option value="deprecated">廃止予定</option><option value="retired">廃止済</option>
-        </select></div>
-        <div class="fld" id="fldCrit"><label>重要度</label><select id="fCrit">
-          <option value="">（未設定）</option><option value="low">低</option><option value="mid">中</option><option value="high">高</option><option value="critical">最重要</option>
-        </select></div>
-        <div class="fld" id="fldHealth"><label>ヘルス（現在の状態）</label><select id="fHealth">
-          <option value="">（自動 / 未設定）</option><option value="ok">正常</option><option value="warn">注意</option><option value="down">障害</option>
-        </select></div>
-        <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
-        <div class="fld" id="fldVendor"><label>ベンダー / 提供元</label><input id="fVendor" type="text" placeholder="例: 自社開発, Salesforce社"></div>
-        <div class="fld" id="fldDates" style="display:flex;gap:8px">
-          <div style="flex:1"><label>導入日</label><input id="fIntro" type="date"></div>
-          <div style="flex:1"><label>更改 / EOSL予定</label><input id="fRenewal" type="date"></div>
-        </div>
-        <div class="fld"><label>オーナー / 責任者</label><input id="fOwner" type="text" placeholder="例: 情シス部 山田 / 営業企画部"></div>
-        <div class="fld"><label>管理部署</label><input id="fDept" type="text" placeholder="例: 情報システム部 基幹Gr"></div>
-        <div class="fld"><label>運用保守（担当・ベンダー）</label><input id="fOps" type="text" placeholder="例: 運用課 / ○○社 保守契約"></div>
-        <div class="fld"><label>技術 / 接続情報</label><input id="fTech" type="text" placeholder="例: REST API, JDBC, gRPC"></div>
-        <div class="fld"><label>タグ（カンマ区切り）</label><input id="fTags" type="text" placeholder="例: 基幹, 顧客, PII"><div class="tagbox" id="tagbox"></div></div>
-        <div class="fld" id="fldCols">
-          <div class="subhead"><label>カラム定義</label><span class="add-mini" id="addCol">＋ 列を追加</span></div>
-          <div class="rowlist" id="colList"></div>
-        </div>
-        <div class="fld">
-          <div class="subhead"><label>障害 / 課題（インシデント）</label><span class="add-mini" id="addInc">＋ 追加</span></div>
-          <div class="rowlist" id="incList"></div>
-        </div>
-        <div class="fld"><label>影響分析 <span style="text-transform:none;font-weight:500;color:var(--text-mute)">（更改・障害の波及）</span></label>
-          <div class="impact-btns">
-            <button class="btn" id="impDown">下流の影響範囲</button>
-            <button class="btn" id="impUp">上流の依存元</button>
+        <div class="fld" id="fldAddChild" style="margin:2px 0 6px"><button class="btn primary" id="addChildBtn" style="width:100%;justify-content:center;padding:9px"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span id="addChildLbl">子要素を追加</span></button></div>
+
+        <details class="isec" open><summary>基本情報</summary><div class="isec-body">
+          <div class="fld"><label>名前</label><input id="fName" type="text"></div>
+          <div class="fld"><label>種別</label><select id="fType">
+            <option value="system">システム</option>
+            <option value="database">データベース</option>
+            <option value="table">テーブル</option>
+            <option value="platform">連携基盤 / ETL</option>
+            <option value="job">ジョブ / パイプライン</option>
+            <option value="connector">コネクタ（双方向同期）</option>
+            <option value="external">外部サービス</option>
+          </select></div>
+          <div class="fld" id="fldParent"><label id="lblParent">所属</label><select id="fParent"></select></div>
+          <div class="fld"><label>説明</label><textarea id="fDesc" placeholder="役割・目的など"></textarea></div>
+        </div></details>
+
+        <details class="isec" open><summary>稼働状況・ライフサイクル</summary><div class="isec-body">
+          <div class="fld" id="fldStatus"><label>稼働ステータス</label><select id="fStatus">
+            <option value="">（未設定）</option>
+            <option value="planning">計画中</option><option value="active">稼働中</option>
+            <option value="maintenance">保守 / 更改中</option><option value="deprecated">廃止予定</option><option value="retired">廃止済</option>
+          </select></div>
+          <div class="fld" id="fldCrit"><label>重要度</label><select id="fCrit">
+            <option value="">（未設定）</option><option value="low">低</option><option value="mid">中</option><option value="high">高</option><option value="critical">最重要</option>
+          </select></div>
+          <div class="fld" id="fldHealth"><label>ヘルス（現在の状態）</label><select id="fHealth">
+            <option value="">（自動 / 未設定）</option><option value="ok">正常</option><option value="warn">注意</option><option value="down">障害</option>
+          </select></div>
+          <div class="fld" id="fldDates" style="display:flex;gap:8px">
+            <div style="flex:1"><label>導入日</label><input id="fIntro" type="date"></div>
+            <div style="flex:1"><label>更改 / EOSL予定</label><input id="fRenewal" type="date"></div>
           </div>
-        </div>
-        <div class="fld"><label>データの流れ / 接続 <span style="text-transform:none;font-weight:500;color:var(--text-mute)">（クリックで移動）</span></label><div class="conn-list" id="connList"></div></div>
+        </div></details>
+
+        <details class="isec" open><summary>管理体制</summary><div class="isec-body">
+          <div class="fld"><label>オーナー / 責任者</label><input id="fOwner" type="text" placeholder="例: 情シス部 山田 / 営業企画部"></div>
+          <div class="fld"><label>管理部署</label><input id="fDept" type="text" placeholder="例: 情報システム部 基幹Gr"></div>
+          <div class="fld"><label>運用保守（担当・ベンダー）</label><input id="fOps" type="text" placeholder="例: 運用課 / ○○社 保守契約"></div>
+          <div class="fld" id="fldVendor"><label>ベンダー / 提供元</label><input id="fVendor" type="text" placeholder="例: 自社開発, Salesforce社"></div>
+          <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
+        </div></details>
+
+        <details class="isec"><summary>技術・データ詳細</summary><div class="isec-body">
+          <div class="fld" id="fldEngine"><label>DBエンジン</label><input id="fEngine" type="text" placeholder="例: PostgreSQL 16, Oracle 19c, BigQuery"></div>
+          <div class="fld" id="fldSchema"><label>スキーマ / データセット</label><input id="fSchema" type="text" placeholder="例: sales, public, mart"></div>
+          <div class="fld" id="fldKind"><label>基盤の種別</label><input id="fKind" type="text" placeholder="例: ETL, iPaaS, Reverse-ETL, MA"></div>
+          <div class="fld" id="fldSchedule"><label>実行タイミング</label><input id="fSchedule" type="text" placeholder="例: 毎日 02:00, 5分毎, リアルタイム"></div>
+          <div class="fld"><label>技術 / 接続情報</label><input id="fTech" type="text" placeholder="例: REST API, JDBC, gRPC"></div>
+          <div class="fld"><label>タグ（カンマ区切り）</label><input id="fTags" type="text" placeholder="例: 基幹, 顧客, PII"><div class="tagbox" id="tagbox"></div></div>
+        </div></details>
+
+        <details class="isec" id="secCols"><summary>カラム定義</summary><div class="isec-body">
+          <div class="fld" id="fldCols" style="margin-top:4px"><span class="add-mini" id="addCol" style="display:inline-block;margin-bottom:7px">＋ 列を追加</span><div class="rowlist" id="colList"></div></div>
+        </div></details>
+
+        <details class="isec"><summary>障害・課題（インシデント）</summary><div class="isec-body">
+          <div class="fld" style="margin-top:4px"><span class="add-mini" id="addInc" style="display:inline-block;margin-bottom:7px">＋ インシデントを追加</span><div class="rowlist" id="incList"></div></div>
+        </div></details>
+
+        <details class="isec" open><summary>影響分析・接続</summary><div class="isec-body">
+          <div class="fld"><label>影響分析 <span style="text-transform:none;font-weight:500;color:var(--text-mute)">（更改・障害の波及）</span></label>
+            <div class="impact-btns">
+              <button class="btn" id="impDown">下流の影響範囲</button>
+              <button class="btn" id="impUp">上流の依存元</button>
+            </div>
+          </div>
+          <div class="fld"><label>データの流れ / 接続 <span style="text-transform:none;font-weight:500;color:var(--text-mute)">（クリックで移動）</span></label><div class="conn-list" id="connList"></div></div>
+        </div></details>
       </div>
       <div class="aside-actions">
         <button class="btn danger" id="delBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>削除</button>
@@ -793,7 +825,7 @@
   let data = load();
   let selectedId = null, hoverId = null;
   let selectedEdge = null, hoverEdgeId = null;
-  let linkMode = false, linkSource = null;
+  let linkMode = false, linkSource = null, linkPressNode = null, linkPressXY = null, linkDrag = false;
   const hidden = new Set();
   const view = { x:0, y:0, k:1 };
   let groupBoxes = {};
@@ -1162,7 +1194,7 @@
   function toggleFields(type){
     const map={ fldParent:["table","database","job"], fldEngine:["database"], fldKind:["platform"], fldSchema:["table"], fldSchedule:["job"],
       fldEnv:["system","database","platform","external"], fldVendor:["system","database","platform","external"], fldDates:["system","database","platform","external"],
-      fldCols:["table"], fldAddChild:["system","database","platform"] };
+      secCols:["table"], fldAddChild:["system","database","platform"] };
     for(const id in map){ $("#"+id).classList.toggle("hide", !map[id].includes(type)); }
     const pl={ table:"所属データベース", database:"所属システム", job:"所属連携基盤" };
     if(pl[type]) $("#lblParent").textContent=pl[type];
@@ -1249,7 +1281,7 @@
       list.appendChild(row);
     });
   }
-  $("#addCol").onclick=()=>{ const n=byId[selectedId]; if(!n)return; (n.columns||(n.columns=[])).push({name:"",type:"",pk:false}); save(); renderCols(n); };
+  $("#addCol").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; const s=$("#secCols"); if(s&&!s.open)s.open=true; (n.columns||(n.columns=[])).push({name:"",type:"",pk:false}); save(); renderCols(n); };
 
   // incidents editor
   function renderIncidents(n){
@@ -1269,7 +1301,7 @@
       list.appendChild(row);
     });
   }
-  $("#addInc").onclick=()=>{ const n=byId[selectedId]; if(!n)return; (n.incidents||(n.incidents=[])).push({severity:"mid",title:"",status:"open"}); if(!n.health)n.health=null; save(); render(); renderIncidents(n); };
+  $("#addInc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; (n.incidents||(n.incidents=[])).push({severity:"mid",title:"",status:"open"}); if(!n.health)n.health=null; save(); render(); renderIncidents(n); };
 
   // impact analysis
   let impactSet=null;
@@ -1419,7 +1451,8 @@
     g.addEventListener("pointerenter",()=>{ if(!dragging){ hoverId=n.id; updateHighlight(); showTip(tipNode(n)); } });
     g.addEventListener("pointermove",(ev)=>{ if(!dragging) moveTip(ev); });
     g.addEventListener("pointerleave",()=>{ if(!dragging){ hoverId=null; updateHighlight(); hideTip(); } });
-    g.addEventListener("pointerdown",(ev)=>{ ev.stopPropagation(); if(linkMode) return; hideTip();
+    g.addEventListener("pointerdown",(ev)=>{ ev.stopPropagation(); hideTip();
+      if(linkMode){ linkPressNode=n.id; linkPressXY={x:ev.clientX,y:ev.clientY}; linkDrag=false; return; }
       dragging=true; moved=false; sx=ev.clientX; sy=ev.clientY; g.setPointerCapture(ev.pointerId); n.fx=n.x; n.fy=n.y; reheat(.28); });
     g.addEventListener("pointermove",(ev)=>{ if(!dragging) return;
       if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true;
@@ -1453,13 +1486,32 @@
   function markPins(){ for(const g of gNodes.children) g.classList.toggle("pinned", !!g._node.pinned); }
   function nodeClick(n){
     if(linkMode){
-      if(!linkSource){ linkSource=n.id; toast("元: "+n.label+" → 対象をクリック"); markSource(); }
-      else if(linkSource===n.id){ toast("同じノードです"); }
-      else{ createEdge(linkSource,n.id); linkSource=null; setLinkMode(false); }
+      if(!linkSource){ linkSource=n.id; toast("元: "+n.label+" → 対象をクリック（またはドラッグして離す）"); markSource(); }
+      else if(linkSource===n.id){ if(!linkDrag) toast("同じノードです"); }
+      else{ createEdge(linkSource,n.id); linkSource=null; linkDrag=false; hideRubber(); setLinkMode(false); }
       return;
     }
     select(n.id);
   }
+  // ドラッグ接続 + ラバーバンド（ノードから引っ張って離すだけで接続）
+  function drawRubber(srcId, wx, wy){ const s=byId[srcId]; if(!s) return; const c=isLeaf(s)?{x:s.x,y:s.y}:centerOfId(srcId); const rb=$("#linkRubber"); if(rb){ rb.setAttribute("d",`M${c.x},${c.y} L${wx},${wy}`); rb.style.opacity=1; } }
+  function hideRubber(){ const rb=$("#linkRubber"); if(rb) rb.style.opacity=0; }
+  window.addEventListener("pointermove",(ev)=>{
+    if(!linkMode) return;
+    if(linkPressNode && !linkSource && linkPressXY && (Math.abs(ev.clientX-linkPressXY.x)+Math.abs(ev.clientY-linkPressXY.y)>5)){ linkSource=linkPressNode; linkDrag=true; markSource(); }
+    if(linkSource){ const p=toWorld(ev.clientX,ev.clientY); drawRubber(linkSource,p.x,p.y); }
+  });
+  window.addEventListener("pointerup",(ev)=>{
+    if(!linkMode){ hideRubber(); linkPressNode=null; return; }
+    if(linkDrag && linkSource){
+      const el=document.elementFromPoint? document.elementFromPoint(ev.clientX,ev.clientY):null;
+      const ng=el&&el.closest? el.closest(".node"):null; const tid=ng&&ng.getAttribute("data-id");
+      if(tid && tid!==linkSource){ createEdge(linkSource,tid); linkSource=null; linkDrag=false; linkPressNode=null; hideRubber(); setLinkMode(false); return; }
+      // 対象ノード外で離した → キャンセルして継続
+      toast("接続先のノードの上で離してください"); linkSource=null; linkDrag=false; linkPressNode=null; hideRubber(); updateHighlight(); return;
+    }
+    linkPressNode=null; if(!linkSource) hideRubber();
+  });
   function markSource(){ for(const g of gNodes.children) g.classList.toggle("selected",g._node.id===linkSource); }
   function createEdge(s,t){
     if(data.edges.some(e=>e.source===s&&e.target===t)){ toast("既に接続されています"); return; }
@@ -1518,14 +1570,21 @@
   // ---------------- Add menu ----------------
   const addMenu=$("#addMenu");
   (function buildAddMenu(){
-    const order=["system","database","table","platform","job","connector","external"];
-    order.forEach((type,i)=>{
-      if(type==="platform"){ const d=document.createElement("div"); d.className="mdiv"; addMenu.appendChild(d); }
-      const t=TYPE[type], mi=document.createElement("div"); mi.className="mi";
-      const ic=document.createElement("span"); ic.className="mic"; ic.style.background=t.color;
-      ic.innerHTML=`<svg viewBox="0 0 24 24">${ICON[type]}</svg>`;
-      const txt=document.createElement("div"); txt.innerHTML=`<span class="mt">${t.chip}</span><span class="md">${t.desc}</span>`;
-      mi.appendChild(ic); mi.appendChild(txt); mi.onclick=()=>{ addNode(type); closeAddMenu(); }; addMenu.appendChild(mi);
+    const groups=[
+      { label:"システム構成", types:["system","database","table"] },
+      { label:"データ連携",   types:["platform","job","connector"] },
+      { label:"外部",         types:["external"] },
+    ];
+    groups.forEach((grp,gi)=>{
+      if(gi>0){ const d=document.createElement("div"); d.className="mdiv"; addMenu.appendChild(d); }
+      const cap=document.createElement("div"); cap.className="mcap"; cap.textContent=grp.label; addMenu.appendChild(cap);
+      for(const type of grp.types){
+        const t=TYPE[type], mi=document.createElement("div"); mi.className="mi";
+        const ic=document.createElement("span"); ic.className="mic"; ic.style.background=t.color;
+        ic.innerHTML=`<svg viewBox="0 0 24 24">${ICON[type]}</svg>`;
+        const txt=document.createElement("div"); txt.innerHTML=`<span class="mt">${t.chip}</span><span class="md">${t.desc}</span>`;
+        mi.appendChild(ic); mi.appendChild(txt); mi.onclick=()=>{ addNode(type); closeAddMenu(); }; addMenu.appendChild(mi);
+      }
     });
   })();
   function closeAddMenu(){ addMenu.classList.remove("open"); }
@@ -1554,8 +1613,8 @@
 
   // ---------------- Link mode ----------------
   const linkBtn=$("#linkBtn"); linkBtn.onclick=()=>setLinkMode(!linkMode);
-  function setLinkMode(on){ linkMode=on; linkSource=null; linkBtn.classList.toggle("active",on); svg.classList.toggle("linking",on);
-    if(on){ select(null); toast("リンク作成: 元ノード → 対象ノード の順にクリック"); } else updateHighlight(); }
+  function setLinkMode(on){ linkMode=on; linkSource=null; linkPressNode=null; linkDrag=false; hideRubber(); linkBtn.classList.toggle("active",on); svg.classList.toggle("linking",on);
+    if(on){ select(null); toast("接続: ノードから別のノードへドラッグして離す（またはクリック→クリック）"); } else updateHighlight(); }
   $("#relayoutBtn").onclick=()=>{ for(const n of data.nodes){ n.fx=null; n.fy=null; n.pinned=false; } markPins(); save(); reheat(1); toast("再整列中…（固定も解除）"); setTimeout(zoomFit,700); };
 
   // ---------------- Export / Import ----------------
