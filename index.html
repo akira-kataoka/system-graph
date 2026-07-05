@@ -6,221 +6,311 @@
 <title>System Graph — 社内システム / テーブル / データ連携マップ</title>
 <style>
   :root {
-    --bg: #f7f8fa;
-    --panel: #ffffff;
-    --panel-2: #f1f3f6;
-    --border: #e2e5ea;
-    --text: #1c2330;
-    --text-dim: #667085;
-    --accent: #4c6ef5;
-    --edge: #b3bccb;
-    --edge-label: #8a94a6;
-    --shadow: 0 4px 20px rgba(20,30,60,.10);
-    --sys: #4c6ef5;   /* システム */
-    --tbl: #12b886;   /* テーブル */
-    --intg: #f59f00;  /* データ連携 */
-    --ext: #e64980;   /* 外部サービス */
+    --bg: #eef1f7;
+    --bg-2: #f7f9fc;
+    --grid: rgba(70,90,130,.12);
+    --glass: rgba(255,255,255,.66);
+    --glass-solid: #ffffff;
+    --panel-2: rgba(120,140,175,.10);
+    --border: rgba(30,45,80,.12);
+    --border-strong: rgba(30,45,80,.20);
+    --text: #16203a;
+    --text-dim: #63708c;
+    --accent: #6366f1;
+    --accent-soft: rgba(99,102,241,.14);
+    --edge: rgba(110,128,160,.42);
+    --edge-hl: #6366f1;
+    --shadow: 0 8px 30px rgba(25,40,80,.14);
+    --shadow-sm: 0 2px 8px rgba(25,40,80,.10);
+    /* node palettes: base / light */
+    --sys: #6366f1;  --sys-2: #a5b4fc;
+    --tbl: #10b981;  --tbl-2: #6ee7b7;
+    --intg:#f59e0b;  --intg-2:#fcd34d;
+    --ext: #f43f5e;  --ext-2: #fda4af;
   }
   :root[data-theme="dark"] {
-    --bg: #12151c;
-    --panel: #1a1e28;
-    --panel-2: #232836;
-    --border: #2d3342;
-    --text: #e6e9ef;
-    --text-dim: #98a2b3;
-    --accent: #5c7cfa;
-    --edge: #414a5c;
-    --edge-label: #6b7688;
-    --shadow: 0 4px 24px rgba(0,0,0,.4);
-    --sys: #5c7cfa;
-    --tbl: #20c997;
-    --intg: #fab005;
-    --ext: #f06595;
+    --bg: #0a0d14;
+    --bg-2: #0e131c;
+    --grid: rgba(150,175,220,.10);
+    --glass: rgba(20,26,38,.62);
+    --glass-solid: #141a26;
+    --panel-2: rgba(150,175,220,.07);
+    --border: rgba(150,180,225,.13);
+    --border-strong: rgba(150,180,225,.22);
+    --text: #e9edf6;
+    --text-dim: #8c98b0;
+    --accent: #818cf8;
+    --accent-soft: rgba(129,140,248,.18);
+    --edge: rgba(150,170,210,.30);
+    --edge-hl: #a5b4fc;
+    --shadow: 0 10px 40px rgba(0,0,0,.55);
+    --shadow-sm: 0 3px 12px rgba(0,0,0,.4);
+    --sys: #818cf8;  --sys-2: #c7d2fe;
+    --tbl: #34d399;  --tbl-2: #a7f3d0;
+    --intg:#fbbf24;  --intg-2:#fde68a;
+    --ext: #fb7185;  --ext-2: #fecdd3;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #12151c; --panel: #1a1e28; --panel-2: #232836; --border: #2d3342;
-      --text: #e6e9ef; --text-dim: #98a2b3; --accent: #5c7cfa; --edge: #414a5c;
-      --edge-label: #6b7688; --shadow: 0 4px 24px rgba(0,0,0,.4);
-      --sys: #5c7cfa; --tbl: #20c997; --intg: #fab005; --ext: #f06595;
+      --bg:#0a0d14; --bg-2:#0e131c; --grid:rgba(150,175,220,.10); --glass:rgba(20,26,38,.62);
+      --glass-solid:#141a26; --panel-2:rgba(150,175,220,.07); --border:rgba(150,180,225,.13);
+      --border-strong:rgba(150,180,225,.22); --text:#e9edf6; --text-dim:#8c98b0; --accent:#818cf8;
+      --accent-soft:rgba(129,140,248,.18); --edge:rgba(150,170,210,.30); --edge-hl:#a5b4fc;
+      --shadow:0 10px 40px rgba(0,0,0,.55); --shadow-sm:0 3px 12px rgba(0,0,0,.4);
+      --sys:#818cf8; --sys-2:#c7d2fe; --tbl:#34d399; --tbl-2:#a7f3d0;
+      --intg:#fbbf24; --intg-2:#fde68a; --ext:#fb7185; --ext-2:#fecdd3;
     }
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN",
-                 "Yu Gothic", Meiryo, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
     background: var(--bg); color: var(--text); overflow: hidden;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   }
   #app { display: flex; flex-direction: column; height: 100vh; }
 
-  /* ---------- Toolbar ---------- */
+  /* ---------------- Toolbar ---------------- */
   header {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    padding: 8px 14px; background: var(--panel);
-    border-bottom: 1px solid var(--border); z-index: 20;
+    position: absolute; top: 12px; left: 12px; right: 12px; z-index: 25;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 9px 12px;
+    background: var(--glass); backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    border: 1px solid var(--border); border-radius: 15px; box-shadow: var(--shadow);
   }
-  header .title { font-weight: 700; font-size: 15px; letter-spacing: .3px; margin-right: 6px; white-space: nowrap; }
-  header .title small { color: var(--text-dim); font-weight: 400; font-size: 11px; margin-left: 6px; }
-  .spacer { flex: 1 1 auto; }
+  .brand { display:flex; align-items:center; gap:9px; font-weight:750; font-size:14.5px; letter-spacing:.2px; margin-right:4px; white-space:nowrap; }
+  .brand .logo {
+    width:26px; height:26px; border-radius:8px; display:grid; place-items:center; font-size:15px;
+    background: linear-gradient(135deg, var(--sys), var(--ext)); box-shadow: var(--shadow-sm);
+  }
+  .brand small { color: var(--text-dim); font-weight: 450; font-size: 10.5px; margin-left:2px; }
+  .sep { width:1px; align-self:stretch; background:var(--border); margin:2px 3px; }
+  .spacer { flex: 1 1 auto; min-width: 4px; }
+
   .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 11px; border: 1px solid var(--border); background: var(--panel-2);
-    color: var(--text); border-radius: 8px; font-size: 12.5px; cursor: pointer;
-    white-space: nowrap; transition: background .12s, border-color .12s;
+    display:inline-flex; align-items:center; gap:6px; padding:7px 11px;
+    border:1px solid transparent; background:var(--panel-2); color:var(--text);
+    border-radius:10px; font-size:12.5px; font-weight:550; cursor:pointer; white-space:nowrap;
+    transition: background .14s, transform .1s, box-shadow .14s, color .14s;
   }
-  .btn:hover { background: var(--border); }
-  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
-  .btn.primary:hover { filter: brightness(1.08); }
-  .btn.active { background: var(--accent); color: #fff; border-color: transparent; }
-  .btn .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .btn:hover { background: var(--accent-soft); }
+  .btn:active { transform: translateY(1px) scale(.98); }
+  .btn.icon { padding:7px 9px; }
+  .btn.primary { background: var(--accent); color:#fff; box-shadow: var(--shadow-sm); }
+  .btn.primary:hover { filter: brightness(1.07); background: var(--accent); }
+  .btn.active { background: var(--accent); color:#fff; box-shadow: var(--shadow-sm); }
+  .btn .swatch { width:10px; height:10px; border-radius:4px; display:inline-block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
+
   .search {
-    display: flex; align-items: center; gap: 6px; padding: 5px 10px;
-    border: 1px solid var(--border); background: var(--panel-2); border-radius: 8px;
+    display:flex; align-items:center; gap:7px; padding:6px 12px;
+    background:var(--panel-2); border:1px solid transparent; border-radius:10px;
+    transition: border-color .14s, background .14s;
   }
-  .search input { border: none; background: transparent; color: var(--text); outline: none; font-size: 12.5px; width: 150px; }
+  .search:focus-within { border-color: var(--accent); background: var(--glass-solid); }
+  .search input { border:none; background:transparent; color:var(--text); outline:none; font-size:12.5px; width:150px; font-family:inherit; }
+  .search input::placeholder { color: var(--text-dim); }
 
-  /* ---------- Main ---------- */
-  main { flex: 1 1 auto; position: relative; overflow: hidden; }
-  svg#graph { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
-  svg#graph.panning { cursor: grabbing; }
-  svg#graph.linking { cursor: crosshair; }
+  /* ---------------- Graph ---------------- */
+  main { flex:1 1 auto; position:relative; overflow:hidden; }
+  svg#graph { width:100%; height:100%; display:block; cursor:grab; touch-action:none; }
+  svg#graph.panning { cursor:grabbing; }
+  svg#graph.linking { cursor:crosshair; }
 
-  .link { stroke: var(--edge); stroke-width: 1.6; fill: none; }
-  .link.hl { stroke: var(--accent); stroke-width: 2.4; }
-  .link-label { fill: var(--edge-label); font-size: 10px; pointer-events: none; }
+  .link { fill:none; stroke:var(--edge); stroke-width:1.5; transition: stroke .2s, stroke-width .2s; }
+  .link.hl { stroke:var(--edge-hl); stroke-width:2.4; }
+  .link.faded { opacity:.12; }
+  .link-label {
+    fill:var(--text-dim); font-size:10px; font-weight:600; pointer-events:none;
+    paint-order:stroke; stroke:var(--bg); stroke-width:3px; stroke-linejoin:round; opacity:.9;
+    transition: opacity .2s;
+  }
+  .link-label.faded { opacity:.08; }
+  .flow { pointer-events:none; }
+  .flow circle { fill: var(--edge-hl); opacity:.0; transition: opacity .3s; }
 
-  .node { cursor: pointer; }
-  .node .shape { stroke-width: 2; transition: filter .12s; }
-  .node text.label { fill: var(--text); font-size: 12px; font-weight: 600; pointer-events: none; }
-  .node text.sub { fill: var(--text-dim); font-size: 9.5px; pointer-events: none; }
-  .node.dim { opacity: .18; }
-  .node.selected .shape { filter: drop-shadow(0 0 0 2px var(--text)); }
-  .node .ring { fill: none; stroke: var(--text); stroke-width: 2.5; opacity: 0; }
-  .node.selected .ring { opacity: .9; }
+  .node { cursor:pointer; }
+  .node .halo { fill:none; opacity:0; transition: opacity .18s; }
+  .node.hover .halo, .node.selected .halo { opacity:.9; }
+  .node .core { stroke:#fff; stroke-width:2.5; transition: transform .16s cubic-bezier(.34,1.56,.64,1); transform-box:fill-box; transform-origin:center; }
+  :root[data-theme="dark"] .node .core { stroke: rgba(255,255,255,.75); }
+  .node.hover .core { transform: scale(1.14); }
+  .node .ext-ring { fill:none; stroke-width:2; stroke-dasharray:3 3.5; opacity:.7; }
+  .node .icon { font-size:15px; text-anchor:middle; dominant-baseline:central; pointer-events:none; user-select:none; }
+  .node .label {
+    fill:var(--text); font-size:11.5px; font-weight:650; text-anchor:middle; pointer-events:none;
+    paint-order:stroke; stroke:var(--bg); stroke-width:3.5px; stroke-linejoin:round;
+    transition: opacity .2s;
+  }
+  .node .sub { fill:var(--text-dim); font-size:9px; font-weight:550; text-anchor:middle; pointer-events:none;
+    paint-order:stroke; stroke:var(--bg); stroke-width:3px; stroke-linejoin:round; }
+  .node.dim { opacity:.2; }
+  .node.dim .label, .node.dim .sub { opacity:0; }
 
-  /* ---------- Inspector ---------- */
+  /* ---------------- Inspector ---------------- */
   aside {
-    position: absolute; top: 0; right: 0; height: 100%; width: 340px;
-    background: var(--panel); border-left: 1px solid var(--border);
-    box-shadow: var(--shadow); transform: translateX(100%); transition: transform .22s ease;
-    display: flex; flex-direction: column; z-index: 15;
+    position:absolute; top:12px; right:12px; bottom:12px; width:340px;
+    background:var(--glass); backdrop-filter:blur(22px) saturate(1.4);
+    -webkit-backdrop-filter:blur(22px) saturate(1.4);
+    border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+    transform: translateX(calc(100% + 20px)); transition: transform .34s cubic-bezier(.22,1,.36,1);
+    display:flex; flex-direction:column; z-index:20; overflow:hidden;
   }
   aside.open { transform: translateX(0); }
-  aside .head { display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
-  aside .head .type-chip { font-size: 11px; padding: 3px 9px; border-radius: 20px; color: #fff; font-weight: 600; }
-  aside .head .close { margin-left: auto; cursor: pointer; color: var(--text-dim); font-size: 20px; line-height: 1; background: none; border: none; }
-  aside .body { padding: 14px 16px; overflow-y: auto; flex: 1; }
-  aside label { display: block; font-size: 11px; color: var(--text-dim); margin: 12px 0 4px; font-weight: 600; letter-spacing: .3px; }
-  aside label:first-child { margin-top: 0; }
+  aside .head { display:flex; align-items:center; gap:10px; padding:16px 16px 12px; }
+  aside .head .big-icon { width:38px; height:38px; border-radius:11px; display:grid; place-items:center; font-size:19px; color:#fff; box-shadow:var(--shadow-sm); }
+  aside .head .meta h3 { margin:0; font-size:14px; font-weight:700; line-height:1.2; }
+  aside .head .meta .type-chip { font-size:10.5px; font-weight:650; color:var(--text-dim); }
+  aside .head .close { margin-left:auto; cursor:pointer; color:var(--text-dim); width:30px; height:30px; border-radius:9px; border:none; background:var(--panel-2); font-size:17px; display:grid; place-items:center; transition: background .14s; }
+  aside .head .close:hover { background: var(--accent-soft); color: var(--text); }
+  aside .body { padding: 4px 16px 16px; overflow-y:auto; flex:1; }
+  aside .body::-webkit-scrollbar { width:8px; }
+  aside .body::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:8px; }
+  aside label { display:block; font-size:10.5px; color:var(--text-dim); margin:14px 0 5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; }
   aside input, aside textarea, aside select {
-    width: 100%; padding: 8px 10px; border: 1px solid var(--border); background: var(--panel-2);
-    color: var(--text); border-radius: 7px; font-size: 13px; font-family: inherit; outline: none;
+    width:100%; padding:9px 11px; border:1px solid var(--border); background:var(--panel-2);
+    color:var(--text); border-radius:9px; font-size:13px; font-family:inherit; outline:none; transition: border-color .14s, background .14s;
   }
-  aside input:focus, aside textarea:focus, aside select:focus { border-color: var(--accent); }
-  aside textarea { resize: vertical; min-height: 62px; }
-  .conn-list { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
-  .conn {
-    display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 6px 9px;
-    background: var(--panel-2); border: 1px solid var(--border); border-radius: 7px; cursor: pointer;
-  }
-  .conn:hover { border-color: var(--accent); }
-  .conn .arrow { color: var(--text-dim); font-size: 11px; }
-  .conn small { color: var(--text-dim); margin-left: auto; }
-  .aside-actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
-  .aside-actions .btn { flex: 1; justify-content: center; }
-  .btn.danger { color: #e03131; }
-  :root[data-theme="dark"] .btn.danger { color: #ff8787; }
+  aside input:focus, aside textarea:focus, aside select:focus { border-color:var(--accent); background:var(--glass-solid); }
+  aside textarea { resize:vertical; min-height:60px; line-height:1.5; }
+  .tagbox { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .tag { font-size:10.5px; padding:3px 9px; border-radius:20px; background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  .conn-list { margin-top:7px; display:flex; flex-direction:column; gap:6px; }
+  .conn { display:flex; align-items:center; gap:8px; font-size:12px; padding:8px 10px; background:var(--panel-2); border:1px solid transparent; border-radius:9px; cursor:pointer; transition: border-color .14s, transform .1s; }
+  .conn:hover { border-color:var(--accent); transform: translateX(2px); }
+  .conn .arrow { color:var(--text-dim); font-size:12px; font-weight:700; }
+  .conn .cdot { width:9px; height:9px; border-radius:50%; flex:none; }
+  .conn small { color:var(--text-dim); margin-left:auto; font-size:10.5px; }
+  .aside-actions { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--border); }
+  .aside-actions .btn { flex:1; justify-content:center; padding:9px; }
+  .btn.danger { color:#e11d48; background: rgba(225,29,72,.09); }
+  :root[data-theme="dark"] .btn.danger { color:#fda4af; background: rgba(251,113,133,.12); }
 
-  /* ---------- Legend ---------- */
-  .legend {
-    position: absolute; left: 14px; bottom: 14px; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 11.5px;
-    box-shadow: var(--shadow); z-index: 10;
+  /* ---------------- Floating controls ---------------- */
+  .dock {
+    position:absolute; left:12px; bottom:12px; z-index:15; display:flex; flex-direction:column; gap:10px;
   }
-  .legend .row { display: flex; align-items: center; gap: 7px; margin: 3px 0; color: var(--text-dim); }
-  .legend .dot { width: 11px; height: 11px; border-radius: 3px; }
-  .legend .dot.round { border-radius: 50%; }
+  .legend, .minimap-wrap {
+    background:var(--glass); backdrop-filter:blur(18px) saturate(1.4); -webkit-backdrop-filter:blur(18px) saturate(1.4);
+    border:1px solid var(--border); border-radius:13px; box-shadow:var(--shadow-sm);
+  }
+  .legend { padding:11px 13px; font-size:11.5px; }
+  .legend .row { display:flex; align-items:center; gap:8px; margin:4px 0; color:var(--text-dim); cursor:pointer; border-radius:6px; padding:1px 2px; transition: color .14s; }
+  .legend .row:hover { color: var(--text); }
+  .legend .row.off { opacity:.35; text-decoration: line-through; }
+  .legend .dot { width:11px; height:11px; border-radius:50%; flex:none; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.5); }
 
-  /* ---------- Hint / status ---------- */
+  .minimap-wrap { padding:6px; }
+  #minimap { display:block; border-radius:8px; cursor:pointer; }
+  .mm-node { }
+  .mm-view { fill: var(--accent-soft); stroke: var(--accent); stroke-width:1.4; }
+
+  .rightdock { position:absolute; right:12px; bottom:12px; z-index:15; display:flex; flex-direction:column; gap:8px; align-items:flex-end; transition: right .34s cubic-bezier(.22,1,.36,1); }
+  aside.open ~ .rightdock { right:364px; }
+  .zoom-ctl { display:flex; flex-direction:column; background:var(--glass); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm); }
+  .zoom-ctl button { width:38px; height:36px; border:none; background:transparent; color:var(--text); font-size:16px; cursor:pointer; display:grid; place-items:center; transition: background .12s; }
+  .zoom-ctl button:hover { background: var(--accent-soft); }
+  .zoom-ctl button + button { border-top:1px solid var(--border); }
   .status {
-    position: absolute; right: 14px; bottom: 14px; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; font-size: 11px;
-    color: var(--text-dim); box-shadow: var(--shadow); z-index: 10; max-width: 260px;
+    background:var(--glass); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--border); border-radius:11px; padding:7px 12px; font-size:11px; color:var(--text-dim);
+    box-shadow:var(--shadow-sm); white-space:nowrap;
   }
-  aside.open ~ .status { right: 354px; }
-  .status b { color: var(--text); }
+  .status b { color:var(--text); font-weight:700; }
 
   .toast {
-    position: absolute; top: 14px; left: 50%; transform: translateX(-50%) translateY(-16px);
-    background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 12.5px;
-    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 30; font-weight: 500;
+    position:absolute; top:70px; left:50%; z-index:40;
+    transform:translateX(-50%) translateY(-14px);
+    background:var(--glass-solid); color:var(--text); padding:10px 18px; border-radius:12px;
+    font-size:12.5px; font-weight:600; box-shadow:var(--shadow); border:1px solid var(--border);
+    opacity:0; pointer-events:none; transition:opacity .22s, transform .22s;
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-  input[type=file] { display: none; }
-  .zoom-ctl { position: absolute; right: 14px; top: 14px; display: flex; flex-direction: column; gap: 6px; z-index: 10; }
-  aside.open ~ .zoom-ctl { right: 354px; }
-  .zoom-ctl .btn { width: 34px; height: 34px; justify-content: center; padding: 0; font-size: 16px; }
+  input[type=file] { display:none; }
+  #nodesG { transition: opacity .5s; }
+
+  @media (max-width: 720px) {
+    .brand small { display:none; }
+    aside { width: calc(100% - 24px); }
+    aside.open ~ .rightdock { right:12px; }
+    .search input { width:96px; }
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="title">🕸️ System Graph <small>社内システム / テーブル / データ連携マップ</small></div>
-    <div class="search">
-      🔍 <input id="search" type="text" placeholder="ノードを検索…" autocomplete="off">
-    </div>
+    <div class="brand"><span class="logo">🕸️</span> System Graph <small>システム / テーブル / データ連携</small></div>
+    <div class="sep"></div>
+    <div class="search">🔍 <input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
     <div class="spacer"></div>
-    <button class="btn" data-add="system"><span class="dot" style="background:var(--sys)"></span>システム</button>
-    <button class="btn" data-add="table"><span class="dot" style="background:var(--tbl)"></span>テーブル</button>
-    <button class="btn" data-add="integration"><span class="dot" style="background:var(--intg)"></span>連携</button>
-    <button class="btn" data-add="external"><span class="dot" style="background:var(--ext)"></span>外部</button>
-    <button class="btn" id="linkBtn">🔗 リンク作成</button>
-    <button class="btn" id="relayoutBtn">🎯 整列</button>
-    <button class="btn" id="exportBtn">⬇ JSON</button>
-    <button class="btn" id="importBtn">⬆ 読込</button>
-    <button class="btn" id="themeBtn">🌓</button>
+    <button class="btn" data-add="system"><span class="swatch" style="background:var(--sys)"></span>システム</button>
+    <button class="btn" data-add="table"><span class="swatch" style="background:var(--tbl)"></span>テーブル</button>
+    <button class="btn" data-add="integration"><span class="swatch" style="background:var(--intg)"></span>連携</button>
+    <button class="btn" data-add="external"><span class="swatch" style="background:var(--ext)"></span>外部</button>
+    <div class="sep"></div>
+    <button class="btn" id="linkBtn">🔗 リンク</button>
+    <button class="btn icon" id="relayoutBtn" title="再整列 (R)">🎯</button>
+    <button class="btn icon" id="exportBtn" title="JSONエクスポート">⬇</button>
+    <button class="btn icon" id="importBtn" title="JSON読込">⬆</button>
+    <button class="btn icon" id="themeBtn" title="テーマ切替">🌓</button>
     <input type="file" id="fileInput" accept="application/json,.json">
   </header>
+
   <main>
     <svg id="graph">
       <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"></path>
+        <radialGradient id="g-system" cx="35%" cy="30%"><stop offset="0%" stop-color="var(--sys-2)"/><stop offset="100%" stop-color="var(--sys)"/></radialGradient>
+        <radialGradient id="g-table" cx="35%" cy="30%"><stop offset="0%" stop-color="var(--tbl-2)"/><stop offset="100%" stop-color="var(--tbl)"/></radialGradient>
+        <radialGradient id="g-integration" cx="35%" cy="30%"><stop offset="0%" stop-color="var(--intg-2)"/><stop offset="100%" stop-color="var(--intg)"/></radialGradient>
+        <radialGradient id="g-external" cx="35%" cy="30%"><stop offset="0%" stop-color="var(--ext-2)"/><stop offset="100%" stop-color="var(--ext)"/></radialGradient>
+        <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.5" r="1.5" fill="var(--grid)"/>
+        </pattern>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/>
         </marker>
-        <marker id="arrow-hl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+        <marker id="arrow-hl" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--edge-hl)"/>
         </marker>
       </defs>
       <g id="viewport">
-        <g id="links"></g>
-        <g id="linkLabels"></g>
-        <g id="nodes"></g>
+        <rect id="bgrect" x="-6000" y="-6000" width="12000" height="12000" fill="url(#dots)"/>
+        <g id="linksG"></g>
+        <g id="flowG"></g>
+        <g id="labelsG"></g>
+        <g id="nodesG"></g>
       </g>
     </svg>
 
-    <div class="zoom-ctl">
-      <button class="btn" id="zoomIn">＋</button>
-      <button class="btn" id="zoomOut">－</button>
-      <button class="btn" id="zoomFit">⊡</button>
+    <div class="rightdock">
+      <div class="status" id="status"></div>
+      <div class="zoom-ctl">
+        <button id="zoomIn" title="ズームイン">＋</button>
+        <button id="zoomOut" title="ズームアウト">－</button>
+        <button id="zoomFit" title="全体表示 (F)">⊡</button>
+      </div>
     </div>
 
-    <div class="legend">
-      <div class="row"><span class="dot round" style="background:var(--sys)"></span> システム</div>
-      <div class="row"><span class="dot" style="background:var(--tbl)"></span> テーブル / データ</div>
-      <div class="row"><span class="dot" style="background:var(--intg);border-radius:50% 50% 50% 0"></span> データ連携 / ジョブ</div>
-      <div class="row"><span class="dot round" style="background:var(--ext)"></span> 外部サービス</div>
+    <div class="dock">
+      <div class="minimap-wrap"><svg id="minimap" width="176" height="112"></svg></div>
+      <div class="legend" id="legend">
+        <div class="row" data-t="system"><span class="dot" style="background:var(--sys)"></span> システム</div>
+        <div class="row" data-t="table"><span class="dot" style="background:var(--tbl)"></span> テーブル / データ</div>
+        <div class="row" data-t="integration"><span class="dot" style="background:var(--intg)"></span> データ連携 / ジョブ</div>
+        <div class="row" data-t="external"><span class="dot" style="background:var(--ext)"></span> 外部サービス</div>
+      </div>
     </div>
 
-    <div class="status" id="status"></div>
-
-    <!-- Inspector -->
     <aside id="inspector">
       <div class="head">
-        <span class="type-chip" id="insChip">システム</span>
-        <span id="insTitle" style="font-weight:700;font-size:13px;"></span>
+        <div class="big-icon" id="insIcon">🖥️</div>
+        <div class="meta">
+          <h3 id="insTitle">—</h3>
+          <div class="type-chip" id="insChip">システム</div>
+        </div>
         <button class="close" id="insClose">×</button>
       </div>
       <div class="body">
@@ -238,10 +328,11 @@
         <label>所有者 / 担当</label>
         <input id="fOwner" type="text" placeholder="例: 情シス / 営業部">
         <label>技術スタック / DB</label>
-        <input id="fTech" type="text" placeholder="例: PostgreSQL, Salesforce, Python">
+        <input id="fTech" type="text" placeholder="例: PostgreSQL, Salesforce">
         <label>タグ（カンマ区切り）</label>
         <input id="fTags" type="text" placeholder="例: 基幹, 顧客, バッチ">
-        <label>接続 <small style="color:var(--text-dim)">（クリックで移動）</small></label>
+        <div class="tagbox" id="tagbox"></div>
+        <label>接続 <span style="text-transform:none;font-weight:500;color:var(--text-dim)">（クリックで移動）</span></label>
         <div class="conn-list" id="connList"></div>
       </div>
       <div class="aside-actions">
@@ -256,563 +347,467 @@
 <script>
 "use strict";
 (function () {
-  // ---------------- Sample seed data ----------------
+  // ---------------- Sample seed ----------------
   const SEED = {
     nodes: [
-      { id: "sfdc",     type: "system",      label: "Salesforce",         desc: "営業支援・顧客管理の基幹SFA/CRM", owner: "営業企画", tech: "Salesforce Sales Cloud" },
-      { id: "kikan",    type: "system",      label: "基幹システム",        desc: "受注・請求・在庫を管理する社内基幹", owner: "情シス", tech: "Oracle / Java" },
-      { id: "ma",       type: "system",      label: "MAツール",            desc: "メール配信・リード育成", owner: "マーケ", tech: "Marketo" },
-      { id: "bi",       type: "system",      label: "BI / DWH",           desc: "全社データ分析基盤", owner: "情シス", tech: "BigQuery / Looker" },
-      { id: "t_account",type: "table",       label: "Account",            desc: "取引先マスタ", owner: "営業企画", tech: "Salesforce" },
-      { id: "t_opp",    type: "table",       label: "Opportunity",        desc: "商談データ", owner: "営業企画", tech: "Salesforce" },
-      { id: "t_order",  type: "table",       label: "受注テーブル",        desc: "受注明細", owner: "情シス", tech: "Oracle" },
-      { id: "t_lead",   type: "table",       label: "Lead",               desc: "見込み客", owner: "マーケ", tech: "Salesforce" },
-      { id: "etl_night",type: "integration", label: "夜間ETLバッチ",       desc: "基幹→DWH 日次連携", owner: "情シス", tech: "Airflow / Python" },
-      { id: "sync_sf",  type: "integration", label: "SF連携ジョブ",        desc: "受注実績をSalesforceへ書き戻し", owner: "情シス", tech: "SFDMU / REST API" },
-      { id: "ma_sync",  type: "integration", label: "MA同期",             desc: "LeadをMAへ双方向同期", owner: "マーケ", tech: "Marketo API" },
-      { id: "ext_free", type: "external",    label: "freee 会計",         desc: "外部会計SaaS", owner: "経理", tech: "freee API" },
+      { id:"sfdc",  type:"system", label:"Salesforce", desc:"営業支援・顧客管理の基幹SFA/CRM", owner:"営業企画", tech:"Sales Cloud", tags:["基幹","顧客"] },
+      { id:"kikan", type:"system", label:"基幹システム", desc:"受注・請求・在庫を管理", owner:"情シス", tech:"Oracle / Java", tags:["基幹"] },
+      { id:"ma",    type:"system", label:"MAツール", desc:"メール配信・リード育成", owner:"マーケ", tech:"Marketo", tags:["マーケ"] },
+      { id:"bi",    type:"system", label:"BI / DWH", desc:"全社データ分析基盤", owner:"情シス", tech:"BigQuery / Looker", tags:["分析"] },
+      { id:"t_account", type:"table", label:"Account", desc:"取引先マスタ", owner:"営業企画", tech:"Salesforce" },
+      { id:"t_opp",  type:"table", label:"Opportunity", desc:"商談データ", owner:"営業企画", tech:"Salesforce" },
+      { id:"t_order",type:"table", label:"受注テーブル", desc:"受注明細", owner:"情シス", tech:"Oracle" },
+      { id:"t_lead", type:"table", label:"Lead", desc:"見込み客", owner:"マーケ", tech:"Salesforce" },
+      { id:"etl_night", type:"integration", label:"夜間ETLバッチ", desc:"基幹→DWH 日次連携", owner:"情シス", tech:"Airflow / Python", tags:["バッチ"] },
+      { id:"sync_sf",  type:"integration", label:"SF連携ジョブ", desc:"受注実績をSalesforceへ書戻し", owner:"情シス", tech:"SFDMU / REST" },
+      { id:"ma_sync",  type:"integration", label:"MA同期", desc:"LeadをMAへ双方向同期", owner:"マーケ", tech:"Marketo API" },
+      { id:"ext_free", type:"external", label:"freee 会計", desc:"外部会計SaaS", owner:"経理", tech:"freee API", tags:["外部"] },
     ],
     edges: [
-      { id:"e1", source:"sfdc",   target:"t_account", label:"保持" },
-      { id:"e2", source:"sfdc",   target:"t_opp",     label:"保持" },
-      { id:"e3", source:"sfdc",   target:"t_lead",    label:"保持" },
-      { id:"e4", source:"kikan",  target:"t_order",   label:"保持" },
-      { id:"e5", source:"etl_night", target:"t_order", label:"抽出" },
-      { id:"e6", source:"etl_night", target:"bi",     label:"ロード" },
-      { id:"e7", source:"t_opp",  target:"sync_sf",   label:"参照" },
-      { id:"e8", source:"sync_sf",target:"t_order",   label:"更新" },
-      { id:"e9", source:"ma_sync",target:"t_lead",    label:"同期" },
-      { id:"e10",source:"ma",     target:"ma_sync",   label:"実行" },
-      { id:"e11",source:"kikan",  target:"ext_free",  label:"仕訳連携" },
-      { id:"e12",source:"bi",     target:"t_account", label:"分析" },
+      {id:"e1",source:"sfdc",target:"t_account",label:"保持"},
+      {id:"e2",source:"sfdc",target:"t_opp",label:"保持"},
+      {id:"e3",source:"sfdc",target:"t_lead",label:"保持"},
+      {id:"e4",source:"kikan",target:"t_order",label:"保持"},
+      {id:"e5",source:"etl_night",target:"t_order",label:"抽出"},
+      {id:"e6",source:"etl_night",target:"bi",label:"ロード"},
+      {id:"e7",source:"t_opp",target:"sync_sf",label:"参照"},
+      {id:"e8",source:"sync_sf",target:"t_order",label:"更新"},
+      {id:"e9",source:"ma_sync",target:"t_lead",label:"同期"},
+      {id:"e10",source:"ma",target:"ma_sync",label:"実行"},
+      {id:"e11",source:"kikan",target:"ext_free",label:"仕訳連携"},
+      {id:"e12",source:"bi",target:"t_account",label:"分析"},
     ]
   };
-
   const TYPE = {
-    system:      { color: "var(--sys)",  chip: "システム",         label: "システム" },
-    table:       { color: "var(--tbl)",  chip: "テーブル",         label: "テーブル / データ" },
-    integration: { color: "var(--intg)", chip: "データ連携",       label: "データ連携 / ジョブ" },
-    external:    { color: "var(--ext)",  chip: "外部サービス",     label: "外部サービス" },
+    system:      { chip:"システム",         icon:"🖥️", color:"var(--sys)",  grad:"url(#g-system)" },
+    table:       { chip:"テーブル / データ", icon:"🗄️", color:"var(--tbl)",  grad:"url(#g-table)" },
+    integration: { chip:"データ連携 / ジョブ",icon:"🔄", color:"var(--intg)", grad:"url(#g-integration)" },
+    external:    { chip:"外部サービス",       icon:"☁️", color:"var(--ext)",  grad:"url(#g-external)" },
   };
   const STORE_KEY = "systemGraph.v1";
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const $ = (s) => document.querySelector(s);
 
   // ---------------- State ----------------
   let data = load();
-  let selectedId = null;
-  let linkMode = false;
-  let linkSource = null;
-  const view = { x: 0, y: 0, k: 1 };
+  let selectedId = null, hoverId = null;
+  let linkMode = false, linkSource = null;
+  const hidden = new Set();                 // hidden types (legend toggle)
+  const view = { x:0, y:0, k:1 };
 
-  const SVG_NS = "http://www.w3.org/2000/svg";
-  const $ = (s) => document.querySelector(s);
-  const svg = $("#graph");
-  const gViewport = $("#viewport");
-  const gNodes = $("#nodes");
-  const gLinks = $("#links");
-  const gLabels = $("#linkLabels");
+  const svg = $("#graph"), gViewport = $("#viewport");
+  const gNodes = $("#nodesG"), gLinks = $("#linksG"), gLabels = $("#labelsG"), gFlow = $("#flowG");
 
   // ---------------- Persistence ----------------
   function load() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (raw) return normalize(JSON.parse(raw));
-    } catch (e) {}
+    try { const raw = localStorage.getItem(STORE_KEY); if (raw) return normalize(JSON.parse(raw)); } catch(e){}
     return normalize(JSON.parse(JSON.stringify(SEED)));
   }
   function normalize(d) {
-    d.nodes = (d.nodes || []).map(n => ({
-      tags: [], desc: "", owner: "", tech: "", ...n,
-      x: typeof n.x === "number" ? n.x : (Math.cos(Math.random()*6.28)*220),
-      y: typeof n.y === "number" ? n.y : (Math.sin(Math.random()*6.28)*220),
-      vx: 0, vy: 0
+    d.nodes = (d.nodes||[]).map(n => ({
+      tags:[], desc:"", owner:"", tech:"", ...n,
+      x: typeof n.x==="number"? n.x : Math.cos(Math.random()*6.28)*230,
+      y: typeof n.y==="number"? n.y : Math.sin(Math.random()*6.28)*230,
+      vx:0, vy:0
     }));
-    d.edges = (d.edges || []).filter(e =>
-      d.nodes.some(n=>n.id===e.source) && d.nodes.some(n=>n.id===e.target)
-    );
+    const ids = new Set(d.nodes.map(n=>n.id));
+    d.edges = (d.edges||[]).filter(e => ids.has(e.source) && ids.has(e.target));
     return d;
   }
   function save() {
-    const out = {
-      nodes: data.nodes.map(({vx,vy,fx,fy,...rest}) => ({...rest, x:Math.round(rest.x), y:Math.round(rest.y)})),
-      edges: data.edges
-    };
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(out)); } catch(e) {}
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        nodes: data.nodes.map(({vx,vy,fx,fy,...r}) => ({...r, x:Math.round(r.x), y:Math.round(r.y)})),
+        edges: data.edges
+      }));
+    } catch(e){}
   }
 
-  // ---------------- Force simulation ----------------
+  // ---------------- Derived ----------------
+  let byId = {}, degree = {};
+  function recompute() {
+    byId = Object.fromEntries(data.nodes.map(n=>[n.id,n]));
+    degree = {};
+    for (const n of data.nodes) degree[n.id] = 0;
+    for (const e of data.edges) { degree[e.source]=(degree[e.source]||0)+1; degree[e.target]=(degree[e.target]||0)+1; }
+  }
+  function radius(n) { return 15 + Math.min(degree[n.id]||0, 9) * 2.1; }
+  const isHidden = (n) => hidden.has(n.type);
+
+  // ---------------- Physics ----------------
   let alpha = 1;
-  const nodeById = () => Object.fromEntries(data.nodes.map(n => [n.id, n]));
-
-  function tick() {
-    if (alpha < 0.005) { requestAnimationFrame(tick); return; }
-    alpha *= 0.985;
-    const byId = nodeById();
+  function reheat(a=0.9){ alpha = Math.max(alpha, a); }
+  function physics() {
+    if (alpha < 0.004) return;
+    alpha *= 0.986;
     const N = data.nodes;
-
-    // repulsion (charge)
-    for (let i = 0; i < N.length; i++) {
-      for (let j = i + 1; j < N.length; j++) {
-        const a = N[i], b = N[j];
-        let dx = a.x - b.x, dy = a.y - b.y;
-        let d2 = dx*dx + dy*dy || 0.01;
-        let d = Math.sqrt(d2);
-        const rep = 5200 / d2;
-        const fx = (dx/d)*rep, fy = (dy/d)*rep;
-        a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+    for (let i=0;i<N.length;i++){
+      for (let j=i+1;j<N.length;j++){
+        const a=N[i], b=N[j];
+        let dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy||0.01, d=Math.sqrt(d2);
+        const rep = 6200/d2;
+        const fx=dx/d*rep, fy=dy/d*rep;
+        a.vx+=fx; a.vy+=fy; b.vx-=fx; b.vy-=fy;
       }
     }
-    // link springs
-    const LINK = 130;
-    for (const e of data.edges) {
-      const a = byId[e.source], b = byId[e.target];
-      if (!a || !b) continue;
-      let dx = b.x - a.x, dy = b.y - a.y;
-      let d = Math.sqrt(dx*dx + dy*dy) || 0.01;
-      const f = (d - LINK) * 0.03;
-      const fx = (dx/d)*f, fy = (dy/d)*f;
-      a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+    const L=135;
+    for (const e of data.edges){
+      const a=byId[e.source], b=byId[e.target]; if(!a||!b) continue;
+      let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||0.01;
+      const f=(d-L)*0.032, fx=dx/d*f, fy=dy/d*f;
+      a.vx+=fx; a.vy+=fy; b.vx-=fx; b.vy-=fy;
     }
-    // centering + integrate
-    for (const n of N) {
-      n.vx += (-n.x) * 0.002;
-      n.vy += (-n.y) * 0.002;
-      if (n.fx != null) { n.x = n.fx; n.y = n.fy; n.vx = 0; n.vy = 0; continue; }
-      n.vx *= 0.82; n.vy *= 0.82;
-      n.x += n.vx * alpha * 1.4;
-      n.y += n.vy * alpha * 1.4;
+    for (const n of N){
+      n.vx += -n.x*0.0022; n.vy += -n.y*0.0022;
+      if (n.fx!=null){ n.x=n.fx; n.y=n.fy; n.vx=0; n.vy=0; continue; }
+      n.vx*=0.83; n.vy*=0.83;
+      n.x += n.vx*alpha*1.5; n.y += n.vy*alpha*1.5;
     }
-    positionNodes();
-    requestAnimationFrame(tick);
   }
-  function reheat(a = 0.9) { alpha = a; }
 
   // ---------------- Rendering ----------------
-  function el(tag, attrs, parent) {
-    const e = document.createElementNS(SVG_NS, tag);
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(e);
-    return e;
-  }
+  function el(tag, attrs, parent){ const e=document.createElementNS(SVG_NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(parent) parent.appendChild(e); return e; }
 
   function render() {
-    gNodes.innerHTML = ""; gLinks.innerHTML = ""; gLabels.innerHTML = "";
+    recompute();
+    gNodes.innerHTML=""; gLinks.innerHTML=""; gLabels.innerHTML=""; gFlow.innerHTML="";
 
     for (const e of data.edges) {
-      const path = el("path", { class: "link", "marker-end": "url(#arrow)", "data-edge": e.id }, gLinks);
-      path._edge = e;
-      const lbl = el("text", { class: "link-label", "text-anchor": "middle", "data-edge": e.id }, gLabels);
-      lbl.textContent = e.label || "";
-      lbl._edge = e;
+      const a=byId[e.source], b=byId[e.target];
+      const hide = a && b && (isHidden(a)||isHidden(b));
+      const p = el("path",{class:"link","marker-end":"url(#arrow)","data-edge":e.id}, gLinks);
+      p._edge=e; if(hide) p.style.display="none";
+      const lbl = el("text",{class:"link-label","text-anchor":"middle"}, gLabels);
+      lbl.textContent = e.label||""; lbl._edge=e; if(hide) lbl.style.display="none";
+      const fc = el("circle",{class:"flow-dot", r:2.6}, gFlow);
+      const wrap = el("g",{class:"flow"}, gFlow); wrap.appendChild(fc);
+      fc._edge=e; fc._t=Math.random(); fc._path=p; if(hide) wrap.style.display="none"; wrap._edge=e;
     }
 
     for (const n of data.nodes) {
-      const g = el("g", { class: "node", "data-id": n.id }, gNodes);
-      g._node = n;
-      const t = TYPE[n.type] || TYPE.system;
-      // shape by type
-      if (n.type === "table") {
-        el("rect", { class:"ring", x:-34, y:-20, width:68, height:40, rx:7 }, g);
-        el("rect", { class:"shape", x:-30, y:-16, width:60, height:32, rx:6, fill:t.color, stroke:"#fff", "fill-opacity":".92" }, g);
-      } else if (n.type === "integration") {
-        el("path", { class:"ring", d: diamond(26) }, g);
-        el("path", { class:"shape", d: diamond(22), fill:t.color, stroke:"#fff" }, g);
-      } else {
-        el("circle", { class:"ring", r: 26 }, g);
-        el("circle", { class:"shape", r: 22, fill:t.color, stroke:"#fff" }, g);
-      }
-      const lab = el("text", { class:"label", "text-anchor":"middle", y: n.type==="table"? 4 : 40 }, g);
-      lab.textContent = n.label || "(無題)";
-      if (n.type !== "table") lab.setAttribute("y", 42);
-      else lab.setAttribute("y", 4);
-      // sub label (owner) below for non-table
-      if (n.type !== "table" && n.owner) {
-        const sub = el("text", { class:"sub", "text-anchor":"middle", y: 55 }, g);
-        sub.textContent = n.owner;
-      }
-      attachNodeEvents(g, n);
+      const g = el("g",{class:"node","data-id":n.id}, gNodes);
+      g._node=n; if(isHidden(n)) g.style.display="none";
+      const t = TYPE[n.type]||TYPE.system;
+      const r = radius(n);
+      el("circle",{class:"halo", r:r+7, fill:"none", stroke:t.color, "stroke-width":2.5, "stroke-opacity":.55}, g);
+      el("circle",{class:"core", r:r, fill:t.grad}, g);
+      if (n.type==="external") el("circle",{class:"ext-ring", r:r+4, stroke:t.color}, g);
+      const ic = el("text",{class:"icon"}, g); ic.textContent = t.icon; ic.setAttribute("font-size", Math.round(r*0.9));
+      const lab = el("text",{class:"label", y:r+15}, g); lab.textContent = n.label||"(無題)";
+      if (n.owner){ const sub=el("text",{class:"sub", y:r+27}, g); sub.textContent=n.owner; }
+      attachNode(g, n);
     }
-    positionNodes();
-    updateSelectionVisuals();
-    updateStatus();
-  }
-  function diamond(r) { return `M0,${-r} L${r},0 L0,${r} L${-r},0 Z`; }
-
-  function positionNodes() {
-    const byId = nodeById();
-    for (const g of gNodes.children) {
-      const n = g._node;
-      g.setAttribute("transform", `translate(${n.x},${n.y})`);
-    }
-    for (const p of gLinks.children) {
-      const e = p._edge;
-      const a = byId[e.source], b = byId[e.target];
-      if (!a || !b) continue;
-      // shorten to node edge
-      const dx = b.x - a.x, dy = b.y - a.y;
-      const d = Math.sqrt(dx*dx+dy*dy) || 1;
-      const rA = nodeRadius(a), rB = nodeRadius(b);
-      const ax = a.x + dx/d*rA, ay = a.y + dy/d*rA;
-      const bx = b.x - dx/d*(rB+7), by = b.y - dy/d*(rB+7);
-      p.setAttribute("d", `M${ax},${ay} L${bx},${by}`);
-    }
-    for (const l of gLabels.children) {
-      const e = l._edge;
-      const a = byId[e.source], b = byId[e.target];
-      if (!a || !b) continue;
-      l.setAttribute("x", (a.x+b.x)/2);
-      l.setAttribute("y", (a.y+b.y)/2 - 4);
-    }
-  }
-  function nodeRadius(n) { return n.type === "table" ? 32 : n.type === "integration" ? 24 : 24; }
-
-  function applyViewport() {
-    gViewport.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+    positionAll(); updateHighlight(); updateStatus(); renderMinimap();
+    gNodes.style.opacity=0; requestAnimationFrame(()=> gNodes.style.opacity=1);
   }
 
-  // ---------------- Selection / Inspector ----------------
-  function select(id) {
-    selectedId = id;
-    updateSelectionVisuals();
-    if (id) openInspector(id); else closeInspector();
+  function positionAll(){
+    for (const g of gNodes.children){ const n=g._node; g.setAttribute("transform",`translate(${n.x},${n.y})`); }
+    for (const p of gLinks.children){
+      const e=p._edge, a=byId[e.source], b=byId[e.target]; if(!a||!b) continue;
+      p.setAttribute("d", edgePath(a,b));
+    }
+    for (const l of gLabels.children){
+      const e=l._edge, a=byId[e.source], b=byId[e.target]; if(!a||!b) continue;
+      const c = ctrl(a,b);
+      l.setAttribute("x", (a.x/4 + c.x/2 + b.x/4)); // approx midpoint of quad bezier
+      l.setAttribute("y", (a.y/4 + c.y/2 + b.y/4) - 3);
+    }
   }
-  function updateSelectionVisuals() {
+  function ctrl(a,b){
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    let dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+    const curv = Math.min(d*0.14, 42);
+    return { x: mx + (-dy/d)*curv, y: my + (dx/d)*curv };
+  }
+  function edgePath(a,b){
+    const c=ctrl(a,b), ra=radius(a), rb=radius(b);
+    let d1x=c.x-a.x, d1y=c.y-a.y, n1=Math.sqrt(d1x*d1x+d1y*d1y)||1;
+    let d2x=b.x-c.x, d2y=b.y-c.y, n2=Math.sqrt(d2x*d2x+d2y*d2y)||1;
+    const sx=a.x+d1x/n1*ra, sy=a.y+d1y/n1*ra;
+    const tx=b.x-d2x/n2*(rb+7), ty=b.y-d2y/n2*(rb+7);
+    return `M${sx.toFixed(1)},${sy.toFixed(1)} Q${c.x.toFixed(1)},${c.y.toFixed(1)} ${tx.toFixed(1)},${ty.toFixed(1)}`;
+  }
+
+  function applyViewport(){ gViewport.setAttribute("transform",`translate(${view.x},${view.y}) scale(${view.k})`); renderMinimap(); }
+
+  // ---------------- Flow particles ----------------
+  function animateFlow(){
+    const speed = 0.0016;
+    for (const wrap of gFlow.children){
+      const fc = wrap.firstChild; if(!fc) continue;
+      const e = fc._edge, a=byId[e.source], b=byId[e.target];
+      if(!a||!b || wrap.style.display==="none"){ fc.setAttribute("opacity",0); continue; }
+      const on = selectedId && (e.source===selectedId || e.target===selectedId);
+      const dim = selectedId && !on;
+      fc._t += speed * (on?2.4:1); if(fc._t>1) fc._t-=1;
+      let pt;
+      try { const len=fc._path.getTotalLength(); pt=fc._path.getPointAtLength(len*fc._t); }
+      catch(err){ continue; }
+      fc.setAttribute("cx", pt.x); fc.setAttribute("cy", pt.y);
+      fc.setAttribute("opacity", dim?0.06 : on?0.95 : 0.5);
+      fc.setAttribute("fill", on? "var(--edge-hl)" : "var(--edge)");
+      fc.setAttribute("r", on?3.4:2.6);
+    }
+  }
+
+  // ---------------- Highlight ----------------
+  function updateHighlight(){
+    const focus = selectedId || hoverId;
     const neigh = new Set();
-    if (selectedId) {
-      neigh.add(selectedId);
-      for (const e of data.edges) {
-        if (e.source === selectedId) neigh.add(e.target);
-        if (e.target === selectedId) neigh.add(e.source);
-      }
+    if (focus){ neigh.add(focus); for(const e of data.edges){ if(e.source===focus)neigh.add(e.target); if(e.target===focus)neigh.add(e.source);} }
+    for (const g of gNodes.children){
+      const id=g._node.id;
+      g.classList.toggle("selected", id===selectedId);
+      g.classList.toggle("hover", id===hoverId);
+      g.classList.toggle("dim", !!focus && !neigh.has(id));
     }
-    for (const g of gNodes.children) {
-      g.classList.toggle("selected", g._node.id === selectedId);
-      g.classList.toggle("dim", !!selectedId && !neigh.has(g._node.id));
-    }
-    for (const p of gLinks.children) {
-      const e = p._edge;
-      const on = selectedId && (e.source === selectedId || e.target === selectedId);
+    for (const p of gLinks.children){
+      const e=p._edge, on = focus && (e.source===focus||e.target===focus);
       p.classList.toggle("hl", !!on);
-      p.setAttribute("marker-end", on ? "url(#arrow-hl)" : "url(#arrow)");
+      p.classList.toggle("faded", !!focus && !on);
+      p.setAttribute("marker-end", on?"url(#arrow-hl)":"url(#arrow)");
+    }
+    for (const l of gLabels.children){
+      const e=l._edge, on = focus && (e.source===focus||e.target===focus);
+      l.classList.toggle("faded", !!focus && !on);
     }
   }
 
+  // ---------------- Inspector ----------------
   const ins = $("#inspector");
-  function openInspector(id) {
-    const n = data.nodes.find(x => x.id === id);
-    if (!n) return;
+  function select(id){ selectedId=id; updateHighlight(); if(id) openInspector(id); else ins.classList.remove("open"); }
+  function openInspector(id){
+    const n = byId[id]; if(!n) return;
     ins.classList.add("open");
-    const t = TYPE[n.type] || TYPE.system;
+    const t = TYPE[n.type]||TYPE.system;
+    $("#insIcon").textContent = t.icon;
+    $("#insIcon").style.background = t.color;
     $("#insChip").textContent = t.chip;
-    $("#insChip").style.background = t.color;
     $("#insTitle").textContent = n.label;
-    $("#fName").value = n.label || "";
-    $("#fType").value = n.type;
-    $("#fDesc").value = n.desc || "";
-    $("#fOwner").value = n.owner || "";
-    $("#fTech").value = n.tech || "";
-    $("#fTags").value = (n.tags || []).join(", ");
-    renderConnections(n);
+    $("#fName").value=n.label||""; $("#fType").value=n.type; $("#fDesc").value=n.desc||"";
+    $("#fOwner").value=n.owner||""; $("#fTech").value=n.tech||""; $("#fTags").value=(n.tags||[]).join(", ");
+    renderTags(n); renderConns(n);
   }
-  function closeInspector() { ins.classList.remove("open"); }
-
-  function renderConnections(n) {
-    const list = $("#connList");
-    list.innerHTML = "";
-    const byId = nodeById();
-    const conns = [];
-    for (const e of data.edges) {
-      if (e.source === n.id) conns.push({ other: byId[e.target], dir: "→", label: e.label });
-      else if (e.target === n.id) conns.push({ other: byId[e.source], dir: "←", label: e.label });
+  function renderTags(n){
+    const box=$("#tagbox"); box.innerHTML="";
+    for(const tg of (n.tags||[])){ const s=document.createElement("span"); s.className="tag"; s.textContent="#"+tg; box.appendChild(s); }
+  }
+  function renderConns(n){
+    const list=$("#connList"); list.innerHTML="";
+    const conns=[];
+    for(const e of data.edges){
+      if(e.source===n.id) conns.push({o:byId[e.target],dir:"→",l:e.label});
+      else if(e.target===n.id) conns.push({o:byId[e.source],dir:"←",l:e.label});
     }
-    if (!conns.length) { list.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">接続なし</div>'; return; }
-    for (const c of conns) {
-      if (!c.other) continue;
-      const d = document.createElement("div");
-      d.className = "conn";
-      d.innerHTML = `<span class="arrow">${c.dir}</span>
-        <span class="dot" style="width:9px;height:9px;border-radius:50%;background:${(TYPE[c.other.type]||TYPE.system).color}"></span>
-        <span>${escapeHtml(c.other.label)}</span><small>${escapeHtml(c.label||"")}</small>`;
-      d.onclick = () => { select(c.other.id); centerOn(c.other); };
+    if(!conns.length){ list.innerHTML='<div style="font-size:12px;color:var(--text-dim)">接続なし</div>'; return; }
+    for(const c of conns){ if(!c.o) continue;
+      const d=document.createElement("div"); d.className="conn";
+      d.innerHTML=`<span class="arrow">${c.dir}</span><span class="cdot" style="background:${(TYPE[c.o.type]||TYPE.system).color}"></span><span>${esc(c.o.label)}</span><small>${esc(c.l||"")}</small>`;
+      d.onclick=()=>{ select(c.o.id); centerOn(c.o); };
       list.appendChild(d);
     }
   }
-  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
 
-  // live editing
-  function bindField(sel, apply) {
-    $(sel).addEventListener("input", () => {
-      const n = data.nodes.find(x => x.id === selectedId);
-      if (!n) return;
-      apply(n, $(sel).value);
-      save();
+  function bindField(sel, apply){
+    $(sel).addEventListener("input", ()=>{ const n=byId[selectedId]; if(!n) return; apply(n,$(sel).value); save(); });
+  }
+  bindField("#fName",(n,v)=>{ n.label=v; $("#insTitle").textContent=v; updLabel(n); });
+  bindField("#fDesc",(n,v)=> n.desc=v);
+  bindField("#fOwner",(n,v)=>{ n.owner=v; updLabel(n); });
+  bindField("#fTech",(n,v)=> n.tech=v);
+  bindField("#fTags",(n,v)=>{ n.tags=v.split(",").map(s=>s.trim()).filter(Boolean); renderTags(n); });
+  $("#fType").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; n.type=$("#fType").value; save(); render(); openInspector(n.id); });
+  function updLabel(n){
+    const g=[...gNodes.children].find(x=>x._node.id===n.id); if(!g) return;
+    const lab=g.querySelector("text.label"); if(lab) lab.textContent=n.label||"(無題)";
+    let sub=g.querySelector("text.sub");
+    if(n.owner){ if(!sub){ sub=el("text",{class:"sub",y:radius(n)+27},g); } sub.textContent=n.owner; }
+    else if(sub) sub.remove();
+  }
+  $("#insClose").onclick=()=>select(null);
+  $("#delBtn").onclick=()=>{ if(!selectedId) return; if(!confirm("このノードと接続を削除しますか?")) return;
+    data.edges=data.edges.filter(e=>e.source!==selectedId&&e.target!==selectedId);
+    data.nodes=data.nodes.filter(n=>n.id!==selectedId);
+    select(null); save(); render(); reheat(.3); toast("削除しました"); };
+  $("#focusBtn").onclick=()=>{ const n=byId[selectedId]; if(n) centerOn(n); };
+
+  // ---------------- Node interaction ----------------
+  function attachNode(g,n){
+    let dragging=false, moved=false, sx, sy;
+    g.addEventListener("pointerenter",()=>{ if(!dragging){ hoverId=n.id; updateHighlight(); } });
+    g.addEventListener("pointerleave",()=>{ if(!dragging){ hoverId=null; updateHighlight(); } });
+    g.addEventListener("pointerdown",(ev)=>{
+      ev.stopPropagation(); if(linkMode) return;
+      dragging=true; moved=false; sx=ev.clientX; sy=ev.clientY;
+      g.setPointerCapture(ev.pointerId); n.fx=n.x; n.fy=n.y; reheat(.28);
+    });
+    g.addEventListener("pointermove",(ev)=>{
+      if(!dragging) return;
+      if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3) moved=true;
+      const p=toWorld(ev.clientX,ev.clientY); n.fx=p.x; n.fy=p.y; n.x=p.x; n.y=p.y;
+      positionAll(); renderMinimap();
+    });
+    g.addEventListener("pointerup",(ev)=>{
+      dragging=false; n.fx=null; n.fy=null;
+      if(!moved) nodeClick(n); else { save(); reheat(.12); }
     });
   }
-  bindField("#fName", (n,v) => { n.label = v; $("#insTitle").textContent = v; updateNodeLabel(n); });
-  bindField("#fDesc", (n,v) => n.desc = v);
-  bindField("#fOwner",(n,v) => { n.owner = v; updateNodeLabel(n); });
-  bindField("#fTech", (n,v) => n.tech = v);
-  bindField("#fTags", (n,v) => n.tags = v.split(",").map(s=>s.trim()).filter(Boolean));
-  $("#fType").addEventListener("change", () => {
-    const n = data.nodes.find(x => x.id === selectedId);
-    if (!n) return;
-    n.type = $("#fType").value;
-    save(); render(); openInspector(n.id);
-  });
-  function updateNodeLabel(n) {
-    const g = [...gNodes.children].find(x => x._node.id === n.id);
-    if (!g) return;
-    const lab = g.querySelector("text.label");
-    if (lab) lab.textContent = n.label || "(無題)";
-    const sub = g.querySelector("text.sub");
-    if (sub) sub.textContent = n.owner || "";
-  }
-
-  $("#insClose").onclick = () => select(null);
-  $("#delBtn").onclick = () => {
-    if (!selectedId) return;
-    if (!confirm("このノードと接続を削除しますか?")) return;
-    data.edges = data.edges.filter(e => e.source !== selectedId && e.target !== selectedId);
-    data.nodes = data.nodes.filter(n => n.id !== selectedId);
-    select(null); save(); render(); toast("削除しました");
-  };
-  $("#focusBtn").onclick = () => {
-    const n = data.nodes.find(x => x.id === selectedId);
-    if (n) centerOn(n);
-  };
-
-  // ---------------- Node interaction (drag / click / link) ----------------
-  function attachNodeEvents(g, n) {
-    let moved = false, startX, startY, dragging = false;
-    g.addEventListener("pointerdown", (ev) => {
-      ev.stopPropagation();
-      if (linkMode) return;
-      dragging = true; moved = false;
-      startX = ev.clientX; startY = ev.clientY;
-      g.setPointerCapture(ev.pointerId);
-      n.fx = n.x; n.fy = n.y;
-      reheat(0.3);
-    });
-    g.addEventListener("pointermove", (ev) => {
-      if (!dragging) return;
-      if (Math.abs(ev.clientX-startX) + Math.abs(ev.clientY-startY) > 3) moved = true;
-      const pt = toWorld(ev.clientX, ev.clientY);
-      n.fx = pt.x; n.fy = pt.y; n.x = pt.x; n.y = pt.y;
-      positionNodes();
-    });
-    g.addEventListener("pointerup", (ev) => {
-      dragging = false;
-      n.fx = null; n.fy = null;
-      if (!moved) handleNodeClick(n);
-      else { save(); reheat(0.15); }
-    });
-  }
-  function handleNodeClick(n) {
-    if (linkMode) {
-      if (!linkSource) { linkSource = n.id; toast("リンク元: " + n.label + " → 対象をクリック"); highlightSource(); }
-      else if (linkSource === n.id) { toast("同じノードです"); }
-      else { createEdge(linkSource, n.id); linkSource = null; setLinkMode(false); }
+  function nodeClick(n){
+    if(linkMode){
+      if(!linkSource){ linkSource=n.id; toast("元: "+n.label+" → 対象をクリック"); markSource(); }
+      else if(linkSource===n.id){ toast("同じノードです"); }
+      else { createEdge(linkSource,n.id); linkSource=null; setLinkMode(false); }
       return;
     }
     select(n.id);
   }
-  function highlightSource() {
-    for (const g of gNodes.children) g.classList.toggle("selected", g._node.id === linkSource);
-  }
-  function createEdge(source, target) {
-    if (data.edges.some(e => e.source===source && e.target===target)) { toast("既に接続されています"); return; }
-    const label = prompt("接続ラベル（データフローの内容など）", "連携") ?? "";
-    data.edges.push({ id: "e"+Date.now(), source, target, label });
-    save(); render(); reheat(0.3); toast("リンクを作成しました");
+  function markSource(){ for(const g of gNodes.children) g.classList.toggle("selected", g._node.id===linkSource); }
+  function createEdge(s,t){
+    if(data.edges.some(e=>e.source===s&&e.target===t)){ toast("既に接続されています"); return; }
+    const label = prompt("接続ラベル（データの流れ・内容など）","連携") ?? "";
+    data.edges.push({id:"e"+Date.now(), source:s, target:t, label});
+    save(); render(); reheat(.3); toast("リンクを作成しました");
   }
 
   // ---------------- Pan / Zoom ----------------
-  let panning = false, panStart;
-  svg.addEventListener("pointerdown", (ev) => {
-    if (ev.target.closest(".node")) return;
-    panning = true; svg.classList.add("panning");
-    panStart = { x: ev.clientX - view.x, y: ev.clientY - view.y };
-    svg.setPointerCapture(ev.pointerId);
-    if (!linkMode) select(null);
+  let panning=false, ps;
+  svg.addEventListener("pointerdown",(ev)=>{
+    if(ev.target.closest(".node")) return;
+    panning=true; svg.classList.add("panning"); ps={x:ev.clientX-view.x,y:ev.clientY-view.y};
+    svg.setPointerCapture(ev.pointerId); if(!linkMode) select(null);
   });
-  svg.addEventListener("pointermove", (ev) => {
-    if (!panning) return;
-    view.x = ev.clientX - panStart.x;
-    view.y = ev.clientY - panStart.y;
-    applyViewport();
+  svg.addEventListener("pointermove",(ev)=>{ if(!panning) return; view.x=ev.clientX-ps.x; view.y=ev.clientY-ps.y; applyViewport(); });
+  svg.addEventListener("pointerup",()=>{ panning=false; svg.classList.remove("panning"); });
+  svg.addEventListener("wheel",(ev)=>{ ev.preventDefault(); zoomAt(ev.clientX,ev.clientY, ev.deltaY<0?1.12:1/1.12); },{passive:false});
+  function zoomAt(cx,cy,f){
+    const r=svg.getBoundingClientRect(), px=cx-r.left, py=cy-r.top;
+    const wx=(px-view.x)/view.k, wy=(py-view.y)/view.k;
+    view.k=Math.max(0.18,Math.min(3.2,view.k*f)); view.x=px-wx*view.k; view.y=py-wy*view.k; applyViewport();
+  }
+  function toWorld(cx,cy){ const r=svg.getBoundingClientRect(); return {x:(cx-r.left-view.x)/view.k, y:(cy-r.top-view.y)/view.k}; }
+  function centerOn(n){ const r=svg.getBoundingClientRect(); view.k=Math.max(view.k,1); view.x=r.width/2-n.x*view.k; view.y=r.height/2-n.y*view.k; applyViewport(); }
+  function bounds(){
+    const vis=data.nodes.filter(n=>!isHidden(n)); if(!vis.length) return null;
+    const xs=vis.map(n=>n.x), ys=vis.map(n=>n.y);
+    return {minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};
+  }
+  function zoomFit(){
+    const b=bounds(); if(!b) return; const pad=90;
+    const r=svg.getBoundingClientRect();
+    const k=Math.min(r.width/(b.maxX-b.minX+pad*2), r.height/(b.maxY-b.minY+pad*2), 1.8);
+    view.k=Math.max(0.18,k);
+    view.x=r.width/2-(b.minX+b.maxX)/2*view.k; view.y=r.height/2-(b.minY+b.maxY)/2*view.k; applyViewport();
+  }
+  $("#zoomIn").onclick=()=>{const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,1.2);};
+  $("#zoomOut").onclick=()=>{const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2,r.top+r.height/2,1/1.2);};
+  $("#zoomFit").onclick=zoomFit;
+
+  // ---------------- Minimap ----------------
+  const mm=$("#minimap"), MMW=176, MMH=112;
+  function renderMinimap(){
+    const b=bounds(); mm.innerHTML="";
+    if(!b) return;
+    const pad=40, w=b.maxX-b.minX+pad*2, h=b.maxY-b.minY+pad*2;
+    const k=Math.min(MMW/w, MMH/h);
+    const ox=(MMW-w*k)/2 - (b.minX-pad)*k, oy=(MMH-h*k)/2 - (b.minY-pad)*k;
+    mm._map={k,ox,oy};
+    for(const n of data.nodes){ if(isHidden(n)) continue;
+      const c=el("circle",{class:"mm-node", cx:n.x*k+ox, cy:n.y*k+oy, r:2.2, fill:(TYPE[n.type]||TYPE.system).color, "fill-opacity":.85}, mm);
+      if(n.id===selectedId){ c.setAttribute("r",3.4); c.setAttribute("stroke","var(--text)"); c.setAttribute("stroke-width",1); }
+    }
+    // viewport rect
+    const r=svg.getBoundingClientRect();
+    const tl=toWorld(r.left,r.top), br=toWorld(r.right,r.bottom);
+    el("rect",{class:"mm-view", x:tl.x*k+ox, y:tl.y*k+oy, width:(br.x-tl.x)*k, height:(br.y-tl.y)*k, rx:3}, mm);
+  }
+  mm.addEventListener("pointerdown",(ev)=>{
+    const m=mm._map; if(!m) return;
+    const rect=mm.getBoundingClientRect();
+    const wx=((ev.clientX-rect.left)-m.ox)/m.k, wy=((ev.clientY-rect.top)-m.oy)/m.k;
+    const r=svg.getBoundingClientRect(); view.x=r.width/2-wx*view.k; view.y=r.height/2-wy*view.k; applyViewport();
   });
-  svg.addEventListener("pointerup", () => { panning = false; svg.classList.remove("panning"); });
-  svg.addEventListener("wheel", (ev) => {
-    ev.preventDefault();
-    const factor = ev.deltaY < 0 ? 1.12 : 1/1.12;
-    zoomAt(ev.clientX, ev.clientY, factor);
-  }, { passive: false });
 
-  function zoomAt(cx, cy, factor) {
-    const rect = svg.getBoundingClientRect();
-    const px = cx - rect.left, py = cy - rect.top;
-    const wx = (px - view.x) / view.k, wy = (py - view.y) / view.k;
-    view.k = Math.max(0.2, Math.min(3, view.k * factor));
-    view.x = px - wx * view.k;
-    view.y = py - wy * view.k;
-    applyViewport();
+  // ---------------- Toolbar ----------------
+  document.querySelectorAll("[data-add]").forEach(b=> b.onclick=()=>addNode(b.getAttribute("data-add")));
+  function addNode(type){
+    const r=svg.getBoundingClientRect(), c=toWorld(r.left+r.width/2, r.top+r.height/2);
+    const n={id:"n"+Date.now(), type, label:TYPE[type].chip+"（新規）", desc:"", owner:"", tech:"", tags:[],
+      x:c.x+(Math.random()-.5)*70, y:c.y+(Math.random()-.5)*70, vx:0, vy:0};
+    if(hidden.has(type)){ hidden.delete(type); syncLegend(); }
+    data.nodes.push(n); save(); render(); reheat(.4); select(n.id);
+    setTimeout(()=>$("#fName").select(),80);
   }
-  function toWorld(cx, cy) {
-    const rect = svg.getBoundingClientRect();
-    return { x: (cx - rect.left - view.x) / view.k, y: (cy - rect.top - view.y) / view.k };
-  }
-  function centerOn(n) {
-    const rect = svg.getBoundingClientRect();
-    view.k = Math.max(view.k, 0.9);
-    view.x = rect.width/2 - n.x * view.k;
-    view.y = rect.height/2 - n.y * view.k;
-    applyViewport();
-  }
-  function zoomFit() {
-    if (!data.nodes.length) return;
-    const xs = data.nodes.map(n=>n.x), ys = data.nodes.map(n=>n.y);
-    const minX=Math.min(...xs)-80, maxX=Math.max(...xs)+80;
-    const minY=Math.min(...ys)-80, maxY=Math.max(...ys)+80;
-    const rect = svg.getBoundingClientRect();
-    const k = Math.min(rect.width/(maxX-minX), rect.height/(maxY-minY), 2);
-    view.k = Math.max(0.2, k);
-    view.x = rect.width/2 - (minX+maxX)/2 * view.k;
-    view.y = rect.height/2 - (minY+maxY)/2 * view.k;
-    applyViewport();
-  }
+  const linkBtn=$("#linkBtn"); linkBtn.onclick=()=>setLinkMode(!linkMode);
+  function setLinkMode(on){ linkMode=on; linkSource=null; linkBtn.classList.toggle("active",on); svg.classList.toggle("linking",on);
+    if(on){ select(null); toast("リンク作成: 元 → 対象 の順にクリック"); } else updateHighlight(); }
+  $("#relayoutBtn").onclick=()=>{ for(const n of data.nodes){n.fx=null;n.fy=null;} reheat(1); toast("再整列中…"); setTimeout(zoomFit,650); };
 
-  $("#zoomIn").onclick = () => { const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.2); };
-  $("#zoomOut").onclick = () => { const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.2); };
-  $("#zoomFit").onclick = zoomFit;
-
-  // ---------------- Toolbar actions ----------------
-  document.querySelectorAll("[data-add]").forEach(btn => {
-    btn.onclick = () => addNode(btn.getAttribute("data-add"));
-  });
-  function addNode(type) {
-    const center = toWorld(svg.getBoundingClientRect().left + svg.getBoundingClientRect().width/2,
-                           svg.getBoundingClientRect().top + svg.getBoundingClientRect().height/2);
-    const n = {
-      id: "n" + Date.now(),
-      type,
-      label: TYPE[type].chip + "（新規）",
-      desc: "", owner: "", tech: "", tags: [],
-      x: center.x + (Math.random()-0.5)*60, y: center.y + (Math.random()-0.5)*60, vx:0, vy:0
-    };
-    data.nodes.push(n);
-    save(); render(); reheat(0.4); select(n.id);
-    setTimeout(() => $("#fName").select(), 60);
-  }
-
-  const linkBtn = $("#linkBtn");
-  linkBtn.onclick = () => setLinkMode(!linkMode);
-  function setLinkMode(on) {
-    linkMode = on; linkSource = null;
-    linkBtn.classList.toggle("active", on);
-    svg.classList.toggle("linking", on);
-    if (on) { select(null); toast("リンク作成: 元ノード → 対象ノードの順にクリック"); }
-    else updateSelectionVisuals();
-  }
-
-  $("#relayoutBtn").onclick = () => {
-    for (const n of data.nodes) { n.fx=null; n.fy=null; }
-    reheat(1); toast("再整列中…");
-    setTimeout(zoomFit, 600);
+  $("#exportBtn").onclick=()=>{
+    const out={ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges };
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="system-graph.json"; a.click();
+    URL.revokeObjectURL(a.href); toast("JSON をエクスポートしました");
   };
-
-  // Export / Import
-  $("#exportBtn").onclick = () => {
-    const out = {
-      nodes: data.nodes.map(({vx,vy,fx,fy,...r}) => ({...r, x:Math.round(r.x), y:Math.round(r.y)})),
-      edges: data.edges
-    };
-    const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "system-graph.json"; a.click();
-    URL.revokeObjectURL(url);
-    toast("JSON をエクスポートしました");
-  };
-  $("#importBtn").onclick = () => $("#fileInput").click();
-  $("#fileInput").addEventListener("change", (ev) => {
-    const file = ev.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = normalize(JSON.parse(reader.result));
-        data = parsed; selectedId = null; save(); render(); zoomFit();
-        toast("読み込みました（" + data.nodes.length + " ノード）");
-      } catch (e) { toast("JSON の読み込みに失敗しました"); }
-    };
-    reader.readAsText(file);
-    ev.target.value = "";
+  $("#importBtn").onclick=()=>$("#fileInput").click();
+  $("#fileInput").addEventListener("change",(ev)=>{
+    const f=ev.target.files[0]; if(!f) return; const rd=new FileReader();
+    rd.onload=()=>{ try{ data=normalize(JSON.parse(rd.result)); selectedId=null; save(); render(); zoomFit(); toast("読み込みました（"+data.nodes.length+" ノード）"); }
+      catch(e){ toast("JSON の読み込みに失敗しました"); } };
+    rd.readAsText(f); ev.target.value="";
   });
 
-  // Theme
-  $("#themeBtn").onclick = () => {
-    const cur = document.documentElement.getAttribute("data-theme");
-    const next = cur === "dark" ? "light" : cur === "light" ? "dark"
-      : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark");
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("systemGraph.theme", next); } catch(e){}
+  $("#themeBtn").onclick=()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const next = cur==="dark"?"light": cur==="light"?"dark": (matchMedia("(prefers-color-scheme: dark)").matches?"light":"dark");
+    document.documentElement.setAttribute("data-theme",next);
+    try{ localStorage.setItem("systemGraph.theme",next); }catch(e){}
   };
-  (function initTheme(){
-    try { const t = localStorage.getItem("systemGraph.theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch(e){}
-  })();
+  (function(){ try{ const t=localStorage.getItem("systemGraph.theme"); if(t) document.documentElement.setAttribute("data-theme",t); }catch(e){} })();
+
+  // Legend filter
+  $("#legend").querySelectorAll(".row").forEach(row=>{
+    row.onclick=()=>{ const t=row.getAttribute("data-t"); if(hidden.has(t)) hidden.delete(t); else hidden.add(t); syncLegend(); render(); };
+  });
+  function syncLegend(){ $("#legend").querySelectorAll(".row").forEach(r=> r.classList.toggle("off", hidden.has(r.getAttribute("data-t")))); }
 
   // Search
-  $("#search").addEventListener("input", (ev) => {
-    const q = ev.target.value.trim().toLowerCase();
-    for (const g of gNodes.children) {
-      const n = g._node;
-      const hay = (n.label + " " + n.desc + " " + n.owner + " " + n.tech + " " + (n.tags||[]).join(" ")).toLowerCase();
-      const match = q === "" ? null : hay.includes(q);
-      g.classList.toggle("dim", q !== "" && !match);
+  $("#search").addEventListener("input",(ev)=>{
+    const q=ev.target.value.trim().toLowerCase();
+    for(const g of gNodes.children){ const n=g._node;
+      const hay=(n.label+" "+n.desc+" "+n.owner+" "+n.tech+" "+(n.tags||[]).join(" ")).toLowerCase();
+      g.classList.toggle("dim", q!=="" && !hay.includes(q));
     }
-    if (q) {
-      const first = data.nodes.find(n => (n.label+" "+n.desc+" "+n.owner+" "+n.tech).toLowerCase().includes(q));
-      if (first) centerOn(first);
-    } else if (!selectedId) {
-      for (const g of gNodes.children) g.classList.remove("dim");
-    }
+    if(q){ const f=data.nodes.find(n=>!isHidden(n)&&(n.label+" "+n.desc+" "+n.owner+" "+n.tech+" "+(n.tags||[]).join(" ")).toLowerCase().includes(q)); if(f) centerOn(f); }
+    else if(!selectedId){ for(const g of gNodes.children) g.classList.remove("dim"); }
   });
 
-  // keyboard
-  window.addEventListener("keydown", (ev) => {
-    if (ev.target.matches("input, textarea, select")) {
-      if (ev.key === "Escape") ev.target.blur();
-      return;
-    }
-    if (ev.key === "Delete" && selectedId) $("#delBtn").click();
-    if (ev.key === "Escape") { if (linkMode) setLinkMode(false); else select(null); }
-    if (ev.key === "l" || ev.key === "L") setLinkMode(!linkMode);
-    if (ev.key === "f" || ev.key === "F") zoomFit();
+  // Keyboard
+  window.addEventListener("keydown",(ev)=>{
+    if(ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
+    if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
+    if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else select(null); }
+    if(ev.key==="l"||ev.key==="L") setLinkMode(!linkMode);
+    if(ev.key==="f"||ev.key==="F") zoomFit();
+    if(ev.key==="r"||ev.key==="R") $("#relayoutBtn").click();
   });
 
-  function updateStatus() {
-    const c = { system:0, table:0, integration:0, external:0 };
-    for (const n of data.nodes) c[n.type] = (c[n.type]||0)+1;
-    $("#status").innerHTML =
-      `<b>${data.nodes.length}</b> ノード / <b>${data.edges.length}</b> 接続　`+
-      `<span style="color:var(--sys)">●</span>${c.system} `+
-      `<span style="color:var(--tbl)">●</span>${c.table} `+
-      `<span style="color:var(--intg)">◆</span>${c.integration} `+
-      `<span style="color:var(--ext)">●</span>${c.external}`;
+  function updateStatus(){
+    const c={system:0,table:0,integration:0,external:0};
+    for(const n of data.nodes) c[n.type]=(c[n.type]||0)+1;
+    $("#status").innerHTML=`<b>${data.nodes.length}</b> ノード · <b>${data.edges.length}</b> 接続`;
   }
 
-  let toastTimer;
-  function toast(msg) {
-    const t = $("#toast");
-    t.textContent = msg; t.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
-  }
+  let tt;
+  function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2200); }
+
+  // ---------------- Loop ----------------
+  function loop(){ physics(); if(alpha>=0.004){ positionAll(); } animateFlow(); if(alpha>=0.004) renderMinimap(); requestAnimationFrame(loop); }
 
   // ---------------- Init ----------------
-  render();
-  applyViewport();
-  reheat(1);
-  requestAnimationFrame(tick);
-  setTimeout(zoomFit, 700);
+  syncLegend(); render(); applyViewport(); reheat(1); requestAnimationFrame(loop);
+  setTimeout(zoomFit, 750);
 })();
 </script>
 </body>
