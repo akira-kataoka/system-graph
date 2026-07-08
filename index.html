@@ -26,6 +26,9 @@
     --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
     --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
     --font-mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    /* motion */
+    --ease-out:cubic-bezier(0.22,1,0.36,1); --ease-spring:cubic-bezier(0.34,1.4,0.64,1); --ease-in-out:cubic-bezier(0.65,0,0.35,1);
+    --dur-1:120ms; --dur-2:200ms; --dur-3:320ms; --node-hl:rgba(255,255,255,.35);
     /* containers */
     --c-system:#64748b; --c-database:#0d9488; --c-platform:#7c3aed;
     /* leaf nodes (with gradient partner) */
@@ -44,7 +47,7 @@
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 32px rgba(0,0,0,.45), 0 32px 72px rgba(0,0,0,.35);
     --shadow-sm:0 1px 2px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.35);
     --ring:0 0 0 3px rgba(139,147,248,.28); --glass-blur:saturate(1.3) blur(18px); --inset-hl:inset 0 1px 0 rgba(255,255,255,.06);
-    --inset-sink:inset 0 1px 2px rgba(0,0,0,.3);
+    --inset-sink:inset 0 1px 2px rgba(0,0,0,.3); --node-hl:rgba(255,255,255,.16);
     --c-system:#94a3b8; --c-database:#2dd4bf; --c-platform:#a78bfa;
     --c-table:#818cf8;   --c-table-2:#c7d2fe;
     --c-job:#fbbf24;     --c-job-2:#fde68a;
@@ -97,8 +100,8 @@
     background:transparent; color:var(--text-dim); border-radius:var(--r-sm); font-size:12.5px; font-weight:550;
     cursor:pointer; white-space:nowrap; transition:background .15s ease, transform .09s ease, color .15s ease, box-shadow .15s ease;
   }
-  .btn:hover { background:var(--panel-2); color:var(--text); }
-  .btn:active { transform:translateY(1px) scale(.985); }
+  .btn:hover { background:var(--panel-2); color:var(--text); transform:translateY(-1px); box-shadow:var(--shadow-sm); }
+  .btn:active { transform:translateY(0) scale(.97); transition-duration:60ms; }
   .btn.icon { padding:8px; }
   .btn.primary { background:var(--accent); background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff 12%), var(--accent)); color:#fff;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 1px 3px rgba(67,56,202,.38); font-weight:600; }
@@ -179,10 +182,15 @@
   .pl-row .pl-c { color:var(--text-dim); font-size:10.5px; font-family:ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; word-break:break-word; margin-top:1px; }
 
   .node .halo { fill:none; opacity:0; transition:opacity .18s; }
-  .node.hover .halo, .node.selected .halo { opacity:.85; }
-  .node .core { stroke:#fff; stroke-width:2.4; transition:transform .16s cubic-bezier(.34,1.56,.64,1); transform-box:fill-box; transform-origin:center; }
-  :root[data-theme="dark"] .node .core { stroke:rgba(255,255,255,.7); }
+  .node.hover .halo { opacity:.7; stroke-opacity:.7; }
+  .node.selected .halo { opacity:1; stroke:var(--accent); stroke-width:2.4; filter:drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 55%, transparent)); animation:ringPulse 2.4s var(--ease-in-out) infinite; }
+  @keyframes ringPulse { 0%,100%{ stroke-opacity:1; } 50%{ stroke-opacity:.5; } }
+  .node .core { stroke:#fff; stroke-width:2.2; transition:transform var(--dur-3) var(--ease-spring); transform-box:fill-box; transform-origin:center; }
+  :root[data-theme="dark"] .node .core { stroke:rgba(255,255,255,.62); }
   .node.hover .core { transform:scale(1.13); }
+  .node.selected .core { transform:scale(1.1); }
+  .node .shine { pointer-events:none; mix-blend-mode:soft-light; }
+  .node.leaf-dot .core { stroke:var(--bg); stroke-width:2; }
   .node .nico { stroke:#fff; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
   .node .ext-ring { fill:none; stroke-width:1.8; stroke-dasharray:3 3; opacity:.75; }
   .node .label { fill:var(--text); font-size:11px; font-weight:650; text-anchor:middle; pointer-events:none; paint-order:stroke; stroke:var(--bg); stroke-width:3.5px; stroke-linejoin:round; transition:opacity .2s; }
@@ -416,6 +424,23 @@
   .badgeN { font-size:10px; font-weight:700; padding:1px 7px; border-radius:20px; background:var(--panel-2); color:var(--text-dim); }
   .cond-cell { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:var(--text-dim); max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
+  /* ---- Motion & scrollbar polish (Fable 5) ---- */
+  .menu.open { animation:menuIn var(--dur-2) var(--ease-out); transform-origin:top right; }
+  @keyframes menuIn { from { opacity:0; transform:scale(.96) translateY(-4px); } }
+  .modal-backdrop.open .modal { animation:modalIn var(--dur-3) var(--ease-out); }
+  @keyframes modalIn { from { opacity:0; transform:translateY(10px) scale(.98); } }
+  .tableview.open, .overview.open { animation:panelIn var(--dur-3) var(--ease-out); }
+  @keyframes panelIn { from { opacity:0; } }
+  * { scrollbar-width:thin; scrollbar-color:var(--border-strong) transparent; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:8px; border:3px solid transparent; background-clip:padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background-color:var(--text-mute); background-clip:padding-box; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  .cell:focus, .colf:focus { box-shadow:0 0 0 3px var(--accent-soft); }
+  @media (prefers-reduced-motion: reduce) {
+    *, .flow circle { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+
   @media (max-width:760px) {
     .brand small { display:none; }
     aside { width:calc(100% - 24px); }
@@ -429,7 +454,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v9 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v10 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -458,6 +483,7 @@
         <radialGradient id="g-job" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-job-2)"/><stop offset="100%" stop-color="var(--c-job)"/></radialGradient>
         <radialGradient id="g-external" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-external-2)"/><stop offset="100%" stop-color="var(--c-external)"/></radialGradient>
         <radialGradient id="g-connector" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-connector-2)"/><stop offset="100%" stop-color="var(--c-connector)"/></radialGradient>
+        <radialGradient id="nodeShine" cx="35%" cy="28%" r="75%"><stop offset="0%" stop-color="#fff" stop-opacity=".42"/><stop offset="46%" stop-color="#fff" stop-opacity=".08"/><stop offset="100%" stop-color="#000" stop-opacity=".16"/></radialGradient>
         <marker id="arrow-sync" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#06b6d4" fill-opacity="0.8"/></marker>
         <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1.4" fill="var(--grid)"/></pattern>
         <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--edge)"/></marker>
@@ -466,7 +492,7 @@
         <marker id="arrow-write" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#22c55e" fill-opacity="0.75"/></marker>
         <marker id="arrow-ref" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7" fill-opacity="0.75"/></marker>
         <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="2.4" result="b"/>
+          <feGaussianBlur stdDeviation="1.8" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
       </defs>
@@ -767,7 +793,7 @@
   // 連携データ量の規模 → 流れる●の大きさ倍率
   const SCALE = { xs:{label:"極小",mul:0.55}, s:{label:"小",mul:0.78}, m:{label:"中",mul:1.0}, l:{label:"大",mul:1.4}, xl:{label:"特大",mul:1.95} };
   const scaleMul = (e)=> (e.scale&&SCALE[e.scale])?SCALE[e.scale].mul:1;
-  const STORE_KEY = "systemGraph.v3";
+  const STORE_KEY = "systemGraph.v4";
   let colorMode = "type"; // type | status | health
   const SVG_NS = "http://www.w3.org/2000/svg";
   const $ = (s) => document.querySelector(s);
@@ -775,81 +801,89 @@
   // ---------------- Seed (realistic org architecture) ----------------
   const SEED = {
     nodes: [
-      // systems
-      { id:"sys_sf", type:"system", label:"Salesforce", desc:"営業支援・顧客管理 (CRM/SFA)", owner:"営業企画部 佐藤", dept:"営業企画部", ops:"情シス CRMチーム / SFA運用ベンダー", status:"active", criticality:"high", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2021-04-01", renewal:"2027-03-31" },
-      { id:"sys_erp",type:"system", label:"基幹システム", desc:"受注・請求・在庫を管理する社内ERP", owner:"情シス部 田中", dept:"情報システム部 基幹Gr", ops:"運用課 / A社 保守契約(24h)", status:"maintenance", criticality:"critical", env:"オンプレ / 自社DC", vendor:"自社開発 + A社保守", introduced:"2014-10-01", renewal:"2026-09-30",
-        incidents:[ {severity:"high", title:"夜間バッチが処理時間超過（月末に遅延）", status:"open"}, {severity:"mid", title:"EOSL に伴う更改検討中", status:"open"} ] },
-      { id:"sys_dp", type:"system", label:"データ基盤", desc:"全社データ分析基盤", owner:"情シス部 鈴木", dept:"情報システム部 データGr", ops:"データGr / 内製運用", status:"active", criticality:"mid", env:"GCP (本番)", vendor:"自社構築", introduced:"2023-01-15" },
-      // databases
-      { id:"db_sf",  type:"database", parent:"sys_sf",  label:"Salesforce Objects", engine:"Salesforce", desc:"標準/カスタムオブジェクト" },
+      // ── システム ──
+      { id:"sys_erp",type:"system", label:"基幹システム (ERP)", desc:"受注・請求・在庫を管理する社内基幹", owner:"情シス部 田中", dept:"情報システム部 基幹Gr", ops:"運用課 / A社 保守契約(24h)", status:"maintenance", criticality:"critical", env:"オンプレ / 自社DC", vendor:"自社開発 + A社保守", introduced:"2014-10-01", renewal:"2026-09-30",
+        incidents:[ {severity:"high", title:"夜間バッチが処理時間超過（月末に遅延）", status:"open"}, {severity:"mid", title:"EOSL に伴う更改を検討中", status:"open"} ] },
+      { id:"sys_dp", type:"system", label:"データ基盤 (DWH)", desc:"全社データ分析基盤", owner:"情シス部 鈴木", dept:"情報システム部 データGr", ops:"データGr / 内製運用", status:"active", criticality:"high", env:"GCP (本番)", vendor:"自社構築", introduced:"2023-01-15" },
+      { id:"sys_sf", type:"system", label:"Salesforce (CRM)", desc:"営業支援・顧客管理 (SFA/CRM)", owner:"営業企画部 佐藤", dept:"営業企画部", ops:"情シス CRMチーム / 運用ベンダー", status:"active", criticality:"high", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2021-04-01", renewal:"2027-03-31" },
+      { id:"sys_ae", type:"system", label:"Account Engagement", desc:"マーケティングオートメーション (旧 Pardot)", owner:"マーケ部 高橋", dept:"マーケティング部", ops:"マーケ運用 / SF社サポート", status:"active", criticality:"mid", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2022-07-01" },
+      // ── データベース ──
       { id:"db_erp", type:"database", parent:"sys_erp", label:"ERP-DB", engine:"Oracle 19c", desc:"基幹業務データベース", owner:"基幹Gr" },
-      { id:"db_ods", type:"database", parent:"sys_erp", label:"ODS", engine:"PostgreSQL 16", desc:"連携用オペレーショナルデータストア（1システムに複数DBの例）", owner:"データGr" },
-      { id:"db_dwh", type:"database", parent:"sys_dp",  label:"DWH", engine:"BigQuery", desc:"データウェアハウス" },
-      // platforms
-      { id:"pf_air", type:"platform", label:"Airflow", kind:"ETL", desc:"バッチ ETL オーケストレーション", owner:"情シス" },
-      { id:"pf_sfdmu",type:"platform",label:"SFDMU", kind:"Reverse-ETL", desc:"Salesforce へのデータ書戻し" },
-      { id:"pf_mkt", type:"platform", label:"Marketo", kind:"MA / iPaaS", desc:"マーケ自動化・双方向同期", owner:"マーケ" },
-      // tables (Salesforce)
-      { id:"t_account", type:"table", parent:"db_sf", label:"Account", desc:"取引先マスタ", schema:"sObject", tags:["顧客"],
-        columns:[ {name:"Id", type:"id", pk:true}, {name:"Name", type:"text"}, {name:"Industry", type:"picklist"}, {name:"AnnualRevenue", type:"currency"} ] },
-      { id:"t_opp", type:"table", parent:"db_sf", label:"Opportunity", desc:"商談", schema:"sObject" },
-      { id:"t_lead", type:"table", parent:"db_sf", label:"Lead", desc:"見込み客", schema:"sObject" },
-      // tables (ERP)
-      { id:"t_order", type:"table", parent:"db_erp", label:"ORDERS", desc:"受注明細", schema:"SALES",
-        columns:[ {name:"ORDER_ID", type:"NUMBER", pk:true}, {name:"ACCOUNT_CD", type:"VARCHAR2"}, {name:"AMOUNT", type:"NUMBER"}, {name:"ORDER_DATE", type:"DATE"} ] },
-      { id:"t_bill", type:"table", parent:"db_erp", label:"BILLING", desc:"請求", schema:"SALES", tags:["PII"] },
-      { id:"t_inv", type:"table", parent:"db_erp", label:"INVENTORY", desc:"在庫", schema:"WMS" },
-      { id:"t_stg", type:"table", parent:"db_ods", label:"stg_orders", desc:"受注ステージング（連携用）", schema:"staging" },
-      // tables (DWH)
-      { id:"t_fact", type:"table", parent:"db_dwh", label:"fact_sales", desc:"売上ファクト", schema:"mart" },
-      { id:"t_dim", type:"table", parent:"db_dwh", label:"dim_customer", desc:"顧客ディメンション", schema:"mart" },
-      // jobs
-      { id:"j_night", type:"job", parent:"pf_air", label:"nightly_sales_etl", desc:"ERP → DWH 日次連携", schedule:"毎日 02:00", tech:"Python / SQL", status:"active", health:"warn",
+      { id:"db_ods", type:"database", parent:"sys_erp", label:"ODS", engine:"PostgreSQL 16", desc:"連携用オペレーショナルデータストア", owner:"データGr" },
+      { id:"db_dwh", type:"database", parent:"sys_dp",  label:"DWH", engine:"BigQuery", desc:"データウェアハウス (mart)", owner:"データGr" },
+      { id:"db_sf",  type:"database", parent:"sys_sf",  label:"Salesforce Objects", engine:"Salesforce", desc:"標準/カスタムオブジェクト", owner:"CRMチーム" },
+      { id:"db_ae",  type:"database", parent:"sys_ae",  label:"AE Objects", engine:"Account Engagement", desc:"見込み客・アクティビティ", owner:"マーケ運用" },
+      // ── 連携基盤 (ETL / iPaaS) ──
+      { id:"pf_air",  type:"platform", label:"Airflow", kind:"ETL", desc:"バッチ ETL オーケストレーション", owner:"データGr" },
+      { id:"pf_sfdmu",type:"platform", label:"SFDMU", kind:"Reverse-ETL", desc:"Salesforce へのデータ書戻し", owner:"CRMチーム" },
+      // ── テーブル (ERP) ──
+      { id:"t_order", type:"table", parent:"db_erp", label:"ORDERS", desc:"受注明細", schema:"SALES", tags:["基幹"], x:-680, y:-150,
+        columns:[ {name:"ORDER_ID",type:"NUMBER",pk:true}, {name:"ACCOUNT_CD",type:"VARCHAR2"}, {name:"AMOUNT",type:"NUMBER"}, {name:"STATUS",type:"VARCHAR2"}, {name:"ORDER_DATE",type:"DATE"} ] },
+      { id:"t_bill",  type:"table", parent:"db_erp", label:"BILLING", desc:"請求", schema:"SALES", tags:["PII"], x:-680, y:-40,
+        columns:[ {name:"BILL_ID",type:"NUMBER",pk:true}, {name:"ACCOUNT_CD",type:"VARCHAR2"}, {name:"AMOUNT",type:"NUMBER"}, {name:"CLOSED_FLAG",type:"NUMBER"}, {name:"BILL_DATE",type:"DATE"} ] },
+      { id:"t_inv",   type:"table", parent:"db_erp", label:"INVENTORY", desc:"在庫", schema:"WMS", x:-680, y:70,
+        columns:[ {name:"SKU",type:"VARCHAR2",pk:true}, {name:"WAREHOUSE_CD",type:"VARCHAR2"}, {name:"QTY",type:"NUMBER"} ] },
+      { id:"t_stg",   type:"table", parent:"db_ods", label:"stg_orders", desc:"受注ステージング（連携用）", schema:"staging", x:-490, y:180 },
+      // ── テーブル (DWH) ──
+      { id:"t_fact",  type:"table", parent:"db_dwh", label:"fact_sales", desc:"売上ファクト", schema:"mart", tags:["分析"], x:-90, y:-70,
+        columns:[ {name:"sales_key",type:"STRING",pk:true}, {name:"customer_id",type:"STRING"}, {name:"amount",type:"NUMERIC"}, {name:"sales_date",type:"DATE"} ] },
+      { id:"t_dim",   type:"table", parent:"db_dwh", label:"dim_customer", desc:"顧客ディメンション (SCD2)", schema:"mart", x:-90, y:60,
+        columns:[ {name:"customer_id",type:"STRING",pk:true}, {name:"name",type:"STRING"}, {name:"segment",type:"STRING"}, {name:"valid_from",type:"DATE"} ] },
+      // ── テーブル (Salesforce) ──
+      { id:"t_account", type:"table", parent:"db_sf", label:"Account", desc:"取引先マスタ", schema:"sObject", tags:["顧客"], x:380, y:-160,
+        columns:[ {name:"Id",type:"id",pk:true}, {name:"Name",type:"text"}, {name:"Industry",type:"picklist"}, {name:"AnnualRevenue",type:"currency"} ] },
+      { id:"t_opp",  type:"table", parent:"db_sf", label:"Opportunity", desc:"商談", schema:"sObject", x:380, y:-40,
+        columns:[ {name:"Id",type:"id",pk:true}, {name:"AccountId",type:"lookup"}, {name:"Amount",type:"currency"}, {name:"StageName",type:"picklist"} ] },
+      { id:"t_lead", type:"table", parent:"db_sf", label:"Lead", desc:"見込み客", schema:"sObject", x:380, y:80,
+        columns:[ {name:"Id",type:"id",pk:true}, {name:"Email",type:"email"}, {name:"Company",type:"text"}, {name:"Status",type:"picklist"} ] },
+      // ── テーブル (Account Engagement) ──
+      { id:"t_prospect", type:"table", parent:"db_ae", label:"Prospect", desc:"見込み客（AE）", schema:"AE", x:800, y:110,
+        columns:[ {name:"id",type:"id",pk:true}, {name:"email",type:"email"}, {name:"company",type:"text"}, {name:"grade",type:"text"}, {name:"score",type:"number"} ] },
+      // ── ジョブ / パイプライン ──
+      { id:"j_night", type:"job", parent:"pf_air", label:"nightly_sales_etl", desc:"ERP → DWH 日次連携", schedule:"毎日 02:00", tech:"Python / SQL", status:"active", health:"warn", x:-350, y:-90,
         incidents:[ {severity:"mid", title:"処理時間が閾値(60分)を超過", status:"open"} ] },
-      { id:"j_cust", type:"job", parent:"pf_air", label:"customer_sync", desc:"顧客ディメンション更新", schedule:"毎日 03:00" },
-      { id:"j_back", type:"job", parent:"pf_sfdmu", label:"sales_writeback", desc:"受注実績を Salesforce へ", schedule:"毎日 05:00", tech:"REST Bulk API" },
-      { id:"j_lead", type:"job", parent:"pf_mkt", label:"lead_sync", desc:"Lead 双方向同期", schedule:"15分毎", tech:"Marketo REST" },
-      // Account Engagement（MA）と SF–AE コネクタ（双方向同期の例）
-      { id:"sys_ae", type:"system", label:"Account Engagement", desc:"MA（旧 Pardot）", owner:"マーケ部", dept:"マーケティング部", ops:"マーケ運用 / SF社サポート", status:"active", criticality:"mid", env:"SaaS (本番)", vendor:"Salesforce社" },
-      { id:"db_ae", type:"database", parent:"sys_ae", label:"AE Objects", engine:"Account Engagement", desc:"AE標準オブジェクト" },
-      { id:"t_prospect", type:"table", parent:"db_ae", label:"Prospect", desc:"見込み客（AE）", schema:"AE" },
-      { id:"conn_ae", type:"connector", label:"SF–AE コネクタ", desc:"Salesforce ⇄ Account Engagement の双方向同期コネクタ", owner:"マーケ部", vendor:"Salesforce社", status:"active", tech:"標準コネクタ v2" },
-      // external
-      { id:"ext_freee", type:"external", label:"freee 会計", desc:"外部会計 SaaS", tech:"freee API", owner:"経理", tags:["外部"] },
+      { id:"j_cust",  type:"job", parent:"pf_air", label:"customer_sync", desc:"顧客ディメンション更新", schedule:"毎日 03:00", tech:"Python", status:"active", x:-350, y:60 },
+      { id:"j_back",  type:"job", parent:"pf_sfdmu", label:"sales_writeback", desc:"受注実績を Salesforce へ書戻し", schedule:"毎日 05:00", tech:"REST Bulk API", status:"active", x:150, y:-20 },
+      // ── コネクタ (双方向同期) ──
+      { id:"conn_ae", type:"connector", label:"SF–AE コネクタ", desc:"Salesforce ⇄ Account Engagement の双方向同期（標準コネクタ）", owner:"マーケ運用", vendor:"Salesforce社", status:"active", tech:"標準コネクタ v2", x:590, y:100 },
+      // ── 外部サービス ──
+      { id:"ext_freee", type:"external", label:"freee 会計", desc:"外部会計 SaaS（仕訳連携）", tech:"freee API", owner:"経理部", tags:["外部","会計"], x:-680, y:300 },
     ],
     edges: [
       { id:"e1", source:"t_order", target:"j_night", label:"受注抽出", kind:"read", mode:"incremental", key:"ORDER_DATE", ifId:"IF00001",
         interval:"日次", window:"02:00-02:30", volume:"約12万件/日", scale:"l",
         condition:"WHERE ORDER_DATE >= :last_run AND STATUS = 'CONFIRMED'", transform:"通貨をJPYに統一 / 取消明細を除外" },
-      { id:"e2", source:"t_inv",  target:"j_night", label:"抽出", kind:"read", mode:"full",
-        condition:"WHERE WAREHOUSE_CD IN ('T01','O01')  -- 全件洗い替え", transform:"在庫スナップショットを日次で取得" },
-      { id:"e3", source:"j_night",target:"t_fact",  label:"ロード", kind:"write", mode:"upsert", key:"sales_key",
+      { id:"e2", source:"t_inv",  target:"j_night", label:"在庫抽出", kind:"read", mode:"full", ifId:"IF00002",
+        interval:"日次", window:"02:00-02:30", volume:"約3万件/日", scale:"m",
+        condition:"WHERE WAREHOUSE_CD IN ('T01','O01')", transform:"在庫スナップショットを日次取得" },
+      { id:"e3", source:"j_night",target:"t_fact",  label:"売上ロード", kind:"write", mode:"upsert", key:"sales_key", ifId:"IF00003",
         interval:"日次", window:"02:30-04:00", volume:"約12万件/日", scale:"xl",
         transform:"受注×在庫を結合し fact_sales へ UPSERT" },
-      { id:"e4", source:"t_account", target:"j_cust", label:"抽出", kind:"read", mode:"incremental", key:"LastModifiedDate",
+      { id:"e4", source:"t_account", target:"j_cust", label:"顧客抽出", kind:"read", mode:"incremental", key:"LastModifiedDate", ifId:"IF00004",
+        interval:"日次", window:"03:00-03:20", volume:"約1万件/日", scale:"s",
         condition:"WHERE LastModifiedDate > :watermark" },
-      { id:"e5", source:"j_cust", target:"t_dim",   label:"ロード", kind:"write", mode:"upsert", key:"customer_id", transform:"SCD Type2 で履歴保持" },
-      { id:"e6", source:"t_fact", target:"j_back",  label:"参照", kind:"read", mode:"incremental",
-        condition:"WHERE sales_date = CURRENT_DATE - 1", transform:"日次実績を集計" },
-      { id:"e7", source:"j_back", target:"t_opp",   label:"実績更新", kind:"write", mode:"upsert", key:"External_Id__c",
-        transform:"商談の実績金額フィールドを更新（Bulk API）" },
-      { id:"e8", source:"t_lead", target:"j_lead",  label:"同期", kind:"read", mode:"cdc",
-        interval:"15分毎", window:"終日", volume:"約2千件/日", scale:"xs",
-        condition:"変更検知（新規/更新リード）", transform:"メール・会社名を正規化" },
-      { id:"e9", source:"j_lead", target:"t_lead",  label:"書戻し", kind:"write", mode:"upsert", key:"Email",
-        transform:"MAのスコアを Lead に書戻し" },
-      { id:"e10",source:"t_bill", target:"ext_freee", label:"仕訳連携", kind:"write", mode:"incremental", key:"BILL_ID", ifId:"IF00010",
+      { id:"e5", source:"j_cust", target:"t_dim",   label:"顧客ロード", kind:"write", mode:"upsert", key:"customer_id", ifId:"IF00005",
+        interval:"日次", window:"03:20-03:40", volume:"約1万件/日", scale:"s", transform:"SCD Type2 で履歴保持" },
+      { id:"e6", source:"t_fact", target:"j_back",  label:"実績参照", kind:"read", mode:"incremental", ifId:"IF00006",
+        interval:"日次", window:"05:00-05:10", volume:"約5千件/日", scale:"s",
+        condition:"WHERE sales_date = CURRENT_DATE - 1", transform:"商談単位に日次実績を集計" },
+      { id:"e7", source:"j_back", target:"t_opp",   label:"実績書戻し", kind:"write", mode:"upsert", key:"External_Id__c", ifId:"IF00007",
+        interval:"日次", window:"05:10-05:30", volume:"約5千件/日", scale:"s", transform:"商談の実績金額フィールドを更新（Bulk API）" },
+      { id:"e8", source:"t_bill", target:"ext_freee", label:"仕訳連携", kind:"write", mode:"incremental", key:"BILL_ID", ifId:"IF00008",
         interval:"日次", window:"06:00-06:15", volume:"約8千件/日", scale:"m",
         condition:"WHERE CLOSED_FLAG = 1 AND BILL_DATE >= :last_run", transform:"勘定科目マッピングを適用",
         mappings:[ {from:"ACCOUNT_CD", to:"勘定科目コード", rule:"社内→freeeコード変換表"}, {from:"AMOUNT", to:"金額", rule:"税抜→税込 ×1.1"}, {from:"BILL_DATE", to:"発生日", rule:"YYYY-MM-DD"} ] },
-      { id:"e11",source:"t_opp",  target:"t_account", label:"FK", kind:"ref" },
-      { id:"e12",source:"t_dim",  target:"t_fact",  label:"JOIN", kind:"ref" },
-      { id:"e13",source:"t_order",target:"t_stg",   label:"レプリケーション", kind:"write", mode:"cdc", key:"ORDER_ID",
+      { id:"e9", source:"t_order",target:"t_stg",   label:"CDCレプリケーション", kind:"write", mode:"cdc", key:"ORDER_ID", ifId:"IF00009",
+        interval:"リアルタイム", window:"終日", volume:"変更分のみ", scale:"m",
         condition:"Oracle → PostgreSQL の変更を CDC で反映", transform:"文字コードを UTF-8 に変換" },
-      { id:"e14",source:"t_lead", target:"conn_ae", label:"リード同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s", ifId:"IF00021",
-        transform:"項目マッピング（Lead⇔Prospect）",
-        mappings:[ {from:"Email", to:"email", rule:"小文字化"}, {from:"Company", to:"company", rule:"—"}, {from:"Status", to:"grade", rule:"ステータス変換表"} ] },
-      { id:"e15",source:"conn_ae",target:"t_prospect", label:"プロスペクト同期", kind:"sync", mode:"realtime", interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s" },
+      { id:"e10",source:"t_lead", target:"conn_ae", label:"リード同期", kind:"sync", mode:"realtime", ifId:"IF00010",
+        interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s", transform:"項目マッピング（Lead ⇔ Prospect）",
+        mappings:[ {from:"Email", to:"email", rule:"小文字化"}, {from:"Company", to:"company", rule:"トリム"}, {from:"Status", to:"grade", rule:"ステータス変換表"} ] },
+      { id:"e11",source:"conn_ae",target:"t_prospect", label:"プロスペクト同期", kind:"sync", mode:"realtime", ifId:"IF00011",
+        interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s", transform:"スコア/グレードを反映" },
+      // 参照（FK / JOIN）— データは流れない構造的な関係
+      { id:"e12",source:"t_opp",  target:"t_account", label:"FK: AccountId", kind:"ref" },
+      { id:"e13",source:"t_fact", target:"t_dim",  label:"JOIN: customer_id", kind:"ref" },
     ]
   };
 
@@ -1046,6 +1080,7 @@
       el("circle",{class:"halo", r:r+(isTable?5:6), fill:"none", stroke:col, "stroke-width":2.4, "stroke-opacity":0.5}, g);
       // テーブルは階層の終端 → 塗りつぶしの●（アイコンなし）で表現
       el("circle",{class:"core", r:r, fill: isTable?col : nodeFill(n)}, g);
+      el("circle",{class:"shine", r:r, fill:"url(#nodeShine)"}, g);
       if(n.type==="external") el("circle",{class:"ext-ring", r:r+3.5, stroke:col}, g);
       if(!isTable){ const ico=iconG(t.icon, Math.round(r*1.05), g, "#fff"); ico.classList.add("nico"); }
       const lab=el("text",{class:"label", y:r+(isTable?13:14)}, g); lab.textContent=n.label||"(無題)";
@@ -1970,7 +2005,7 @@
   (function(){ const ml=$("#modeLegend2"); let h=""; for(const k in KIND) h+=`<span class="sl"><span class="sd" style="background:${KIND[k].color}"></span>${KIND[k].label}</span>`; ml.innerHTML=h; })();
 
   // ---------------- Init ----------------
-  syncLegend(); renderModeLegend(); render(); applyViewport(); reheat(1); requestAnimationFrame(loop); setTimeout(zoomFit,800);
+  syncLegend(); renderModeLegend(); render(); applyViewport(); reheat(0.3); requestAnimationFrame(loop); setTimeout(zoomFit,700);
 })();
 </script>
 </body>
