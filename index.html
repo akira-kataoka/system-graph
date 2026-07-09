@@ -487,7 +487,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v14 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v15 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -500,6 +500,7 @@
     <div class="sep"></div>
     <button class="btn" id="overviewBtn" title="概要 / 要対応"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>概要</button>
     <button class="btn" id="tableBtn" title="テーブル / 一覧・階層編集"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>テーブル</button>
+    <button class="btn" id="ganttBtn" title="更改 / EOL ロードマップ"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3M7 13h6M7 16h9"/></svg>更改</button>
     <button class="btn" id="threeBtn" title="3D表示（Three.js）"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/></svg>3D</button>
     <button class="btn icon" id="historyBtn" title="変更履歴 / 元に戻す"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg></button>
     <button class="btn icon" id="relayoutBtn" title="再整列 (R)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
@@ -643,6 +644,9 @@
           <div class="fld"><label>運用保守（担当・ベンダー）</label><input id="fOps" type="text" placeholder="例: 運用課 / ○○社 保守契約"></div>
           <div class="fld" id="fldVendor"><label>ベンダー / 提供元</label><input id="fVendor" type="text" placeholder="例: 自社開発, Salesforce社"></div>
           <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
+          <div class="fld"><label>最終棚卸し / 確認日</label>
+            <div style="display:flex;gap:8px;align-items:center"><input id="fReviewed" type="date" style="flex:1"><button class="btn" id="reviewNow" style="white-space:nowrap;padding:8px 10px">今日で確認</button></div>
+          </div>
         </div></details>
 
         <details class="isec"><summary>関連ドキュメント / 設計書</summary><div class="isec-body">
@@ -776,11 +780,22 @@
     </div>
     <div class="tv-search"><svg class="ui-ic" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="tvSearch" placeholder="絞り込み…" autocomplete="off"></div>
     <div class="spacer"></div>
+    <button class="btn" id="tvCsv"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>CSV</button>
     <button class="btn" id="tvExport"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>台帳</button>
     <button class="close" id="tvClose" style="border:none;background:var(--panel-2);width:32px;height:32px;border-radius:9px;cursor:pointer;display:grid;place-items:center;color:var(--text-dim)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="tv-body" id="tvBody"></div>
   <div class="tv-addbar" id="tvAddbar"></div>
+</div>
+
+<div class="tableview" id="ganttView">
+  <div class="tv-head">
+    <div class="tv-title"><svg class="ui-ic" viewBox="0 0 24 24" style="width:17px;height:17px"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3M7 13h6M7 16h9"/></svg>更改 / EOL ロードマップ</div>
+    <div class="statuslegend" style="gap:8px 12px"><span class="sl"><span class="sd" style="background:#ef4444"></span>最重要</span><span class="sl"><span class="sd" style="background:#f97316"></span>高</span><span class="sl"><span class="sd" style="background:#f59e0b"></span>中</span><span class="sl"><span class="sd" style="background:#3b82f6"></span>低</span><span class="sl">◆ 更改/EOL予定</span></div>
+    <div class="spacer"></div>
+    <button class="close" id="ganttClose" style="border:none;background:var(--panel-2);width:32px;height:32px;border-radius:9px;cursor:pointer;display:grid;place-items:center;color:var(--text-dim)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="tv-body" id="ganttBody" style="padding:8px 12px"></div>
 </div>
 
 <div class="ctxmenu" id="ctxMenu"></div>
@@ -856,11 +871,11 @@
   const SEED = {
     nodes: [
       // ── システム ──
-      { id:"sys_erp",type:"system", label:"基幹システム (ERP)", desc:"受注・請求・在庫を管理する社内基幹", owner:"情シス部 田中", dept:"情報システム部 基幹Gr", ops:"運用課 / A社 保守契約(24h)", status:"maintenance", criticality:"critical", env:"オンプレ / 自社DC", vendor:"自社開発 + A社保守", introduced:"2014-10-01", renewal:"2026-09-30",
+      { id:"sys_erp",type:"system", label:"基幹システム (ERP)", desc:"受注・請求・在庫を管理する社内基幹", owner:"情シス部 田中", dept:"情報システム部 基幹Gr", ops:"運用課 / A社 保守契約(24h)", status:"maintenance", criticality:"critical", env:"オンプレ / 自社DC", vendor:"自社開発 + A社保守", introduced:"2014-10-01", renewal:"2026-09-30", lastReviewed:"2024-09-01",
         incidents:[ {severity:"high", title:"夜間バッチが処理時間超過（月末に遅延）", status:"open"}, {severity:"mid", title:"EOSL に伴う更改を検討中", status:"open"} ],
         docs:[ {label:"基幹システム 基本設計書", url:"https://wiki.example.com/erp/design"}, {label:"運用手順書", url:"https://wiki.example.com/erp/ops"} ] },
       { id:"sys_dp", type:"system", label:"データ基盤 (DWH)", desc:"全社データ分析基盤", owner:"情シス部 鈴木", dept:"情報システム部 データGr", ops:"データGr / 内製運用", status:"active", criticality:"high", env:"GCP (本番)", vendor:"自社構築", introduced:"2023-01-15" },
-      { id:"sys_sf", type:"system", label:"Salesforce (CRM)", desc:"営業支援・顧客管理 (SFA/CRM)", owner:"営業企画部 佐藤", dept:"営業企画部", ops:"情シス CRMチーム / 運用ベンダー", status:"active", criticality:"high", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2021-04-01", renewal:"2027-03-31" },
+      { id:"sys_sf", type:"system", label:"Salesforce (CRM)", desc:"営業支援・顧客管理 (SFA/CRM)", owner:"営業企画部 佐藤", dept:"営業企画部", ops:"情シス CRMチーム / 運用ベンダー", status:"active", criticality:"high", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2021-04-01", renewal:"2027-03-31", lastReviewed:"2026-06-15" },
       { id:"sys_ae", type:"system", label:"Account Engagement", desc:"マーケティングオートメーション (旧 Pardot)", owner:"マーケ部 高橋", dept:"マーケティング部", ops:"マーケ運用 / SF社サポート", status:"active", criticality:"mid", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2022-07-01" },
       // ── データベース ──
       { id:"db_erp", type:"database", parent:"sys_erp", label:"ERP-DB", engine:"Oracle 19c", desc:"基幹業務データベース", owner:"基幹Gr" },
@@ -1049,6 +1064,19 @@
     for(const k in ifm){ if(ifm[k].length>1) issues.push({level:"error", text:`連携ID「${k}」が重複（${ifm[k].length}件）`, edge:ifm[k][0].id}); }
     for(const e of data.edges){ if(e.kind!=="ref" && !String(e.ifId||"").trim()){ const a=byId[e.source],b=byId[e.target]; issues.push({level:"warn", text:`連携（${a?a.label:"?"}→${b?b.label:"?"}）に連携ID未採番`, edge:e.id}); } }
     for(const n of data.nodes){ if((n.status==="deprecated"||n.status==="retired") && data.edges.some(e=>e.source===n.id||e.target===n.id)) issues.push({level:"warn", text:`${(STATUS[n.status]||{}).label||""}の「${n.label}」に現役の接続あり`, id:n.id}); }
+    // 循環依存（有向: source→target、参照は除外／sync は一方向として扱う）
+    const adj={}; for(const e of data.edges){ if(e.kind==="ref") continue; (adj[e.source]||(adj[e.source]=[])).push(e.target); }
+    const col={}, cyc=new Set(); const stk=[];
+    (function(){ const st=[]; for(const n of data.nodes){ if(col[n.id]) continue; st.push([n.id,0,[]]);
+      // 反復DFSで back-edge を検出
+      const path=[], onp=new Set(); const stack=[{u:n.id,it:0}]; col[n.id]=1; path.push(n.id); onp.add(n.id);
+      while(stack.length){ const top=stack[stack.length-1]; const nb=adj[top.u]||[];
+        if(top.it<nb.length){ const v=nb[top.it++]; if(onp.has(v)){ let started=false; for(const s of path){ if(s===v)started=true; if(started)cyc.add(s); } cyc.add(top.u); }
+          else if(!col[v]){ col[v]=1; stack.push({u:v,it:0}); path.push(v); onp.add(v); } }
+        else { col[top.u]=2; onp.delete(top.u); path.pop(); stack.pop(); } } } })();
+    if(cyc.size) issues.push({level:"error", text:`循環依存を検出（${cyc.size}ノードが関与）— 二重反映・鮮度崩壊の恐れ`, id:[...cyc][0]});
+    // 鮮度（棚卸し）: 最終確認日が未設定/180日超
+    for(const n of data.nodes){ if(n.type==="system"||n.type==="database"){ const du=daysUntil(n.lastReviewed); if(n.lastReviewed==null||n.lastReviewed===""){ issues.push({level:"info", text:`${TYPE[n.type].chip}「${n.label}」は棚卸し未実施`, id:n.id}); } else if(du!=null && du< -180){ issues.push({level:"warn", text:`${TYPE[n.type].chip}「${n.label}」は棚卸しから ${-du}日 経過`, id:n.id}); } } }
     const rank={error:0,warn:1,info:2}; issues.sort((a,b)=>rank[a.level]-rank[b.level]); return issues;
   }
   function openIncidents(n){ return (n.incidents||[]).filter(i=>i.status!=="closed"); }
@@ -1356,7 +1384,7 @@
     $("#fEngine").value=n.engine||""; $("#fKind").value=n.kind||""; $("#fSchema").value=n.schema||""; $("#fSchedule").value=n.schedule||"";
     $("#fStatus").value=n.status||""; $("#fCrit").value=n.criticality||""; $("#fHealth").value=n.health||"";
     $("#fEnv").value=n.env||""; $("#fVendor").value=n.vendor||""; $("#fIntro").value=n.introduced||""; $("#fRenewal").value=n.renewal||"";
-    $("#fDept").value=n.dept||""; $("#fOps").value=n.ops||"";
+    $("#fDept").value=n.dept||""; $("#fOps").value=n.ops||""; $("#fReviewed").value=n.lastReviewed||"";
     toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderDocs(n); renderIncidents(n); renderConns(n);
   }
   const CHILD_OF={ system:"database", database:"table", platform:"job" };
@@ -1428,6 +1456,8 @@
   bindField("#fVendor",(n,v)=>n.vendor=v);
   bindField("#fDept",(n,v)=>n.dept=v);
   bindField("#fOps",(n,v)=>n.ops=v);
+  bindField("#fReviewed",(n,v)=>n.lastReviewed=v);
+  $("#reviewNow").onclick=()=>{ const n=byId[selectedId]; if(!n) return; snapshot("棚卸し確認"); const d=new Date(); const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; n.lastReviewed=iso; $("#fReviewed").value=iso; save(); toast("本日付で確認済みにしました"); };
   bindField("#fIntro",(n,v)=>n.introduced=v);
   bindField("#fRenewal",(n,v)=>{ n.renewal=v; softRefresh(); });
   $("#fStatus").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.status=$("#fStatus").value||null; save(); render(); });
@@ -2069,6 +2099,7 @@ ${ser.serializeToString(gNod)}
     if(ev.key==="Escape" && T3.on){ exit3D(); return; }
     if(ev.key==="Escape" && helpModal.classList.contains("open")){ helpModal.classList.remove("open"); return; }
     if(ev.key==="Escape" && tableView.classList.contains("open")){ closeTable(); return; }
+    if(ev.key==="Escape" && ganttView.classList.contains("open")){ closeGantt(); return; }
     if(ev.target && ev.target.matches && ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
     if(ev.key==="?"){ helpModal.classList.toggle("open"); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
@@ -2102,6 +2133,48 @@ ${ser.serializeToString(gNod)}
   $("#tvTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ tvTab=b.getAttribute("data-tab"); $("#tvTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); tvSort={col:null,dir:1}; tvFilters={}; buildTable(); });
   $("#tvSearch").addEventListener("input",()=>{ if(tvTab==="tree") buildTable(); else rebuildBody(); });
   $("#tvExport").onclick=()=>$("#mdBtn").click();
+
+  // ---------------- 更改/EOL ガント ----------------
+  const ganttView=$("#ganttView");
+  $("#ganttBtn").onclick=()=>{ if(ganttView.classList.contains("open")) closeGantt(); else openGantt(); };
+  $("#ganttClose").onclick=closeGantt;
+  function openGantt(){ ganttView.classList.add("open"); $("#ganttBtn").classList.add("active"); buildGantt(); }
+  function closeGantt(){ ganttView.classList.remove("open"); $("#ganttBtn").classList.remove("active"); }
+  function buildGantt(){
+    const body=$("#ganttBody");
+    const items=data.nodes.filter(n=>n.introduced||n.renewal).map(n=>({n, s:n.introduced?new Date(n.introduced):null, e:n.renewal?new Date(n.renewal):null})).filter(it=>!isNaN(it.s||it.e));
+    if(!items.length){ body.innerHTML='<div class="empty-note" style="padding:44px;text-align:center">導入日・更改予定日が登録されたシステムがありません。<br>ノードを選択し「稼働状況・ライフサイクル」で日付を登録してください。</div>'; return; }
+    const today=new Date(); let minD=today, maxD=today;
+    for(const it of items){ for(const d of [it.s,it.e]){ if(d&&!isNaN(d)){ if(d<minD)minD=d; if(d>maxD)maxD=d; } } }
+    minD=new Date(minD.getFullYear(),0,1); maxD=new Date(maxD.getFullYear()+1,0,1); const span=(maxD-minD)||1;
+    items.sort((a,b)=>{ const ae=a.e?a.e.getTime():Infinity, be=b.e?b.e.getTime():Infinity; return ae-be; });
+    const LW=200, rowH=30, headH=40, W=Math.max(960, LW+ (maxD.getFullYear()-minD.getFullYear()+1)*150 ), plotW=W-LW-24, H=headH+items.length*rowH+16;
+    const x=(d)=> LW + ((d-minD)/span)*plotW;
+    const crit={critical:"#ef4444",high:"#f97316",mid:"#f59e0b",low:"#3b82f6"};
+    let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter,sans-serif">`;
+    for(let y=minD.getFullYear(); y<=maxD.getFullYear(); y++){ const gx=x(new Date(y,0,1)); s+=`<line x1="${gx}" y1="${headH-4}" x2="${gx}" y2="${H-8}" stroke="var(--border)"/><text x="${gx+5}" y="${headH-12}" font-size="11" font-weight="700" fill="var(--text-dim)">${y}</text>`; }
+    const tx=x(today); s+=`<line x1="${tx}" y1="${headH-18}" x2="${tx}" y2="${H-8}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${tx+3}" y="${headH-6}" font-size="10" fill="var(--accent)" font-weight="700">今日</text>`;
+    items.forEach((it,i)=>{ const ry=headH+i*rowH, n=it.n, col=crit[n.criticality]||"var(--c-system)";
+      s+=`<text x="12" y="${ry+rowH/2+4}" font-size="12" font-weight="600" fill="var(--text)" class="g-hit" data-id="${n.id}" style="cursor:pointer">${esc(n.label.length>20?n.label.slice(0,19)+"…":n.label)}</text>`;
+      const a=it.s||it.e, b=it.e||today; const bx=x(a<b?a:b), bw=Math.max(5, x(a<b?b:a)-bx); const overdue=it.e&&it.e<today;
+      s+=`<rect x="${bx}" y="${ry+7}" width="${bw}" height="${rowH-15}" rx="4" fill="${col}" fill-opacity="0.82" class="g-hit" data-id="${n.id}" style="cursor:pointer"/>`;
+      if(it.e&&!isNaN(it.e)){ const ex=x(it.e); s+=`<path d="M${ex} ${ry+rowH/2-6} l6 6 l-6 6 l-6 -6 z" fill="${overdue?"#ef4444":col}"/>`; if(overdue) s+=`<text x="${ex+9}" y="${ry+rowH/2+4}" font-size="10" fill="#ef4444" font-weight="700">超過</text>`; }
+    });
+    s+=`</svg>`; body.innerHTML=s;
+    body.querySelectorAll(".g-hit").forEach(el=>{ el.onclick=()=>{ const id=el.getAttribute("data-id"); closeGantt(); select(id); const n=byId[id]; if(n) centerOn(n); }; });
+  }
+  $("#tvCsv").onclick=()=>{
+    const q=$("#tvSearch").value.trim().toLowerCase(); const isEdge=tvTab==="edges"; const cols=isEdge?EDGE_COLS:NODE_COLS;
+    let arr=isEdge?data.edges.slice():data.nodes.slice();
+    if(q) arr=arr.filter(o=> isEdge?edgeMatchesQ(o,q):passF(o,q));
+    for(const c of cols){ const fv=(tvFilters[c.k]||"").trim().toLowerCase(); if(!fv) continue; arr=arr.filter(o=> String(isEdge?edgeColVal(o,c.k):nodeColVal(o,c.k)).toLowerCase().includes(fv)); }
+    const getV=(o,k)=> isEdge?edgeColVal(o,k):nodeColVal(o,k);
+    const q2=(v)=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+    const lines=[cols.map(c=>q2(c.label)).join(",")]; for(const o of arr) lines.push(cols.map(c=>q2(getV(o,c.k))).join(","));
+    const blob=new Blob([String.fromCharCode(0xFEFF)+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}); const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download=(isEdge?"data-integrations":"system-inventory")+".csv"; a.click(); URL.revokeObjectURL(a.href);
+    toast("CSVを出力しました（"+arr.length+"行）");
+  };
 
   const critMap={low:"低",mid:"中",high:"高",critical:"最重要"};
   function optSel(map,val,blank){ let h=`<option value="">${blank||"—"}</option>`; for(const k in map) h+=`<option value="${k}" ${val===k?"selected":""}>${map[k].label||map[k]}</option>`; return h; }
