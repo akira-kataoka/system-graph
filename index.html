@@ -358,6 +358,22 @@
   .btn.danger { color:#e11d48; background:rgba(225,29,72,.09); }
   :root[data-theme="dark"] .btn.danger { color:#fda4af; background:rgba(251,113,133,.12); }
 
+  /* ---------- Master management ---------- */
+  .master-add { display:flex; gap:8px; margin-bottom:12px; }
+  .master-add input { flex:1; padding:9px 11px; border:1px solid var(--border); background:var(--bg-2); color:var(--text); border-radius:var(--r-sm); font-size:13px; font-family:inherit; outline:none; box-shadow:var(--inset-sink); }
+  .master-add input:focus { border-color:var(--accent); box-shadow:var(--ring); }
+  .master-add .btn { flex:none; }
+  .master-list { display:flex; flex-direction:column; gap:6px; }
+  .master-row { display:flex; align-items:center; gap:8px; background:var(--panel-2); border:1px solid var(--border); border-radius:9px; padding:6px 8px; }
+  .master-row .mval { flex:1; min-width:0; padding:6px 9px; border:1px solid transparent; background:var(--glass-solid); color:var(--text); border-radius:6px; font-size:12.5px; font-family:inherit; outline:none; }
+  .master-row .mval:hover { border-color:var(--border); }
+  .master-row .mval:focus { border-color:var(--accent); box-shadow:var(--ring); }
+  .master-row .mcount { flex:none; font-size:10.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:3px 8px; border-radius:20px; min-width:44px; text-align:center; }
+  .master-row .mcount.zero { color:var(--text-mute); background:var(--panel); }
+  .master-row .mdel { flex:none; cursor:pointer; border:none; background:none; color:var(--text-mute); padding:3px; border-radius:6px; display:grid; place-items:center; transition:color .12s, background .12s; }
+  .master-row .mdel svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .master-row .mdel:hover { color:#e11d48; background:rgba(225,29,72,.1); }
+
   /* ---------- Docks ---------- */
   .dock { position:absolute; left:12px; bottom:12px; z-index:18; display:flex; flex-direction:column; gap:9px; }
   .panel { background:var(--glass); backdrop-filter:blur(18px) saturate(1.4); -webkit-backdrop-filter:blur(18px) saturate(1.4); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow-sm), var(--inset-hl); }
@@ -524,7 +540,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v21 · 2026-07-09</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v22 · 2026-07-09</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -551,6 +567,9 @@
         <button class="btn menu-row" id="svgBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 16l4-5 3 3 4-6 5 8"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>SVG出力（アニメ付）</button>
         <div class="mdiv"></div>
         <button class="btn menu-row" id="importBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg>JSON 読込</button>
+        <div class="mdiv"></div>
+        <div class="mcap">管理</div>
+        <button class="btn menu-row" id="masterBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.4"/></svg>マスタ管理（部署・担当・分類）</button>
         <div class="mdiv"></div>
         <button class="btn menu-row" id="themeBtn"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>テーマ切替</button>
         <button class="btn menu-row" id="helpBtn"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.7-2 2-2 3.5"/><circle cx="12" cy="17" r="0.5"/></svg>使い方（?）</button>
@@ -654,6 +673,12 @@
       <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v3"/><circle cx="6" cy="3" r="0" /><path d="M3 3h6M3 18h6"/></svg>経路探索 <span id="pathTitle" style="font-size:12px;color:var(--text-dim);font-weight:500"></span>
         <button class="close" id="pathClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="ob" id="pathBody"></div>
+    </div>
+
+    <div class="overview" id="masterPanel">
+      <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.4"/></svg>マスタ管理 <span style="font-size:11px;color:var(--text-dim);font-weight:500">部署・担当・分類の統一（改名で全ノード名寄せ）</span>
+        <button class="close" id="masterClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ob" id="masterBody"></div>
     </div>
 
     <aside id="inspector">
@@ -1091,6 +1116,19 @@
     ]
   };
 
+  // ---------------- Master data (部署・担当・分類の統一) ----------------
+  const MASTER_CATS=[
+    {k:"owner", label:"オーナー / 担当者", field:"owner"},
+    {k:"dept",  label:"管理部署",        field:"dept"},
+    {k:"ops",   label:"運用保守・ベンダー", field:"ops"},
+    {k:"vendor",label:"ベンダー",         field:"vendor"},
+    {k:"env",   label:"環境",            field:"env"},
+    {k:"engine",label:"DBエンジン",       field:"engine"},
+    {k:"kind",  label:"基盤種別",         field:"kind"},
+    {k:"tags",  label:"タグ",            field:"tags", arr:true},
+  ];
+  const MASTER_KEYS=MASTER_CATS.map(c=>c.k);
+
   // ---------------- State ----------------
   let data = load();
   let selectedId = null, hoverId = null;
@@ -1119,9 +1157,10 @@
     });
     const ids=new Set(d.nodes.map(n=>n.id));
     d.edges=(d.edges||[]).filter(e=>ids.has(e.source)&&ids.has(e.target));
+    const m=d.masters||{}; d.masters={}; for(const k of MASTER_KEYS){ d.masters[k]=Array.isArray(m[k])?m[k].map(v=>String(v)).filter(Boolean):[]; }
     return d;
   }
-  function serialize(){ return JSON.stringify({ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges }); }
+  function serialize(){ return JSON.stringify({ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges, masters:data.masters }); }
   function save(){ try{ localStorage.setItem(STORE_KEY, serialize()); }catch(e){} }
   // ---- 変更履歴（各変更の直前状態を記録し、任意地点へ復元）----
   const history=[];   // undoスタック {label, ts, state}  state = 変更直前のスナップショット
@@ -1132,7 +1171,7 @@
   // 連続入力（1文字ずつ）を1件の履歴にまとめる：バースト開始時のみ直前状態を記録
   function snapOnce(el,label){ if(el.__editing) return; el.__editing=true; snapshot(label); }
   function endBurst(el){ if(el) el.__editing=false; }
-  function applyState(s){ data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null; ins.classList.remove("open"); edgeIns.classList.remove("open"); save(); render(); }
+  function applyState(s){ data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null; ins.classList.remove("open"); edgeIns.classList.remove("open"); save(); render(); if($("#masterPanel")&&$("#masterPanel").classList.contains("open")) renderMaster(); }
   function undo(){
     if(!history.length){ toast("元に戻す履歴がありません"); return; }
     const h=history.pop(); redoStack.push({label:h.label, ts:nowStr(), state:serialize()}); applyState(h.state);
@@ -1579,6 +1618,7 @@
   function populateDatalists(){
     for(const id in DL_FIELD){ const f=DL_FIELD[id]; const set=new Set(DL_DEFAULTS[id]||[]);
       for(const n of data.nodes){ const v=String(n[f]||"").trim(); if(v) set.add(v); }
+      for(const v of ((data.masters&&data.masters[f])||[])){ const t=String(v).trim(); if(t) set.add(t); }
       const el=document.getElementById(id); if(el) el.innerHTML=[...set].map(v=>`<option value="${esc(v)}">`).join(""); }
     for(const [id,f] of [["dl-interval","interval"],["dl-window","window"]]){ const set=new Set(DL_DEFAULTS[id]||[]);
       for(const e of data.edges){ const v=String(e[f]||"").trim(); if(v) set.add(v); }
@@ -1732,7 +1772,7 @@
       }
       h+=`</div>`;
     });
-    body.innerHTML=h; closeOverview(); closeHistory(); pathPanel.classList.add("open");
+    body.innerHTML=h; closeOverview(); closeHistory(); closeMaster(); pathPanel.classList.add("open");
     body.querySelectorAll(".pc-node").forEach(el=>{ el.style.cursor="pointer"; el.onclick=()=>{ const n=byId[el.getAttribute("data-id")]; if(n){ select(n.id); centerOn(n); } }; });
   }
 
@@ -1801,7 +1841,7 @@
       for(let i=0;i<chain.length;i++){ const hop=chain[i]; h+=edgeTag(hop.edge,hop.rule)+nodeTag(hop.node,hop.field); }
       h+=`</div>`;
     });
-    body.innerHTML=h; closeOverview(); closeHistory(); pathPanel.classList.add("open");
+    body.innerHTML=h; closeOverview(); closeHistory(); closeMaster(); pathPanel.classList.add("open");
     body.querySelectorAll(".pc-node").forEach(el=>{ el.style.cursor="pointer"; el.onclick=()=>{ const n=byId[el.getAttribute("data-id")]; if(n){ select(n.id); centerOn(n); } }; });
   }
 
@@ -2267,13 +2307,61 @@ ${ser.serializeToString(gNod)}
 
   // ---------------- Overview drawer ----------------
   const overview=$("#overview");
-  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { closeHistory(); closePath(); buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
+  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { closeHistory(); closePath(); closeMaster(); buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
   $("#ovClose").onclick=closeOverview;
   function closeOverview(){ overview.classList.remove("open"); $("#overviewBtn").classList.remove("active"); }
 
+  // ---------------- マスタ管理（部署・担当・分類の統一） ----------------
+  const masterPanel=$("#masterPanel");
+  let masterCat="owner";
+  $("#masterBtn").onclick=()=>{ if(masterPanel.classList.contains("open")) closeMaster(); else openMaster(); };
+  $("#masterClose").onclick=closeMaster;
+  function openMaster(){ closeOverview(); closeHistory(); closePath(); masterPanel.classList.add("open"); renderMaster(); }
+  function closeMaster(){ masterPanel.classList.remove("open"); }
+  function masterUsage(cat){ const c=MASTER_CATS.find(x=>x.k===cat); const m=new Map();
+    for(const n of data.nodes){ if(c.arr){ for(const t of (n.tags||[])){ const v=String(t).trim(); if(v) m.set(v,(m.get(v)||0)+1); } }
+      else { const v=String(n[c.field]||"").trim(); if(v) m.set(v,(m.get(v)||0)+1); } }
+    for(const v of (data.masters[cat]||[])){ const t=String(v).trim(); if(t&&!m.has(t)) m.set(t,0); }
+    return m; }
+  function masterAdd(cat,val){ val=String(val||"").trim(); if(!val) return; const list=data.masters[cat]||(data.masters[cat]=[]);
+    if(masterUsage(cat).has(val)){ toast("すでに存在します: "+val); return; }
+    snapshot("マスタに追加"); list.push(val); save(); populateDatalists(); renderMaster(); toast("マスタに追加: "+val); }
+  function masterRename(cat,oldV,newV){ oldV=String(oldV); newV=String(newV||"").trim();
+    if(!newV||newV===oldV){ renderMaster(); return; }
+    const c=MASTER_CATS.find(x=>x.k===cat); snapshot("マスタ改名（名寄せ）"); let cnt=0;
+    for(const n of data.nodes){ if(c.arr){ if(Array.isArray(n.tags)){ let ch=false; n.tags=n.tags.map(t=>{ if(String(t)===oldV){ ch=true; cnt++; return newV; } return t; }); if(ch) n.tags=[...new Set(n.tags)]; } }
+      else if(String(n[c.field]||"")===oldV){ n[c.field]=newV; cnt++; } }
+    data.masters[cat]=[...new Set((data.masters[cat]||[]).map(v=>v===oldV?newV:v))];
+    if(cnt===0 && !data.masters[cat].includes(newV)) data.masters[cat].push(newV);
+    save(); populateDatalists(); render(); renderMaster(); toast(`「${oldV}」→「${newV}」に統一（${cnt} 件更新）`); }
+  function masterDelete(cat,val){ const c=MASTER_CATS.find(x=>x.k===cat); const cnt=masterUsage(cat).get(val)||0;
+    if(!confirm(cnt?`「${val}」を使用中の ${cnt} 件のノードから削除（空欄化）し、マスタからも消しますか?`:`「${val}」をマスタから削除しますか?`)) return;
+    snapshot("マスタを削除");
+    for(const n of data.nodes){ if(c.arr){ if(Array.isArray(n.tags)) n.tags=n.tags.filter(t=>String(t)!==val); }
+      else if(String(n[c.field]||"")===val) n[c.field]=""; }
+    data.masters[cat]=(data.masters[cat]||[]).filter(v=>v!==val);
+    save(); populateDatalists(); render(); renderMaster(); toast("削除しました: "+val); }
+  function renderMaster(){ const body=$("#masterBody"); if(!body) return;
+    let h='<div class="hist-hint">値の<b>改名</b>は使用中の全ノードを一括置換（名寄せ）します。<b>削除</b>は使用ノードを空欄化します。追加した値は各入力欄の候補に出ます。</div>';
+    h+='<div class="tv-tabs" id="masterTabs" style="margin:2px 0 12px;flex-wrap:wrap">'+MASTER_CATS.map(c=>`<button data-mc="${c.k}" class="${c.k===masterCat?"on":""}">${esc(c.label)}</button>`).join("")+'</div>';
+    const cat=masterCat, c=MASTER_CATS.find(x=>x.k===cat), usage=masterUsage(cat);
+    const rows=[...usage.entries()].sort((a,b)=> b[1]-a[1] || (a[0]>b[0]?1:-1));
+    h+=`<div class="master-add"><input id="mNew" placeholder="新しい${esc(c.label)}を追加…" autocomplete="off"><button class="btn primary" id="mAddBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>追加</button></div>`;
+    h+=`<div class="master-list">`;
+    if(!rows.length) h+='<div class="empty-note">まだ値がありません。上の欄から追加できます。</div>';
+    for(const [val,cnt] of rows){ h+=`<div class="master-row"><input class="mval" data-old="${esc(val)}" value="${esc(val)}"><span class="mcount ${cnt?"":"zero"}">${cnt?cnt+" 件":"未使用"}</span><button class="mdel" data-val="${esc(val)}" title="削除（使用ノードは空欄化）"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></button></div>`; }
+    h+=`</div>`;
+    body.innerHTML=h;
+    body.querySelectorAll("#masterTabs button").forEach(b=> b.onclick=()=>{ masterCat=b.getAttribute("data-mc"); renderMaster(); });
+    const add=()=>masterAdd(cat,$("#mNew").value);
+    $("#mAddBtn").onclick=add; $("#mNew").onkeydown=(e)=>{ if(e.key==="Enter"){ e.preventDefault(); add(); } };
+    body.querySelectorAll(".mval").forEach(inp=>{ inp.onchange=()=>masterRename(cat,inp.getAttribute("data-old"),inp.value); inp.onkeydown=(e)=>{ if(e.key==="Enter") inp.blur(); }; });
+    body.querySelectorAll(".mdel").forEach(b=> b.onclick=()=>masterDelete(cat,b.getAttribute("data-val")) );
+  }
+
   // ---------------- 変更履歴パネル ----------------
   const historyPanel=$("#historyPanel");
-  $("#historyBtn").onclick=()=>{ if(historyPanel.classList.contains("open")) closeHistory(); else { closeOverview(); closePath(); renderHistory(); historyPanel.classList.add("open"); $("#historyBtn").classList.add("active"); } };
+  $("#historyBtn").onclick=()=>{ if(historyPanel.classList.contains("open")) closeHistory(); else { closeOverview(); closePath(); closeMaster(); renderHistory(); historyPanel.classList.add("open"); $("#historyBtn").classList.add("active"); } };
   $("#histClose").onclick=closeHistory;
   function closeHistory(){ historyPanel.classList.remove("open"); $("#historyBtn").classList.remove("active"); }
   function renderHistory(){
@@ -2409,7 +2497,7 @@ ${ser.serializeToString(gNod)}
     if(ev.key==="?"){ helpModal.classList.toggle("open"); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
     if(ev.key==="Delete"&&selectedEdge) $("#eDelBtn").click();
-    if(ev.key==="Escape"){ if(pathMode||pathPanel.classList.contains("open")){ pathMode=false; pathSource=null; closePath(); impactSet=null; updateHighlight(); } else if(linkMode) setLinkMode(false); else if(historyPanel.classList.contains("open")) closeHistory(); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
+    if(ev.key==="Escape"){ if(pathMode||pathPanel.classList.contains("open")){ pathMode=false; pathSource=null; closePath(); impactSet=null; updateHighlight(); } else if(linkMode) setLinkMode(false); else if(masterPanel.classList.contains("open")) closeMaster(); else if(historyPanel.classList.contains("open")) closeHistory(); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
     if(ev.key==="l"||ev.key==="L") setLinkMode(!linkMode);
     if(ev.key==="f"||ev.key==="F") zoomFit();
     if(ev.key==="r"||ev.key==="R") $("#relayoutBtn").click();
@@ -2434,7 +2522,7 @@ ${ser.serializeToString(gNod)}
   const tableView=$("#tableView"); let tvTab="tree", tvSort={col:null,dir:1}, tvFilters={};
   $("#tableBtn").onclick=()=>{ if(tableView.classList.contains("open")) closeTable(); else openTable(); };
   $("#tvClose").onclick=closeTable;
-  function openTable(){ tableView.classList.add("open"); $("#tableBtn").classList.add("active"); buildTable(); }
+  function openTable(){ closeMaster(); tableView.classList.add("open"); $("#tableBtn").classList.add("active"); buildTable(); }
   function closeTable(){ tableView.classList.remove("open"); $("#tableBtn").classList.remove("active"); }
   $("#tvTabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ tvTab=b.getAttribute("data-tab"); $("#tvTabs").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); tvSort={col:null,dir:1}; tvFilters={}; buildTable(); });
   $("#tvSearch").addEventListener("input",()=>{ if(tvTab==="tree") buildTable(); else rebuildBody(); });
@@ -2444,7 +2532,7 @@ ${ser.serializeToString(gNod)}
   const ganttView=$("#ganttView");
   $("#ganttBtn").onclick=()=>{ if(ganttView.classList.contains("open")) closeGantt(); else openGantt(); };
   $("#ganttClose").onclick=closeGantt;
-  function openGantt(){ ganttView.classList.add("open"); $("#ganttBtn").classList.add("active"); buildGantt(); }
+  function openGantt(){ closeMaster(); ganttView.classList.add("open"); $("#ganttBtn").classList.add("active"); buildGantt(); }
   function closeGantt(){ ganttView.classList.remove("open"); $("#ganttBtn").classList.remove("active"); }
   function buildGantt(){
     const body=$("#ganttBody");
