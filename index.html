@@ -524,7 +524,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v20 · 2026-07-09</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v21 · 2026-07-09</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -1129,6 +1129,9 @@
   function nowStr(){ try{ return new Date().toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }catch(e){ return ""; } }
   let editorName=""; try{ editorName=localStorage.getItem("systemGraph.editor")||""; }catch(e){}
   function snapshot(label){ try{ history.push({label:label||"変更", ts:nowStr(), by:editorName, state:serialize()}); if(history.length>80) history.shift(); redoStack.length=0; if($("#historyPanel")&&$("#historyPanel").classList.contains("open")) renderHistory(); }catch(e){} }
+  // 連続入力（1文字ずつ）を1件の履歴にまとめる：バースト開始時のみ直前状態を記録
+  function snapOnce(el,label){ if(el.__editing) return; el.__editing=true; snapshot(label); }
+  function endBurst(el){ if(el) el.__editing=false; }
   function applyState(s){ data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null; ins.classList.remove("open"); edgeIns.classList.remove("open"); save(); render(); }
   function undo(){
     if(!history.length){ toast("元に戻す履歴がありません"); return; }
@@ -1582,7 +1585,10 @@
       const el=document.getElementById(id); if(el) el.innerHTML=[...set].map(v=>`<option value="${esc(v)}">`).join(""); }
   }
 
-  function bindField(sel,apply){ $(sel).addEventListener("input",()=>{ const n=byId[selectedId]; if(!n) return; apply(n,$(sel).value); save(); }); }
+  const FIELD_LABEL={ "#fName":"名前","#fDesc":"説明","#fOwner":"オーナー","#fTech":"技術","#fEngine":"DBエンジン","#fKind":"基盤種別","#fSchema":"スキーマ","#fSchedule":"スケジュール","#fTags":"タグ","#fEnv":"環境","#fVendor":"ベンダー","#fDept":"管理部署","#fOps":"運用保守","#fReviewed":"最終確認日","#fIntro":"導入日","#fRenewal":"更改予定日" };
+  function bindField(sel,apply){ const el=$(sel); const label=(FIELD_LABEL[sel]||"項目")+"を編集";
+    el.addEventListener("input",()=>{ const n=byId[selectedId]; if(!n) return; snapOnce(el,label); apply(n,el.value); save(); });
+    el.addEventListener("blur",()=>endBurst(el)); el.addEventListener("change",()=>endBurst(el)); }
   bindField("#fName",(n,v)=>{ n.label=v; $("#insTitle").textContent=v; softRefresh(); });
   bindField("#fDesc",(n,v)=>n.desc=v);
   bindField("#fOwner",(n,v)=>n.owner=v);
@@ -1603,9 +1609,9 @@
   $("#reviewNow").onclick=()=>{ const n=byId[selectedId]; if(!n) return; snapshot("棚卸し確認"); const d=new Date(); const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; n.lastReviewed=iso; $("#fReviewed").value=iso; save(); toast("本日付で確認済みにしました"); };
   bindField("#fIntro",(n,v)=>n.introduced=v);
   bindField("#fRenewal",(n,v)=>{ n.renewal=v; softRefresh(); });
-  $("#fStatus").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.status=$("#fStatus").value||null; save(); render(); });
-  $("#fCrit").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.criticality=$("#fCrit").value||null; save(); });
-  $("#fHealth").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; n.health=$("#fHealth").value||null; save(); render(); });
+  $("#fStatus").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; snapshot("稼働ステータスを変更"); n.status=$("#fStatus").value||null; save(); render(); });
+  $("#fCrit").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; snapshot("重要度を変更"); n.criticality=$("#fCrit").value||null; save(); });
+  $("#fHealth").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n)return; snapshot("ヘルスを変更"); n.health=$("#fHealth").value||null; save(); render(); });
 
   // columns editor (tables)
   function renderCols(n){
@@ -1618,15 +1624,16 @@
         `<label class="pk"><input type="checkbox" class="pkc" ${col.pk?"checked":""}>PK</label>`+
         `<button class="lin" title="この項目のリネージ（上流・下流）を辿る"${lc?"":' style="opacity:.4"'}><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v3"/><path d="M3 3h4M3 18h4M17 18h4"/></svg>${lc?`<span class="lin-n">${lc}</span>`:""}</button>`+
         `<button class="rm">×</button>`;
-      row.querySelector(".cn").oninput=e=>{ col.name=e.target.value; save(); };
-      row.querySelector(".tt").oninput=e=>{ col.type=e.target.value; save(); };
-      row.querySelector(".pkc").onchange=e=>{ col.pk=e.target.checked; save(); };
+      const cnI=row.querySelector(".cn"), ttI=row.querySelector(".tt");
+      cnI.oninput=e=>{ snapOnce(cnI,"カラムを編集"); col.name=e.target.value; save(); }; cnI.onblur=()=>endBurst(cnI);
+      ttI.oninput=e=>{ snapOnce(ttI,"カラムを編集"); col.type=e.target.value; save(); }; ttI.onblur=()=>endBurst(ttI);
+      row.querySelector(".pkc").onchange=e=>{ snapshot("カラムを編集"); col.pk=e.target.checked; save(); };
       row.querySelector(".lin").onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); if(col.name) traceColumnLineage(n.id,col.name); else toast("列名を入力してください"); };
-      row.querySelector(".rm").onclick=()=>{ cols.splice(i,1); save(); renderCols(n); };
+      row.querySelector(".rm").onclick=()=>{ snapshot("列を削除"); cols.splice(i,1); save(); renderCols(n); };
       list.appendChild(row);
     });
   }
-  $("#addCol").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; const s=$("#secCols"); if(s&&!s.open)s.open=true; (n.columns||(n.columns=[])).push({name:"",type:"",pk:false}); save(); renderCols(n); };
+  $("#addCol").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; snapshot("列を追加"); const s=$("#secCols"); if(s&&!s.open)s.open=true; (n.columns||(n.columns=[])).push({name:"",type:"",pk:false}); save(); renderCols(n); };
   // 関連ドキュメント / 設計書リンク
   function docRow(list, i, onchange){ const doc=list[i];
     const row=document.createElement("div"); row.className="erow"; row.style.flexWrap="wrap";
@@ -1635,16 +1642,17 @@
       (doc.url?`<a class="doc-open" href="${safeUrl}" target="_blank" rel="noopener noreferrer">開く</a>`:"")+
       `<button class="rm">×</button>`+
       `<input class="dur" placeholder="https://… / 社内Wiki URL" value="${esc(doc.url||"")}" style="flex:1 1 100%;margin-top:5px">`;
-    row.querySelector(".dnm").oninput=e=>{ doc.label=e.target.value; save(); };
-    row.querySelector(".dur").oninput=e=>{ doc.url=e.target.value; save(); };
-    row.querySelector(".dur").onchange=onchange;
-    row.querySelector(".rm").onclick=()=>{ list.splice(i,1); save(); onchange(); };
+    const dnm=row.querySelector(".dnm"), dur=row.querySelector(".dur");
+    dnm.oninput=e=>{ snapOnce(dnm,"ドキュメントを編集"); doc.label=e.target.value; save(); }; dnm.onblur=()=>endBurst(dnm);
+    dur.oninput=e=>{ snapOnce(dur,"ドキュメントを編集"); doc.url=e.target.value; save(); };
+    dur.onchange=()=>{ endBurst(dur); onchange(); };
+    row.querySelector(".rm").onclick=()=>{ snapshot("ドキュメントを削除"); list.splice(i,1); save(); onchange(); };
     return row;
   }
   function renderDocs(n){ const list=$("#docList"); list.innerHTML=""; const docs=n.docs||(n.docs=[]);
     if(!docs.length){ list.innerHTML='<div style="font-size:11.5px;color:var(--text-mute)">未登録（設計書・ER図・手順書などのURL）</div>'; }
     docs.forEach((_,i)=> list.appendChild(docRow(docs,i,()=>renderDocs(n)))); }
-  $("#addDoc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; (n.docs||(n.docs=[])).push({label:"",url:""}); save(); renderDocs(n); };
+  $("#addDoc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; snapshot("ドキュメントを追加"); (n.docs||(n.docs=[])).push({label:"",url:""}); save(); renderDocs(n); };
   function renderEdgeDocs(e){ const list=$("#eDocList"); list.innerHTML=""; const docs=e.docs||(e.docs=[]);
     if(!docs.length){ list.innerHTML='<div style="font-size:11.5px;color:var(--text-mute)">未登録（IF設計書・仕様書などのURL）</div>'; }
     docs.forEach((_,i)=> list.appendChild(docRow(docs,i,()=>renderEdgeDocs(e)))); }
@@ -1661,14 +1669,15 @@
         `<input class="grow tl" placeholder="事象・課題" value="${esc(inc.title||"")}">`+
         `<select class="st-sel ss"><option value="open" ${inc.status!=="closed"?"selected":""}>未</option><option value="closed" ${inc.status==="closed"?"selected":""}>済</option></select>`+
         `<button class="rm">×</button>`;
-      row.querySelector(".sv").onchange=e=>{ inc.severity=e.target.value; save(); render(); };
-      row.querySelector(".tl").oninput=e=>{ inc.title=e.target.value; save(); };
-      row.querySelector(".ss").onchange=e=>{ inc.status=e.target.value; save(); render(); renderIncidents(n); };
-      row.querySelector(".rm").onclick=()=>{ incs.splice(i,1); save(); render(); renderIncidents(n); };
+      const tlI=row.querySelector(".tl");
+      row.querySelector(".sv").onchange=e=>{ snapshot("インシデントを編集"); inc.severity=e.target.value; save(); render(); };
+      tlI.oninput=e=>{ snapOnce(tlI,"インシデントを編集"); inc.title=e.target.value; save(); }; tlI.onblur=()=>endBurst(tlI);
+      row.querySelector(".ss").onchange=e=>{ snapshot("インシデント状態を変更"); inc.status=e.target.value; save(); render(); renderIncidents(n); };
+      row.querySelector(".rm").onclick=()=>{ snapshot("インシデントを削除"); incs.splice(i,1); save(); render(); renderIncidents(n); };
       list.appendChild(row);
     });
   }
-  $("#addInc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; (n.incidents||(n.incidents=[])).push({severity:"mid",title:"",status:"open"}); if(!n.health)n.health=null; save(); render(); renderIncidents(n); };
+  $("#addInc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; snapshot("インシデントを追加"); (n.incidents||(n.incidents=[])).push({severity:"mid",title:"",status:"open"}); if(!n.health)n.health=null; save(); render(); renderIncidents(n); };
 
   // impact analysis
   let impactSet=null;
@@ -1843,14 +1852,15 @@
         `<input class="grow mt" placeholder="先項目" value="${esc(m.to||"")}" style="flex:1 1 38%">`+
         `<button class="rm">×</button>`+
         `<input class="mr" placeholder="変換ルール（例: TRIM / ×1.1 / コード変換）" value="${esc(m.rule||"")}" style="flex:1 1 100%;margin-top:5px">`;
-      row.querySelector(".mf").oninput=ev=>{ m.from=ev.target.value; save(); };
-      row.querySelector(".mt").oninput=ev=>{ m.to=ev.target.value; save(); };
-      row.querySelector(".mr").oninput=ev=>{ m.rule=ev.target.value; save(); };
-      row.querySelector(".rm").onclick=()=>{ maps.splice(i,1); save(); renderMappings(e); };
+      const mf=row.querySelector(".mf"), mt=row.querySelector(".mt"), mr=row.querySelector(".mr");
+      mf.oninput=ev=>{ snapOnce(mf,"項目マッピングを編集"); m.from=ev.target.value; save(); }; mf.onblur=()=>endBurst(mf);
+      mt.oninput=ev=>{ snapOnce(mt,"項目マッピングを編集"); m.to=ev.target.value; save(); }; mt.onblur=()=>endBurst(mt);
+      mr.oninput=ev=>{ snapOnce(mr,"項目マッピングを編集"); m.rule=ev.target.value; save(); }; mr.onblur=()=>endBurst(mr);
+      row.querySelector(".rm").onclick=()=>{ snapshot("項目マッピングを削除"); maps.splice(i,1); save(); renderMappings(e); };
       list.appendChild(row);
     });
   }
-  $("#addMap").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; (e.mappings||(e.mappings=[])).push({from:"",to:"",rule:""}); save(); renderMappings(e); };
+  $("#addMap").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; snapshot("項目マッピングを追加"); (e.mappings||(e.mappings=[])).push({from:"",to:"",rule:""}); save(); renderMappings(e); };
   function renderEdgeFlow(e){
     const a=byId[e.source], b=byId[e.target]; const wrap=$("#eiFlow"); wrap.innerHTML="";
     const mk=(n)=>{ const t=TYPE[n.type]; return `<div class="fm-node" data-id="${n.id}"><div class="fm-ic" style="background:${nodeColor(n)}"><svg viewBox="0 0 24 24">${ICON[t.icon]}</svg></div><div class="fm-l">${esc(n.label)}</div></div>`; };
@@ -1868,7 +1878,10 @@
       d.onclick=()=>{ select(o.id); centerOn(o); }; list.appendChild(d);
     });
   }
-  function bindEdge(sel,apply,rerender){ $(sel).addEventListener("input",()=>{ const e=edgeById[selectedEdge]; if(!e) return; apply(e,$(sel).value); save(); if(rerender) render(); }); }
+  const EFIELD_LABEL={ "#eIfId":"連携ID","#eLabel":"連携名","#eCond":"抽出条件","#eKey":"増分キー","#eTrans":"変換ロジック","#eInterval":"連携間隔","#eWindow":"実行時間帯","#eVolume":"データ量" };
+  function bindEdge(sel,apply,rerender){ const el=$(sel); const label=(EFIELD_LABEL[sel]||"連携項目")+"を編集";
+    el.addEventListener("input",()=>{ const e=edgeById[selectedEdge]; if(!e) return; snapOnce(el,label); apply(e,el.value); save(); if(rerender) render(); });
+    el.addEventListener("blur",()=>endBurst(el)); el.addEventListener("change",()=>endBurst(el)); }
   bindEdge("#eIfId",(e,v)=>e.ifId=v,true);
   bindEdge("#eLabel",(e,v)=>e.label=v,true);
   bindEdge("#eCond",(e,v)=>e.condition=v);
@@ -1877,9 +1890,9 @@
   bindEdge("#eInterval",(e,v)=>e.interval=v);
   bindEdge("#eWindow",(e,v)=>e.window=v);
   bindEdge("#eVolume",(e,v)=>e.volume=v);
-  $("#eScale").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.scale=$("#eScale").value||null; save(); render(); });
-  $("#eKind").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.kind=$("#eKind").value; save(); render(); openEdgeInspector(e.id); });
-  $("#eMode").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.mode=$("#eMode").value||null; save(); render(); openEdgeInspector(e.id); });
+  $("#eScale").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; snapshot("データ量スケールを変更"); e.scale=$("#eScale").value||null; save(); render(); });
+  $("#eKind").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; snapshot("連携種別を変更"); e.kind=$("#eKind").value; save(); render(); openEdgeInspector(e.id); });
+  $("#eMode").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; snapshot("連携方式を変更"); e.mode=$("#eMode").value||null; save(); render(); openEdgeInspector(e.id); });
   $("#eiClose").onclick=()=>{ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); };
   $("#eDelBtn").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; if(!confirm("このデータ連携を削除しますか?")) return;
     snapshot("連携を削除"); data.edges=data.edges.filter(x=>x.id!==e.id); selectedEdge=null; edgeIns.classList.remove("open"); save(); render(); toast("連携を削除しました"); };
