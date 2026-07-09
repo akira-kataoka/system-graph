@@ -358,7 +358,21 @@
   /* ---------- Docks ---------- */
   .dock { position:absolute; left:12px; bottom:12px; z-index:18; display:flex; flex-direction:column; gap:9px; }
   .panel { background:var(--glass); backdrop-filter:blur(18px) saturate(1.4); -webkit-backdrop-filter:blur(18px) saturate(1.4); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow-sm), var(--inset-hl); }
-  .legend { padding:10px 12px; font-size:11.5px; }
+  .legend { padding:0; font-size:11.5px; overflow:hidden; transition:box-shadow .2s; }
+  .legend-head { display:flex; align-items:center; gap:7px; padding:9px 11px; cursor:pointer; user-select:none; border-radius:var(--r-md); transition:background .14s; }
+  .legend-head:hover { background:var(--panel-2); }
+  .legend-head .lh-ic { width:14px; height:14px; flex:none; fill:none; stroke:var(--accent); stroke-width:2; stroke-linecap:round; opacity:.9; }
+  .legend-head .lh-title { font-size:11.5px; font-weight:700; letter-spacing:.3px; color:var(--text); }
+  .legend-head .lh-hint { font-size:9.5px; color:var(--text-mute); margin-left:2px; white-space:nowrap; overflow:hidden; }
+  .legend-head .lh-toggle { margin-left:auto; width:22px; height:22px; flex:none; border:none; background:transparent; color:var(--text-dim); cursor:pointer; display:grid; place-items:center; border-radius:6px; transition:background .12s, transform .26s cubic-bezier(.22,1,.36,1); }
+  .legend-head .lh-toggle svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .legend-head:hover .lh-toggle { color:var(--text); }
+  .legend-content { padding:0 12px 11px; max-height:60vh; overflow:auto; opacity:1; transition:max-height .3s cubic-bezier(.22,1,.36,1), opacity .2s, padding .3s; }
+  .legend.collapsed .legend-content { max-height:0; opacity:0; padding-top:0; padding-bottom:0; pointer-events:none; }
+  .legend.collapsed .legend-head { border-radius:var(--r-md); }
+  .legend.collapsed .lh-toggle { transform:rotate(-90deg); }
+  .legend.collapsed .lh-hint { display:none; }
+  @media (max-width:760px){ .legend-head .lh-hint { display:none; } }
   .legend .lt { font-size:9.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--text-mute); margin:2px 0 5px; }
   .legend .row { display:flex; align-items:center; gap:8px; margin:3px 0; color:var(--text-dim); cursor:pointer; border-radius:6px; padding:1px 2px; transition:color .14s, opacity .14s; }
   .legend .row:hover { color:var(--text); }
@@ -366,9 +380,16 @@
   .legend .row.off .swatch { filter:grayscale(1); }
   .legend .swatch { width:12px; height:12px; border-radius:4px; flex:none; box-shadow:inset 0 0 0 1.3px rgba(255,255,255,.45); }
   .legend .swatch.round { border-radius:50%; }
-  .minimap-wrap { padding:6px; }
-  #minimap { display:block; border-radius:8px; cursor:pointer; }
+  .minimap-wrap { padding:6px; position:relative; }
+  #minimap { display:block; border-radius:8px; cursor:pointer; transition:height .28s cubic-bezier(.22,1,.36,1), opacity .2s; }
   .mm-view { fill:var(--accent-soft); stroke:var(--accent); stroke-width:1.3; }
+  .mm-toggle { position:absolute; top:9px; right:9px; width:20px; height:20px; border:none; border-radius:6px; background:var(--glass-solid); color:var(--text-dim); cursor:pointer; display:grid; place-items:center; opacity:0; transition:opacity .14s, background .12s, color .12s, transform .26s cubic-bezier(.22,1,.36,1); box-shadow:var(--shadow-sm); }
+  .mm-toggle svg { width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .minimap-wrap:hover .mm-toggle { opacity:1; }
+  .minimap-wrap:hover .mm-toggle:hover { color:var(--text); background:var(--panel-2); }
+  .minimap-wrap.collapsed { padding:0; }
+  .minimap-wrap.collapsed #minimap { height:0 !important; opacity:0; }
+  .minimap-wrap.collapsed .mm-toggle { position:static; opacity:1; transform:rotate(-90deg); width:100%; height:26px; border-radius:var(--r-md); background:transparent; box-shadow:none; }
 
   .rightdock { position:absolute; right:12px; bottom:12px; z-index:18; display:flex; flex-direction:column; gap:8px; align-items:flex-end; transition:right .34s cubic-bezier(.22,1,.36,1); }
   aside.open ~ .rightdock { right:368px; }
@@ -500,7 +521,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v17 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v18 · 2026-07-09</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -578,9 +599,17 @@
       </div>
     </div>
 
-    <div class="dock">
-      <div class="panel minimap-wrap"><svg id="minimap" width="180" height="112"></svg></div>
+    <div class="dock" id="dock">
+      <div class="panel minimap-wrap" id="minimapWrap"><svg id="minimap" width="180" height="112"></svg>
+        <button class="mm-toggle" id="minimapToggle" title="ミニマップを隠す / 表示"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="panel legend" id="legend">
+        <div class="legend-head" id="legendHead">
+          <svg class="lh-ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          <span class="lh-title">凡例・表示</span>
+          <span class="lh-hint">クリックで種別を絞込</span>
+          <button class="lh-toggle" id="legendToggle" title="凡例を隠す / 表示 (G)" aria-expanded="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        </div>
+        <div class="legend-content" id="legendContent">
         <div class="lt">表示モード（色分け）</div>
         <div class="segmented" id="modeSeg" style="margin-bottom:8px">
           <button data-mode="type" class="on">種別</button>
@@ -601,6 +630,7 @@
         <div class="row" data-t="external"><span class="swatch round" style="background:var(--c-external)"></span> 外部サービス</div>
         <div class="lt" style="margin-top:8px">データの流れ（色＝種別 / ●大きさ＝データ量）</div>
         <div class="statuslegend" id="modeLegend2"></div>
+        </div>
         </div>
       </div>
     </div>
@@ -790,7 +820,7 @@
         <div class="hrow"><b style="color:#3b82f6">■</b>読取（抽出）　<b style="color:#22c55e">■</b>書込（ロード）　<b style="color:#06b6d4">■</b>双方向同期（コネクタ）　<b style="color:#a855f7">■</b>参照。●の大きさ＝データ量</div>
       </div>
       <div class="help-sec"><h4>ショートカット</h4>
-        <div class="hrow"><kbd>L</kbd> リンク　<kbd>F</kbd> 全体表示　<kbd>R</kbd> 再整列　<kbd>Delete</kbd> 削除　<kbd>Ctrl+D</kbd> 複製　<kbd>Esc</kbd> 解除/閉じる　<kbd>?</kbd> ヘルプ</div>
+        <div class="hrow"><kbd>L</kbd> リンク　<kbd>F</kbd> 全体表示　<kbd>R</kbd> 再整列　<kbd>G</kbd> 凡例の表示/非表示　<kbd>Delete</kbd> 削除　<kbd>Ctrl+D</kbd> 複製　<kbd>Esc</kbd> 解除/閉じる　<kbd>?</kbd> ヘルプ</div>
         <div class="hrow"><kbd>Ctrl+Z</kbd> 元に戻す　<kbd>Ctrl+Y</kbd>／<kbd>Ctrl+Shift+Z</kbd> やり直し　<b>右クリック</b>：ノード/線/背景のメニュー（編集・複製・接続・フォーカス・削除）</div>
       </div>
     </div>
@@ -965,6 +995,29 @@
       { id:"j_ec", type:"job", parent:"pf_ft", label:"shopify_ingest", desc:"Shopify → ERP 受注取込", schedule:"5分毎", tech:"Fivetran connector", status:"active", x:-820, y:150 },
       // ── 外部サービス ──
       { id:"ext_freee", type:"external", label:"freee 会計", desc:"外部会計 SaaS（仕訳連携）", tech:"freee API", owner:"経理部", tags:["外部","会計"], x:-680, y:320 },
+      { id:"ext_stripe", type:"external", label:"Stripe 決済", desc:"オンライン決済（EC入金照合）", tech:"Stripe API / Webhook", owner:"EC運用", tags:["外部","決済"], x:-960, y:250 },
+      { id:"ext_slack", type:"external", label:"Slack 通知", desc:"バッチ結果・障害の運用通知", tech:"Incoming Webhook", owner:"運用課", tags:["外部","通知"], x:-330, y:-270 },
+      { id:"ext_ga4",  type:"external", label:"GA4 (行動ログ)", desc:"Web行動ログ（BigQuery Export）", tech:"GA4 → BigQuery", owner:"マーケ部", tags:["外部","行動ログ"], x:-720, y:350 },
+      // ── 人事システム (Workday) ──
+      { id:"sys_hr", type:"system", label:"人事システム (Workday)", desc:"従業員・組織・勤怠のマスタ", owner:"人事部 中村", dept:"人事部", ops:"人事システム課 / Workdayサポート", status:"active", criticality:"mid", env:"SaaS (本番)", vendor:"Workday社", introduced:"2022-01-01", lastReviewed:"2026-04-01",
+        docs:[ {label:"人事マスタ 連携仕様", url:"https://wiki.example.com/hr/if"} ] },
+      { id:"db_hr", type:"database", parent:"sys_hr", label:"Workday Objects", engine:"Workday", desc:"従業員・組織データ", owner:"人事システム課" },
+      { id:"t_emp", type:"table", parent:"db_hr", label:"Worker", desc:"従業員マスタ", schema:"HR", tags:["PII","人事"], x:1060, y:-40,
+        columns:[ {name:"worker_id",type:"id",pk:true}, {name:"name",type:"text"}, {name:"email",type:"email"}, {name:"org_id",type:"reference"}, {name:"hire_date",type:"date"} ] },
+      { id:"t_org", type:"table", parent:"db_hr", label:"Organization", desc:"組織マスタ", schema:"HR", tags:["人事"], x:1060, y:80,
+        columns:[ {name:"org_id",type:"id",pk:true}, {name:"org_name",type:"text"}, {name:"parent_org",type:"reference"} ] },
+      // ── データレイク（DWHシステム配下の2つ目のDB）──
+      { id:"db_lake", type:"database", parent:"sys_dp", label:"Data Lake (GCS)", engine:"GCS / Iceberg", desc:"生ログ・半構造データのレイク", owner:"データGr" },
+      { id:"t_events", type:"table", parent:"db_lake", label:"raw_events", desc:"Web/アプリ行動ログ（生）", schema:"raw", tags:["行動ログ","大容量"], x:-360, y:340,
+        columns:[ {name:"event_id",type:"STRING",pk:true}, {name:"user_id",type:"STRING"}, {name:"event_name",type:"STRING"}, {name:"event_ts",type:"TIMESTAMP"} ] },
+      { id:"t_dim_emp", type:"table", parent:"db_dwh", label:"dim_employee", desc:"従業員ディメンション", schema:"mart", tags:["分析"], x:-90, y:190,
+        columns:[ {name:"employee_id",type:"STRING",pk:true}, {name:"name",type:"STRING"}, {name:"org",type:"STRING"} ] },
+      // ── 変換基盤（dbt Cloud）──
+      { id:"pf_dbt", type:"platform", label:"dbt Cloud", kind:"Transform (ELT)", desc:"SQL変換・データモデリング", owner:"データGr" },
+      { id:"j_mart", type:"job", parent:"pf_dbt", label:"build_marts", desc:"レイク→martを再構築（dbt run）", schedule:"毎日 04:00", tech:"dbt / SQL", status:"active", x:-220, y:250 },
+      // ── 追加ジョブ ──
+      { id:"j_hr",  type:"job", parent:"pf_ft", label:"workday_ingest", desc:"Workday → DWH 従業員連携", schedule:"日次 01:00", tech:"Fivetran connector", status:"active", x:560, y:20 },
+      { id:"j_evt", type:"job", parent:"pf_air", label:"event_loader", desc:"GA4 → レイク 行動ログ取込", schedule:"毎日 01:30", tech:"Python / BigQuery", status:"active", health:"warn", x:-540, y:300 },
     ],
     edges: [
       { id:"e1", source:"t_order", target:"j_night", label:"受注抽出", kind:"read", mode:"incremental", key:"ORDER_DATE", ifId:"IF00001",
@@ -1006,10 +1059,30 @@
         mappings:[ {from:"id", to:"ORDER_ID", rule:"プレフィックス EC-"}, {from:"total_price", to:"AMOUNT", rule:"—"}, {from:"created_at", to:"ORDER_DATE", rule:"JST変換"} ] },
       { id:"e14",source:"t_fact", target:"t_report", label:"売上集計", kind:"read", mode:"incremental", ifId:"IF00014",
         interval:"日次", window:"06:00-06:20", volume:"約1万行", scale:"s", condition:"日次で売上サマリを再構築（LookML PDT）" },
+      // ── 人事 / レイク / dbt / 外部連携（追加）──
+      { id:"e18",source:"t_emp", target:"j_hr", label:"従業員抽出", kind:"read", mode:"incremental", key:"updated_at", ifId:"IF00015",
+        interval:"日次", window:"01:00-01:10", volume:"約6千件/日", scale:"s", condition:"WHERE updated_at > :cursor AND active = true" },
+      { id:"e19",source:"j_hr", target:"t_dim_emp", label:"従業員ロード", kind:"write", mode:"upsert", key:"employee_id", ifId:"IF00016",
+        interval:"日次", window:"01:10-01:25", volume:"約6千件/日", scale:"s", transform:"組織階層を展開し dim_employee へ UPSERT",
+        mappings:[ {from:"worker_id", to:"employee_id", rule:"—"}, {from:"org_id", to:"org", rule:"組織名に解決"} ] },
+      { id:"e20",source:"ext_ga4", target:"j_evt", label:"行動ログ取込", kind:"read", mode:"incremental", key:"event_ts", ifId:"IF00017",
+        interval:"日次", window:"01:30-01:50", volume:"約400万件/日", scale:"xl", condition:"GA4 BigQuery Export の当日分パーティション" },
+      { id:"e21",source:"j_evt", target:"t_events", label:"レイク書込", kind:"write", mode:"full", ifId:"IF00018",
+        interval:"日次", window:"01:50-02:10", volume:"約400万件/日", scale:"xl", transform:"スキーマ整形し Iceberg テーブルへ追記" },
+      { id:"e22",source:"t_events", target:"j_mart", label:"ログ集計", kind:"read", mode:"incremental", key:"event_ts", ifId:"IF00019",
+        interval:"日次", window:"04:00-04:20", volume:"約400万件/日", scale:"xl", condition:"WHERE event_ts >= CURRENT_DATE - 1", transform:"セッション化・イベント集計" },
+      { id:"e23",source:"j_mart", target:"t_fact", label:"mart再構築", kind:"write", mode:"upsert", key:"sales_key", ifId:"IF00020",
+        interval:"日次", window:"04:20-04:40", volume:"増分", scale:"m", transform:"dbt モデルで fact を再構築" },
+      { id:"e24",source:"j_night", target:"ext_slack", label:"完了通知", kind:"write", mode:"realtime", ifId:"IF00021",
+        interval:"リアルタイム", window:"バッチ完了時", volume:"通知", scale:"xs", transform:"成否・件数を運用チャンネルへ通知" },
+      { id:"e25",source:"ext_stripe", target:"j_ec", label:"決済取込", kind:"read", mode:"incremental", key:"created", ifId:"IF00022",
+        interval:"5分毎", window:"終日", volume:"約3千件/日", scale:"s", condition:"Stripe Webhook（charge.succeeded）を突合" },
       // 参照（FK / JOIN）— データは流れない構造的な関係
       { id:"e15",source:"t_opp",  target:"t_account", label:"FK: AccountId", kind:"ref" },
       { id:"e16",source:"t_fact", target:"t_dim",  label:"JOIN: customer_id", kind:"ref" },
       { id:"e17",source:"t_report", target:"t_kpi", label:"参照", kind:"ref" },
+      { id:"e26",source:"t_emp", target:"t_org", label:"FK: org_id", kind:"ref" },
+      { id:"e27",source:"t_fact", target:"t_dim_emp", label:"JOIN: employee", kind:"ref" },
     ]
   };
 
@@ -2075,6 +2148,19 @@ ${ser.serializeToString(gNod)}
     if(hidden.has(t)) hidden.delete(t); else hidden.add(t); syncLegend(); render(); }; });
   function syncLegend(){ $("#legend").querySelectorAll(".row").forEach(r=>r.classList.toggle("off",hidden.has(r.getAttribute("data-t")))); }
 
+  // ---------------- Collapsible dock (legend / minimap) ----------------
+  const legendEl=$("#legend"), minimapWrapEl=$("#minimapWrap");
+  function setLegendCollapsed(v,persist){ legendEl.classList.toggle("collapsed",v);
+    const t=$("#legendToggle"); if(t) t.setAttribute("aria-expanded",String(!v));
+    if(persist!==false){ try{ localStorage.setItem("systemGraph.legendCollapsed",v?"1":"0"); }catch(e){} } }
+  function toggleLegend(){ setLegendCollapsed(!legendEl.classList.contains("collapsed")); }
+  $("#legendHead").onclick=(ev)=>{ ev.stopPropagation(); toggleLegend(); };
+  function setMinimapCollapsed(v,persist){ minimapWrapEl.classList.toggle("collapsed",v);
+    if(persist!==false){ try{ localStorage.setItem("systemGraph.minimapCollapsed",v?"1":"0"); }catch(e){} } }
+  $("#minimapToggle").onclick=(ev)=>{ ev.stopPropagation(); setMinimapCollapsed(!minimapWrapEl.classList.contains("collapsed")); };
+  try{ setLegendCollapsed(localStorage.getItem("systemGraph.legendCollapsed")==="1",false);
+       setMinimapCollapsed(localStorage.getItem("systemGraph.minimapCollapsed")==="1",false); }catch(e){}
+
   // ---------------- Color mode ----------------
   function applyMode(m){ colorMode=m; $("#modeSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.getAttribute("data-mode")===m)); try{ localStorage.setItem("systemGraph.colorMode",m); }catch(e){} renderModeLegend(); render(); }
   $("#modeSeg").querySelectorAll("button").forEach(b=>{ b.onclick=()=>applyMode(b.getAttribute("data-mode")); });
@@ -2237,6 +2323,7 @@ ${ser.serializeToString(gNod)}
     if(ev.key==="l"||ev.key==="L") setLinkMode(!linkMode);
     if(ev.key==="f"||ev.key==="F") zoomFit();
     if(ev.key==="r"||ev.key==="R") $("#relayoutBtn").click();
+    if(ev.key==="g"||ev.key==="G") toggleLegend();
   });
 
   function updateStatus(){ const c={}; for(const n of data.nodes) c[n.type]=(c[n.type]||0)+1;
