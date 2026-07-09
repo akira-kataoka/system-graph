@@ -285,6 +285,9 @@
   .erow input.grow { flex:1; min-width:0; }
   .erow .sev-sel { width:64px; } .erow .st-sel { width:58px; } .erow .ty { width:78px; }
   .erow .rm { cursor:pointer; color:var(--text-mute); border:none; background:none; font-size:15px; padding:0 2px; flex:none; }
+  .erow .lin { cursor:pointer; color:var(--text-dim); border:none; background:none; padding:2px 3px; flex:none; display:inline-flex; align-items:center; gap:3px; border-radius:6px; transition:color .12s, background .12s; }
+  .erow .lin:hover { color:var(--accent); background:var(--accent-soft); }
+  .erow .lin .lin-n { font-size:9px; font-weight:800; background:var(--accent); color:#fff; border-radius:20px; padding:0 4px; min-width:13px; text-align:center; line-height:14px; }
   .erow .doc-open { flex:none; font-size:10.5px; font-weight:700; color:#fff; background:var(--accent); padding:4px 9px; border-radius:6px; text-decoration:none; }
   .erow .doc-open:hover { filter:brightness(1.08); }
   .doclink { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--accent); text-decoration:none; padding:6px 9px; background:var(--accent-soft); border-radius:8px; margin:2px 4px 2px 0; }
@@ -521,7 +524,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v19 · 2026-07-09</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v20 · 2026-07-09</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -1047,7 +1050,8 @@
         mappings:[ {from:"ACCOUNT_CD", to:"勘定科目コード", rule:"社内→freeeコード変換表"}, {from:"AMOUNT", to:"金額", rule:"税抜→税込 ×1.1"}, {from:"BILL_DATE", to:"発生日", rule:"YYYY-MM-DD"} ] },
       { id:"e9", source:"t_order",target:"t_stg",   label:"CDCレプリケーション", kind:"write", mode:"cdc", key:"ORDER_ID", ifId:"IF00009",
         interval:"リアルタイム", window:"終日", volume:"変更分のみ", scale:"m",
-        condition:"Oracle → PostgreSQL の変更を CDC で反映", transform:"文字コードを UTF-8 に変換" },
+        condition:"Oracle → PostgreSQL の変更を CDC で反映", transform:"文字コードを UTF-8 に変換",
+        mappings:[ {from:"ORDER_ID", to:"order_id", rule:"—"}, {from:"ACCOUNT_CD", to:"account_cd", rule:"—"}, {from:"AMOUNT", to:"amount", rule:"数値型に変換"} ] },
       { id:"e10",source:"t_lead", target:"conn_ae", label:"リード同期", kind:"sync", mode:"realtime", ifId:"IF00010",
         interval:"リアルタイム", window:"終日", volume:"約2千件/日", scale:"s", transform:"項目マッピング（Lead ⇔ Prospect）",
         mappings:[ {from:"Email", to:"email", rule:"小文字化"}, {from:"Company", to:"company", rule:"トリム"}, {from:"Status", to:"grade", rule:"ステータス変換表"} ] },
@@ -1608,13 +1612,16 @@
     const list=$("#colList"); list.innerHTML=""; const cols=n.columns||(n.columns=[]);
     cols.forEach((col,i)=>{
       const row=document.createElement("div"); row.className="erow";
+      const lc=col.name?columnLineageCount(n.id,col.name):0;
       row.innerHTML=`<input class="grow cn" placeholder="列名" value="${esc(col.name||"")}">`+
         `<input class="ty tt" placeholder="型" value="${esc(col.type||"")}">`+
         `<label class="pk"><input type="checkbox" class="pkc" ${col.pk?"checked":""}>PK</label>`+
+        `<button class="lin" title="この項目のリネージ（上流・下流）を辿る"${lc?"":' style="opacity:.4"'}><svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v3"/><path d="M3 3h4M3 18h4M17 18h4"/></svg>${lc?`<span class="lin-n">${lc}</span>`:""}</button>`+
         `<button class="rm">×</button>`;
       row.querySelector(".cn").oninput=e=>{ col.name=e.target.value; save(); };
       row.querySelector(".tt").oninput=e=>{ col.type=e.target.value; save(); };
       row.querySelector(".pkc").onchange=e=>{ col.pk=e.target.checked; save(); };
+      row.querySelector(".lin").onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); if(col.name) traceColumnLineage(n.id,col.name); else toast("列名を入力してください"); };
       row.querySelector(".rm").onclick=()=>{ cols.splice(i,1); save(); renderCols(n); };
       list.appendChild(row);
     });
@@ -1714,6 +1721,75 @@
         h+=`<div class="pc-edge"><div class="pc-chips"><span class="pc-k" style="background:${kc}">${(KIND[e.kind]||{}).label||""}</span>${e.ifId?`<span class="pc-if">${esc(e.ifId)}</span>`:""}${md?`<span class="pc-m">${md.label}</span>`:""}</div>${e.condition?`<div class="pc-cond">${esc(e.condition)}</div>`:""}${e.transform?`<div class="pc-tr">変換: ${esc(e.transform)}</div>`:""}</div>`;
         if(i===p.length-1) h+=`<div class="pc-node" data-id="${to.id}"><span class="cdot" style="background:${TYPE[to.type].color}"></span>${esc(to.label)}</div>`;
       }
+      h+=`</div>`;
+    });
+    body.innerHTML=h; closeOverview(); closeHistory(); pathPanel.classList.add("open");
+    body.querySelectorAll(".pc-node").forEach(el=>{ el.style.cursor="pointer"; el.onclick=()=>{ const n=byId[el.getAttribute("data-id")]; if(n){ select(n.id); centerOn(n); } }; });
+  }
+
+  // ---------------- Column lineage (項目リネージ) ----------------
+  // Walk edge.mappings field-by-field. down: source==node & mapping.from==field → target/mapping.to. up: mirror.
+  function walkField(nodeId, field, dir, visited, chain, out){
+    let extended=false;
+    for(const e of data.edges){
+      if(!Array.isArray(e.mappings)||!e.mappings.length) continue;
+      const atSrc = dir==="down" ? e.source===nodeId : e.target===nodeId;
+      if(!atSrc) continue;
+      for(const m of e.mappings){
+        const here = dir==="down" ? (m.from||"") : (m.to||"");
+        if(here!==field) continue;
+        const nextNode = dir==="down" ? e.target : e.source;
+        const nextField = dir==="down" ? (m.to||"") : (m.from||"");
+        const key=e.id+"|"+here+"|"+nextField;
+        if(visited.has(key)) continue;
+        const nv=new Set(visited); nv.add(key);
+        extended=true;
+        walkField(nextNode, nextField, dir, nv, chain.concat([{edge:e, node:nextNode, field:nextField, rule:m.rule||""}]), out);
+      }
+    }
+    if(!extended && chain.length) out.push(chain);
+  }
+  function columnLineageChains(tableId,colName){
+    const down=[], up=[];
+    walkField(tableId,colName,"down",new Set(),[],down);
+    walkField(tableId,colName,"up",new Set(),[],up);
+    return {down,up};
+  }
+  function columnLineageCount(tableId,colName){
+    let c=0;
+    for(const e of data.edges){ if(!Array.isArray(e.mappings)) continue;
+      for(const m of e.mappings){ if(e.source===tableId&&(m.from||"")===colName)c++; if(e.target===tableId&&(m.to||"")===colName)c++; } }
+    return c;
+  }
+  function traceColumnLineage(tableId,colName){
+    const {down,up}=columnLineageChains(tableId,colName);
+    if(!down.length&&!up.length){ toast(`「${colName}」に紐づく項目マッピングは未登録です`); return; }
+    const set=new Set([tableId]);
+    for(const chain of down.concat(up)) for(const h of chain) set.add(h.node);
+    impactSet=set; selectedEdge=null; updateHighlight(); renderMinimap();
+    renderLineage(tableId,colName,up,down);
+  }
+  function renderLineage(tableId,colName,up,down){
+    if(!pathPanel) return; const body=$("#pathBody"), t=byId[tableId];
+    $("#pathTitle").textContent=`項目リネージ: ${t?t.label:"?"}.${colName}`;
+    const fld=(txt)=>`<code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:var(--panel-2);padding:1px 6px;border-radius:5px">${esc(txt||"—")}</code>`;
+    const nodeTag=(id,extra)=>{ const nd=byId[id]; if(!nd) return `<span class="pc-node">?${extra?` · ${fld(extra)}`:""}</span>`; return `<span class="pc-node" data-id="${id}" style="display:inline-flex"><span class="cdot" style="background:${TYPE[nd.type].color}"></span>${esc(nd.label)}${extra?` · ${fld(extra)}`:""}</span>`; };
+    const edgeTag=(e,rule)=>{ const kc=kindColor(e); return `<div class="pc-edge"><div class="pc-chips"><span class="pc-k" style="background:${kc}">${(KIND[e.kind]||{}).label||""}</span>${e.ifId?`<span class="pc-if">${esc(e.ifId)}</span>`:""}</div>${rule?`<div class="pc-tr">加工: ${esc(rule)}</div>`:""}</div>`; };
+    let h=`<div class="hist-hint">選択項目 ${fld(colName)} を起点に、登録済みの項目マッピングを辿ります。行クリックで該当ノードへ。</div>`;
+    // upstream
+    h+=`<div class="osec" style="margin:12px 0 6px">上流（この項目の供給元）</div>`;
+    if(!up.length) h+=`<div class="pc-cond" style="margin-left:2px">供給元マッピングは未登録</div>`;
+    up.forEach(chain=>{ h+=`<div class="pathchain">`;
+      // chain is from origin outward; reverse to show source → origin
+      const rev=chain.slice().reverse();
+      for(let i=0;i<rev.length;i++){ const hop=rev[i]; h+=nodeTag(hop.node,hop.field)+edgeTag(hop.edge,hop.rule); }
+      h+=nodeTag(tableId,colName)+`</div>`;
+    });
+    // downstream
+    h+=`<div class="osec" style="margin:14px 0 6px">下流（この項目の流れ先）</div>`;
+    if(!down.length) h+=`<div class="pc-cond" style="margin-left:2px">流れ先マッピングは未登録</div>`;
+    down.forEach(chain=>{ h+=`<div class="pathchain">`+nodeTag(tableId,colName);
+      for(let i=0;i<chain.length;i++){ const hop=chain[i]; h+=edgeTag(hop.edge,hop.rule)+nodeTag(hop.node,hop.field); }
       h+=`</div>`;
     });
     body.innerHTML=h; closeOverview(); closeHistory(); pathPanel.classList.add("open");
