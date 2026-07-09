@@ -521,7 +521,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v18 · 2026-07-09</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v19 · 2026-07-09</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -835,6 +835,7 @@
       <button data-tab="tree" class="on">システム階層</button>
       <button data-tab="flat">全ノード一覧</button>
       <button data-tab="edges">データ連携</button>
+      <button data-tab="maps">項目マッピング</button>
     </div>
     <div class="tv-search"><svg class="ui-ic" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="tvSearch" placeholder="絞り込み…" autocomplete="off"></div>
     <div class="spacer"></div>
@@ -2380,15 +2381,15 @@ ${ser.serializeToString(gNod)}
     body.querySelectorAll(".g-hit").forEach(el=>{ el.onclick=()=>{ const id=el.getAttribute("data-id"); closeGantt(); select(id); const n=byId[id]; if(n) centerOn(n); }; });
   }
   $("#tvCsv").onclick=()=>{
-    const q=$("#tvSearch").value.trim().toLowerCase(); const isEdge=tvTab==="edges"; const cols=isEdge?EDGE_COLS:NODE_COLS;
-    let arr=isEdge?data.edges.slice():data.nodes.slice();
-    if(q) arr=arr.filter(o=> isEdge?edgeMatchesQ(o,q):passF(o,q));
-    for(const c of cols){ const fv=(tvFilters[c.k]||"").trim().toLowerCase(); if(!fv) continue; arr=arr.filter(o=> String(isEdge?edgeColVal(o,c.k):nodeColVal(o,c.k)).toLowerCase().includes(fv)); }
-    const getV=(o,k)=> isEdge?edgeColVal(o,k):nodeColVal(o,k);
+    const q=$("#tvSearch").value.trim().toLowerCase(); const cols=tvCols();
+    let arr=tvArr();
+    if(q) arr=arr.filter(o=> tvMatches(o,q));
+    for(const c of cols){ const fv=(tvFilters[c.k]||"").trim().toLowerCase(); if(!fv) continue; arr=arr.filter(o=> String(tvColVal(o,c.k)).toLowerCase().includes(fv)); }
     const q2=(v)=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
-    const lines=[cols.map(c=>q2(c.label)).join(",")]; for(const o of arr) lines.push(cols.map(c=>q2(getV(o,c.k))).join(","));
+    const lines=[cols.map(c=>q2(c.label)).join(",")]; for(const o of arr) lines.push(cols.map(c=>q2(tvColVal(o,c.k))).join(","));
     const blob=new Blob([String.fromCharCode(0xFEFF)+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}); const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob); a.download=(isEdge?"data-integrations":"system-inventory")+".csv"; a.click(); URL.revokeObjectURL(a.href);
+    const fname=tvTab==="edges"?"data-integrations":tvTab==="maps"?"field-mappings":"system-inventory";
+    a.href=URL.createObjectURL(blob); a.download=fname+".csv"; a.click(); URL.revokeObjectURL(a.href);
     toast("CSVを出力しました（"+arr.length+"行）");
   };
 
@@ -2427,6 +2428,31 @@ ${ser.serializeToString(gNod)}
   const EDGE_COLS=[ {k:"ifId",label:"連携ID"},{k:"source",label:"元"},{k:"target",label:"先"},{k:"kind",label:"種別"},{k:"mode",label:"方式"},{k:"interval",label:"間隔"},{k:"window",label:"時間帯"},{k:"volume",label:"データ量"},{k:"condition",label:"抽出条件"},{k:"key",label:"キー"} ];
   function nodeColVal(n,k){ switch(k){ case "label":return n.label||""; case "type":return TYPE[n.type].chip; case "parent":return (n.parent&&byId[n.parent])?byId[n.parent].label:""; case "status":return n.status&&STATUS[n.status]?STATUS[n.status].label:""; case "criticality":return critMap[n.criticality]||""; case "inc":return String(openIncidents(n).length||""); default:return n[k]||""; } }
   function edgeColVal(e,k){ switch(k){ case "source":return byId[e.source]?byId[e.source].label:""; case "target":return byId[e.target]?byId[e.target].label:""; case "kind":return (KIND[e.kind]||{}).label||""; case "mode":return (MODE[e.mode]||{}).label||""; default:return e[k]||""; } }
+  // ---- 項目マッピング（column-level lineage）: flatten edge.mappings across the org ----
+  const MAP_COLS=[ {k:"ifId",label:"連携ID"},{k:"src",label:"元テーブル"},{k:"from",label:"元項目"},{k:"to",label:"先項目"},{k:"dst",label:"先テーブル"},{k:"rule",label:"変換ルール"},{k:"kind",label:"種別"} ];
+  function mapRows(){ const rows=[]; for(const e of data.edges){ if(!Array.isArray(e.mappings)||!e.mappings.length) continue; const a=byId[e.source], b=byId[e.target];
+      for(let i=0;i<e.mappings.length;i++){ const m=e.mappings[i]||{}; rows.push({ _id:e.id+"#"+i, edgeId:e.id, ifId:e.ifId||"", src:a?a.label:"?", from:m.from||"", to:m.to||"", dst:b?b.label:"?", rule:m.rule||"", kind:(KIND[e.kind]||{}).label||"" }); } } return rows; }
+  function mapColVal(r,k){ return r[k]||""; }
+  function mapMatchesQ(r,q){ return (r.ifId+" "+r.src+" "+r.from+" "+r.to+" "+r.dst+" "+r.rule).toLowerCase().includes(q); }
+  function mapRowHTML(r){ const dot=`<span class="tv-dot" style="background:${TYPE.table.color}"></span>`;
+    const code=(t)=>`<code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:var(--panel-2);padding:1px 6px;border-radius:5px;color:var(--text)">${esc(t||"—")}</code>`;
+    return `<tr data-edge="${r.edgeId}">`+
+      `<td style="font-weight:600">${esc(r.ifId||"—")}</td>`+
+      `<td><span class="tv-name">${dot}${esc(r.src)}</span></td>`+
+      `<td>${code(r.from)}</td>`+
+      `<td><span style="color:var(--accent);font-weight:700;margin-right:4px">→</span>${code(r.to)}</td>`+
+      `<td><span class="tv-name">${dot}${esc(r.dst)}</span></td>`+
+      `<td style="color:var(--text-dim)">${esc(r.rule||"—")}</td>`+
+      `<td><span class="typechip" style="background:${KINDCOL(r)}">${esc(r.kind||"")}</span></td>`+
+      `<td><div class="rowact"><button data-act="egoto" data-id="${r.edgeId}" title="連携をグラフで表示"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></button></div></td></tr>`;
+  }
+  function KINDCOL(r){ for(const e of data.edges){ if(e.id===r.edgeId) return (KIND[e.kind]||{}).color||"var(--text-mute)"; } return "var(--text-mute)"; }
+  // dispatch by current tab (nodes / edges / maps)
+  function tvCols(){ return tvTab==="edges"?EDGE_COLS : tvTab==="maps"?MAP_COLS : NODE_COLS; }
+  function tvArr(){ return tvTab==="edges"?data.edges.slice() : tvTab==="maps"?mapRows() : data.nodes.slice(); }
+  function tvColVal(o,k){ return tvTab==="edges"?edgeColVal(o,k) : tvTab==="maps"?mapColVal(o,k) : nodeColVal(o,k); }
+  function tvMatches(o,q){ return tvTab==="edges"?edgeMatchesQ(o,q) : tvTab==="maps"?mapMatchesQ(o,q) : passF(o,q); }
+  function tvRowHTML(o){ return tvTab==="edges"?edgeRowHTML(o) : tvTab==="maps"?mapRowHTML(o) : nodeRowHTML(o,0); }
   function buildHead(cols){
     return `<thead><tr>`+cols.map(c=>`<th data-s="${c.k}">${c.label}<span class="arw" data-arw="${c.k}"></span></th>`).join("")+`<th class="nosort">操作</th></tr>`+
       `<tr class="filterrow">`+cols.map(c=>`<th><input class="colf" data-f="${c.k}" placeholder="絞込" value="${esc(tvFilters[c.k]||"")}"></th>`).join("")+`<th></th></tr></thead>`;
@@ -2469,7 +2495,7 @@ ${ser.serializeToString(gNod)}
   function buildTable(){
     const q=$("#tvSearch").value.trim().toLowerCase();
     if(tvTab==="tree"){ $("#tvBody").innerHTML=buildTree(q); buildAddbar(); return; }
-    const cols = tvTab==="edges"?EDGE_COLS:NODE_COLS;
+    const cols = tvCols();
     $("#tvBody").innerHTML=`<table class="dt">${buildHead(cols)}<tbody id="tvTbody"></tbody></table>`;
     $("#tvBody").querySelectorAll("th[data-s]").forEach(th=>{ th.onclick=(e)=>{ if(e.target.classList&&e.target.classList.contains("colf"))return; const k=th.getAttribute("data-s"); if(tvSort.col===k)tvSort.dir*=-1; else{tvSort.col=k;tvSort.dir=1;} rebuildBody(); }; });
     $("#tvBody").querySelectorAll(".colf").forEach(inp=>{ inp.onclick=(e)=>e.stopPropagation(); inp.addEventListener("input",()=>{ tvFilters[inp.getAttribute("data-f")]=inp.value; rebuildBody(); }); });
@@ -2478,17 +2504,18 @@ ${ser.serializeToString(gNod)}
   function rebuildBody(){
     if(tvTab==="tree"){ buildTable(); return; }
     const tb=$("#tvTbody"); if(!tb) return;
-    const q=$("#tvSearch").value.trim().toLowerCase(), isEdge=tvTab==="edges", cols=isEdge?EDGE_COLS:NODE_COLS;
-    let arr = isEdge? data.edges.slice() : data.nodes.slice();
-    if(q) arr=arr.filter(o=> isEdge?edgeMatchesQ(o,q):passF(o,q));
-    for(const c of cols){ const fv=(tvFilters[c.k]||"").trim().toLowerCase(); if(!fv) continue; arr=arr.filter(o=> String(isEdge?edgeColVal(o,c.k):nodeColVal(o,c.k)).toLowerCase().includes(fv)); }
-    if(tvSort.col){ const k=tvSort.col; arr=arr.slice().sort((a,b)=>{ let x=isEdge?edgeColVal(a,k):nodeColVal(a,k), y=isEdge?edgeColVal(b,k):nodeColVal(b,k); const nx=parseFloat(x),ny=parseFloat(y),bn=x!==""&&y!==""&&!isNaN(nx)&&!isNaN(ny); const cmp=bn?nx-ny:(x>y?1:x<y?-1:0); return cmp*tvSort.dir; }); }
-    tb.innerHTML = arr.map(o=> isEdge?edgeRowHTML(o):nodeRowHTML(o,0)).join("") || emptyRow(cols.length+1);
+    const q=$("#tvSearch").value.trim().toLowerCase(), cols=tvCols();
+    let arr = tvArr();
+    if(q) arr=arr.filter(o=> tvMatches(o,q));
+    for(const c of cols){ const fv=(tvFilters[c.k]||"").trim().toLowerCase(); if(!fv) continue; arr=arr.filter(o=> String(tvColVal(o,c.k)).toLowerCase().includes(fv)); }
+    if(tvSort.col){ const k=tvSort.col; arr=arr.slice().sort((a,b)=>{ let x=tvColVal(a,k), y=tvColVal(b,k); const nx=parseFloat(x),ny=parseFloat(y),bn=x!==""&&y!==""&&!isNaN(nx)&&!isNaN(ny); const cmp=bn?nx-ny:(x>y?1:x<y?-1:0); return cmp*tvSort.dir; }); }
+    tb.innerHTML = arr.map(o=> tvRowHTML(o)).join("") || emptyRow(cols.length+1);
     $("#tvBody").querySelectorAll("[data-arw]").forEach(s=>{ s.textContent=(s.getAttribute("data-arw")===tvSort.col)?(tvSort.dir>0?" ▲":" ▼"):""; });
   }
   function buildAddbar(){
     const bar=$("#tvAddbar");
     if(tvTab==="edges"){ bar.innerHTML='<span class="lbl">データ連携（線）の追加はグラフ上の「リンク」から。ここでは抽出条件などを直接編集できます。</span>'; return; }
+    if(tvTab==="maps"){ const n=mapRows().length; bar.innerHTML='<span class="lbl">項目マッピング（元項目 → 先項目・加工ルール）を全社横断で一覧・検索・CSV出力。登録は各データ連携の「項目マッピング」欄から。<b style="color:var(--text)">'+n+' 件</b></span>'; return; }
     const types=["system","database","table","platform","job","connector","external"];
     bar.innerHTML='<span class="lbl">追加：</span>'+types.map(t=>`<button class="btn" data-addtype="${t}"><span style="width:9px;height:9px;border-radius:50%;background:${TYPE[t].color};display:inline-block;margin-right:5px"></span>${TYPE[t].chip}</button>`).join("");
     bar.querySelectorAll("[data-addtype]").forEach(b=>b.onclick=()=>{ addNode(b.getAttribute("data-addtype")); buildTable(); });
