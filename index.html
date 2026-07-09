@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700;750&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
   :root {
     --bg:#f2f4f8; --bg-2:#f8fafc; --grid:rgba(100,116,145,.085);
@@ -254,6 +255,11 @@
   .erow input.grow { flex:1; min-width:0; }
   .erow .sev-sel { width:64px; } .erow .st-sel { width:58px; } .erow .ty { width:78px; }
   .erow .rm { cursor:pointer; color:var(--text-mute); border:none; background:none; font-size:15px; padding:0 2px; flex:none; }
+  .erow .doc-open { flex:none; font-size:10.5px; font-weight:700; color:#fff; background:var(--accent); padding:4px 9px; border-radius:6px; text-decoration:none; }
+  .erow .doc-open:hover { filter:brightness(1.08); }
+  .doclink { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--accent); text-decoration:none; padding:6px 9px; background:var(--accent-soft); border-radius:8px; margin:2px 4px 2px 0; }
+  .doclink:hover { text-decoration:underline; }
+  .doclink svg { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2; }
   .erow .pk { display:flex; align-items:center; gap:3px; font-size:10.5px; color:var(--text-dim); flex:none; }
   .impact-btns { display:flex; gap:8px; margin-top:6px; }
   .impact-btns .btn { flex:1; justify-content:center; padding:8px; font-size:12px; }
@@ -350,6 +356,16 @@
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   input[type=file] { display:none; }
   #nodesG { transition:opacity .5s; }
+  /* 3D mode */
+  #three3d { position:absolute; inset:0; z-index:5; display:none; cursor:grab; }
+  #three3d.on { display:block; }
+  #three3d.grabbing { cursor:grabbing; }
+  #three3d canvas { display:block; }
+  #threeHint { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:9; display:none;
+    background:var(--glass); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid var(--border);
+    border-radius:20px; padding:7px 16px; font-size:11.5px; color:var(--text-dim); box-shadow:var(--shadow-sm); pointer-events:none; }
+  body.mode-3d #threeHint { display:block; }
+  body.mode-3d #graph, body.mode-3d .dock, body.mode-3d .rightdock { display:none; }
 
   /* ---------- Empty state ---------- */
   .empty-state {
@@ -454,7 +470,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v11 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v12 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -467,6 +483,7 @@
     <div class="sep"></div>
     <button class="btn" id="overviewBtn" title="概要 / 要対応"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>概要</button>
     <button class="btn" id="tableBtn" title="テーブル / 一覧・階層編集"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>テーブル</button>
+    <button class="btn" id="threeBtn" title="3D表示（Three.js）"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/></svg>3D</button>
     <button class="btn icon" id="relayoutBtn" title="再整列 (R)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
     <button class="btn icon" id="exportBtn" title="JSONエクスポート"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
     <button class="btn icon" id="importBtn" title="JSON読込"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
@@ -478,6 +495,8 @@
   </header>
 
   <main>
+    <div id="three3d"></div>
+    <div id="threeHint">ドラッグで回転 / ホイールでズーム / 右ドラッグで移動 / ノードをクリックで選択</div>
     <svg id="graph">
       <defs>
         <radialGradient id="g-table" cx="34%" cy="28%"><stop offset="0%" stop-color="var(--c-table-2)"/><stop offset="100%" stop-color="var(--c-table)"/></radialGradient>
@@ -602,6 +621,10 @@
           <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
         </div></details>
 
+        <details class="isec"><summary>関連ドキュメント / 設計書</summary><div class="isec-body">
+          <div class="fld" style="margin-top:4px"><span class="add-mini" id="addDoc" style="display:inline-block;margin-bottom:7px">＋ リンクを追加</span><div class="rowlist" id="docList"></div></div>
+        </div></details>
+
         <details class="isec"><summary>技術・データ詳細</summary><div class="isec-body">
           <div class="fld" id="fldEngine"><label>DBエンジン</label><input id="fEngine" type="text" placeholder="例: PostgreSQL 16, Oracle 19c, BigQuery"></div>
           <div class="fld" id="fldSchema"><label>スキーマ / データセット</label><input id="fSchema" type="text" placeholder="例: sales, public, mart"></div>
@@ -668,6 +691,10 @@
         <div class="fld" id="eldMaps">
           <div class="subhead"><label>項目マッピング / 加工</label><span class="add-mini" id="addMap">＋ 項目を追加</span></div>
           <div class="rowlist" id="mapList"></div>
+        </div>
+        <div class="fld">
+          <div class="subhead"><label>関連ドキュメント / 設計書</label><span class="add-mini" id="eAddDoc">＋ リンク</span></div>
+          <div class="rowlist" id="eDocList"></div>
         </div>
         <div class="fld"><label>接続</label><div class="conn-list" id="eEndpoints"></div></div>
       </div>
@@ -804,7 +831,8 @@
     nodes: [
       // ── システム ──
       { id:"sys_erp",type:"system", label:"基幹システム (ERP)", desc:"受注・請求・在庫を管理する社内基幹", owner:"情シス部 田中", dept:"情報システム部 基幹Gr", ops:"運用課 / A社 保守契約(24h)", status:"maintenance", criticality:"critical", env:"オンプレ / 自社DC", vendor:"自社開発 + A社保守", introduced:"2014-10-01", renewal:"2026-09-30",
-        incidents:[ {severity:"high", title:"夜間バッチが処理時間超過（月末に遅延）", status:"open"}, {severity:"mid", title:"EOSL に伴う更改を検討中", status:"open"} ] },
+        incidents:[ {severity:"high", title:"夜間バッチが処理時間超過（月末に遅延）", status:"open"}, {severity:"mid", title:"EOSL に伴う更改を検討中", status:"open"} ],
+        docs:[ {label:"基幹システム 基本設計書", url:"https://wiki.example.com/erp/design"}, {label:"運用手順書", url:"https://wiki.example.com/erp/ops"} ] },
       { id:"sys_dp", type:"system", label:"データ基盤 (DWH)", desc:"全社データ分析基盤", owner:"情シス部 鈴木", dept:"情報システム部 データGr", ops:"データGr / 内製運用", status:"active", criticality:"high", env:"GCP (本番)", vendor:"自社構築", introduced:"2023-01-15" },
       { id:"sys_sf", type:"system", label:"Salesforce (CRM)", desc:"営業支援・顧客管理 (SFA/CRM)", owner:"営業企画部 佐藤", dept:"営業企画部", ops:"情シス CRMチーム / 運用ベンダー", status:"active", criticality:"high", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2021-04-01", renewal:"2027-03-31" },
       { id:"sys_ae", type:"system", label:"Account Engagement", desc:"マーケティングオートメーション (旧 Pardot)", owner:"マーケ部 高橋", dept:"マーケティング部", ops:"マーケ運用 / SF社サポート", status:"active", criticality:"mid", env:"SaaS (本番)", vendor:"Salesforce社", introduced:"2022-07-01" },
@@ -868,7 +896,8 @@
     edges: [
       { id:"e1", source:"t_order", target:"j_night", label:"受注抽出", kind:"read", mode:"incremental", key:"ORDER_DATE", ifId:"IF00001",
         interval:"日次", window:"02:00-02:30", volume:"約12万件/日", scale:"l",
-        condition:"WHERE ORDER_DATE >= :last_run AND STATUS = 'CONFIRMED'", transform:"通貨をJPYに統一 / 取消明細を除外" },
+        condition:"WHERE ORDER_DATE >= :last_run AND STATUS = 'CONFIRMED'", transform:"通貨をJPYに統一 / 取消明細を除外",
+        docs:[ {label:"IF00001 インターフェース設計書", url:"https://wiki.example.com/if/IF00001"} ] },
       { id:"e2", source:"t_inv",  target:"j_night", label:"在庫抽出", kind:"read", mode:"full", ifId:"IF00002",
         interval:"日次", window:"02:00-02:30", volume:"約3万件/日", scale:"m",
         condition:"WHERE WAREHOUSE_CD IN ('T01','O01')", transform:"在庫スナップショットを日次取得" },
@@ -1279,7 +1308,7 @@
     $("#fStatus").value=n.status||""; $("#fCrit").value=n.criticality||""; $("#fHealth").value=n.health||"";
     $("#fEnv").value=n.env||""; $("#fVendor").value=n.vendor||""; $("#fIntro").value=n.introduced||""; $("#fRenewal").value=n.renewal||"";
     $("#fDept").value=n.dept||""; $("#fOps").value=n.ops||"";
-    toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderIncidents(n); renderConns(n);
+    toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderDocs(n); renderIncidents(n); renderConns(n);
   }
   const CHILD_OF={ system:"database", database:"table", platform:"job" };
   function toggleFields(type){
@@ -1373,6 +1402,28 @@
     });
   }
   $("#addCol").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; const s=$("#secCols"); if(s&&!s.open)s.open=true; (n.columns||(n.columns=[])).push({name:"",type:"",pk:false}); save(); renderCols(n); };
+  // 関連ドキュメント / 設計書リンク
+  function docRow(list, i, onchange){ const doc=list[i];
+    const row=document.createElement("div"); row.className="erow"; row.style.flexWrap="wrap";
+    const safeUrl=(doc.url||"").replace(/"/g,"&quot;");
+    row.innerHTML=`<input class="grow dnm" placeholder="名称（例: ER図 / 設計書）" value="${esc(doc.label||"")}" style="flex:1 1 44%">`+
+      (doc.url?`<a class="doc-open" href="${safeUrl}" target="_blank" rel="noopener noreferrer">開く</a>`:"")+
+      `<button class="rm">×</button>`+
+      `<input class="dur" placeholder="https://… / 社内Wiki URL" value="${esc(doc.url||"")}" style="flex:1 1 100%;margin-top:5px">`;
+    row.querySelector(".dnm").oninput=e=>{ doc.label=e.target.value; save(); };
+    row.querySelector(".dur").oninput=e=>{ doc.url=e.target.value; save(); };
+    row.querySelector(".dur").onchange=onchange;
+    row.querySelector(".rm").onclick=()=>{ list.splice(i,1); save(); onchange(); };
+    return row;
+  }
+  function renderDocs(n){ const list=$("#docList"); list.innerHTML=""; const docs=n.docs||(n.docs=[]);
+    if(!docs.length){ list.innerHTML='<div style="font-size:11.5px;color:var(--text-mute)">未登録（設計書・ER図・手順書などのURL）</div>'; }
+    docs.forEach((_,i)=> list.appendChild(docRow(docs,i,()=>renderDocs(n)))); }
+  $("#addDoc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const n=byId[selectedId]; if(!n)return; (n.docs||(n.docs=[])).push({label:"",url:""}); save(); renderDocs(n); };
+  function renderEdgeDocs(e){ const list=$("#eDocList"); list.innerHTML=""; const docs=e.docs||(e.docs=[]);
+    if(!docs.length){ list.innerHTML='<div style="font-size:11.5px;color:var(--text-mute)">未登録（IF設計書・仕様書などのURL）</div>'; }
+    docs.forEach((_,i)=> list.appendChild(docRow(docs,i,()=>renderEdgeDocs(e)))); }
+  $("#eAddDoc").onclick=(ev)=>{ ev.preventDefault(); ev.stopPropagation(); const e=edgeById[selectedEdge]; if(!e)return; (e.docs||(e.docs=[])).push({label:"",url:""}); save(); renderEdgeDocs(e); };
 
   // incidents editor
   function renderIncidents(n){
@@ -1447,7 +1498,7 @@
     $("#eInterval").value=e.interval||""; $("#eWindow").value=e.window||""; $("#eVolume").value=e.volume||""; $("#eScale").value=e.scale||"";
     const ref = e.kind==="ref";
     $("#eldMode").classList.toggle("hide",ref); $("#eldSched").classList.toggle("hide",ref); $("#eldVol").classList.toggle("hide",ref); $("#eldCond").classList.toggle("hide",ref); $("#eldKey").classList.toggle("hide",ref); $("#eldTrans").classList.toggle("hide",ref); $("#eldMaps").classList.toggle("hide",ref);
-    renderEdgeFlow(e); renderMappings(e); renderEndpoints(e);
+    renderEdgeFlow(e); renderMappings(e); renderEdgeDocs(e); renderEndpoints(e);
   }
   // データ連携の項目マッピング / 加工
   function renderMappings(e){
@@ -1520,6 +1571,7 @@
     if(n.engine) h+=`<div class="tt-r">エンジン: <b>${esc(n.engine)}</b></div>`;
     if(n.schedule) h+=`<div class="tt-r">実行: <b>${esc(n.schedule)}</b></div>`;
     const inc=openIncidents(n); if(inc.length) h+=`<div class="tt-r" style="color:${HEALTH.warn.color}">⚠ 未解決 ${inc.length}件</div>`;
+    const nd=(n.docs||[]).filter(x=>x&&x.url).length; if(nd) h+=`<div class="tt-r">📄 設計書 ${nd}件</div>`.replace("📄","▤");
     if(n.type==="job"){ const outs=data.edges.filter(e=>e.source===n.id); const insE=data.edges.filter(e=>e.target===n.id);
       h+=`<div class="tt-r" style="margin-top:3px">入力 ${insE.length} → 出力 ${outs.length}</div>`; }
     return h;
@@ -1535,6 +1587,7 @@
     if(e.condition) h+=`<div class="tt-cond">${esc(e.condition)}</div>`;
     if(e.transform) h+=`<div class="tt-r" style="margin-top:3px">変換: ${esc(e.transform)}</div>`;
     const mp=(e.mappings||[]).length; if(mp) h+=`<div class="tt-r">項目マッピング ${mp}件</div>`;
+    const ed=(e.docs||[]).filter(x=>x&&x.url).length; if(ed) h+=`<div class="tt-r">▤ 設計書 ${ed}件</div>`;
     return h;
   }
 
@@ -1801,6 +1854,7 @@ ${ser.serializeToString(gNod)}
         }
       }
       const incs=openIncidents(sys); if(incs.length){ L.push("","**未解決の課題**"); for(const i of incs) L.push(`- [${(SEVERITY[i.severity]||{}).label||""}] ${i.title||""}`); }
+      const sdocs=(sys.docs||[]).filter(dd=>dd&&dd.url); if(sdocs.length){ L.push("","**関連ドキュメント**"); for(const dd of sdocs) L.push(`- [${dd.label||dd.url}](${dd.url})`); }
       L.push("");
     }
     L.push("## 🔄 データ連携（抽出条件）","","| 連携ID | 連携名 | 元 | → | 先 | 種別 | 方式 | 間隔 | 時間帯 | データ量 | 抽出条件 | 変換 | キー |","|---|---|---|---|---|---|---|---|---|---|---|---|---|");
@@ -1814,6 +1868,10 @@ ${ser.serializeToString(gNod)}
         L.push("",`**${a?a.label:"?"} → ${b?b.label:"?"}**`,"","| 元項目 | 先項目 | 変換ルール |","|---|---|---|");
         for(const m of e.mappings) L.push(`| ${m.from||""} | ${m.to||""} | ${(m.rule||"").replace(/\|/g,"\\|")} |`);
       }
+    }
+    const edoc=data.edges.filter(e=>(e.docs||[]).some(dd=>dd&&dd.url));
+    if(edoc.length){ L.push("","### 連携の関連ドキュメント");
+      for(const e of edoc){ const a=byId[e.source], b=byId[e.target]; L.push(`- **${e.ifId||""} ${a?a.label:"?"} → ${b?b.label:"?"}**: `+(e.docs.filter(dd=>dd&&dd.url).map(dd=>`[${dd.label||dd.url}](${dd.url})`).join(" / "))); }
     }
     const blob=new Blob([L.join("\n")],{type:"text/markdown"}); const a=document.createElement("a");
     a.href=URL.createObjectURL(blob); a.download="system-inventory.md"; a.click(); URL.revokeObjectURL(a.href); toast("台帳(Markdown)を出力しました");
@@ -1923,6 +1981,7 @@ ${ser.serializeToString(gNod)}
   // ---------------- Keyboard ----------------
   window.addEventListener("keydown",(ev)=>{
     if((ev.ctrlKey||ev.metaKey) && (ev.key==="z"||ev.key==="Z")){ ev.preventDefault(); undo(); return; }
+    if(ev.key==="Escape" && T3.on){ exit3D(); return; }
     if(ev.key==="Escape" && helpModal.classList.contains("open")){ helpModal.classList.remove("open"); return; }
     if(ev.key==="Escape" && tableView.classList.contains("open")){ closeTable(); return; }
     if(ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
@@ -2086,6 +2145,112 @@ ${ser.serializeToString(gNod)}
   });
 
   function loop(){ physics(); if(alpha>=0.004) positionAll(); animateFlow(); if(alpha>=0.004) renderMinimap(); requestAnimationFrame(loop); }
+
+  // ==================== 3D view (Three.js) ====================
+  const T3 = { on:false, inited:false, renderer:null, scene:null, camera:null, root:null,
+    nodeMeshes:{}, labelSprites:{}, lineGeo:null, lineObj:null, particles:null, partData:[],
+    sph:{r:150, theta:0.9, phi:1.15}, target:null, raf:0, size:{w:0,h:0} };
+  function cssHex(v){ if(typeof v==="string"&&v.trim().startsWith("var(")){ const n=v.trim().slice(4,-1).trim(); return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#8899aa"; } return v; }
+  const W3=0.075; // world → three units
+  function toggle3D(){ if(T3.on) exit3D(); else enter3D(); }
+  function enter3D(){
+    if(!window.THREE){ toast("3Dライブラリを読み込めませんでした（オンライン環境で再読込してください）"); return; }
+    T3.on=true; document.body.classList.add("mode-3d"); $("#three3d").classList.add("on"); $("#threeBtn").classList.add("active");
+    if(!T3.inited) init3D();
+    build3D(); resize3D(); if(!T3.raf) animate3D();
+  }
+  function exit3D(){ T3.on=false; document.body.classList.remove("mode-3d"); $("#three3d").classList.remove("on"); $("#threeBtn").classList.remove("active");
+    if(T3.raf){ cancelAnimationFrame(T3.raf); T3.raf=0; } }
+  function init3D(){
+    const el=$("#three3d"); const TH=window.THREE;
+    T3.renderer=new TH.WebGLRenderer({antialias:true, alpha:true}); T3.renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+    el.appendChild(T3.renderer.domElement);
+    T3.scene=new TH.Scene();
+    T3.camera=new TH.PerspectiveCamera(55,1,0.1,4000);
+    T3.target=new TH.Vector3(0,0,0);
+    T3.scene.add(new TH.AmbientLight(0xffffff,0.75));
+    const dl=new TH.DirectionalLight(0xffffff,0.9); dl.position.set(1,1.4,1); T3.scene.add(dl);
+    const dl2=new TH.DirectionalLight(0x88aaff,0.35); dl2.position.set(-1,-0.6,-0.8); T3.scene.add(dl2);
+    T3.root=new TH.Group(); T3.scene.add(T3.root);
+    setup3DControls(el);
+    addEventListener("resize",()=>{ if(T3.on) resize3D(); });
+    T3.inited=true;
+  }
+  function nodeThreePos(n){ if(n._x3==null){ n._x3=(n.x||0)*W3; n._y3=-(n.y||0)*W3; n._z3=(Math.random()-.5)*40; } }
+  function build3D(){
+    const TH=window.THREE; recompute();
+    // clear
+    while(T3.root.children.length) T3.root.remove(T3.root.children[0]);
+    T3.nodeMeshes={}; T3.labelSprites={}; T3.partData=[];
+    const L=leaves();
+    for(const n of L){ nodeThreePos(n);
+      const r=Math.max(2.2, radius(n)*W3*1.15);
+      const geo=new TH.SphereGeometry(r,24,18);
+      const col=new TH.Color(cssHex(nodeColor(n)));
+      const mat=new TH.MeshStandardMaterial({color:col, roughness:.42, metalness:.15, emissive:col.clone().multiplyScalar(.18)});
+      const m=new TH.Mesh(geo,mat); m._id=n.id; T3.root.add(m); T3.nodeMeshes[n.id]=m;
+      const lab=makeLabel3D(n.label, cssHex("var(--text)")); lab._r=r; T3.root.add(lab); T3.labelSprites[n.id]=lab;
+    }
+    // edges as line segments
+    const segEdges=data.edges.filter(e=>byId[e.source]&&byId[e.target]&&isLeaf(byId[e.source])&&isLeaf(byId[e.target]));
+    const positions=new Float32Array(segEdges.length*6), colors=new Float32Array(segEdges.length*6);
+    T3._segEdges=segEdges;
+    segEdges.forEach((e,i)=>{ const c=new TH.Color(e.kind==="ref"?cssHex("var(--edge)"):kindColor(e)); for(const off of [0,3]){ colors[i*6+off]=c.r; colors[i*6+off+1]=c.g; colors[i*6+off+2]=c.b; } });
+    const lg=new TH.BufferGeometry(); lg.setAttribute("position",new TH.BufferAttribute(positions,3)); lg.setAttribute("color",new TH.BufferAttribute(colors,3));
+    T3.lineGeo=lg; T3.lineObj=new TH.LineSegments(lg,new TH.LineBasicMaterial({vertexColors:true, transparent:true, opacity:.55})); T3.root.add(T3.lineObj);
+    // particles
+    const pd=[]; for(const e of segEdges){ if(e.kind==="ref") continue; const col=new TH.Color(kindColor(e)); const N=3; const sp=(e.mode==="realtime"?0.010:e.mode==="cdc"?0.008:e.mode==="full"?0.004:0.006);
+      for(let i=0;i<N;i++) pd.push({e, t:i/N, sp, col, rev:false});
+      if(e.kind==="sync"){ for(let i=0;i<N;i++) pd.push({e, t:i/N, sp, col, rev:true}); } }
+    T3.partData=pd;
+    const pp=new Float32Array(pd.length*3), pc=new Float32Array(pd.length*3);
+    pd.forEach((d,i)=>{ pc[i*3]=d.col.r; pc[i*3+1]=d.col.g; pc[i*3+2]=d.col.b; });
+    const pg=new TH.BufferGeometry(); pg.setAttribute("position",new TH.BufferAttribute(pp,3)); pg.setAttribute("color",new TH.BufferAttribute(pc,3));
+    const pmat=new TH.PointsMaterial({size:3.4, vertexColors:true, transparent:true, opacity:.95, sizeAttenuation:true, depthWrite:false});
+    T3.particles=new TH.Points(pg,pmat); T3.root.add(T3.particles);
+  }
+  function makeLabel3D(text, color){ const TH=window.THREE;
+    const c=document.createElement("canvas"); c.width=256; c.height=64; const ctx=c.getContext("2d");
+    ctx.font="600 26px Inter, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.lineWidth=6; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.strokeText(text||"",128,34); ctx.fillStyle=color; ctx.fillText(text||"",128,34);
+    const tex=new TH.CanvasTexture(c); tex.minFilter=TH.LinearFilter;
+    const sp=new TH.Sprite(new TH.SpriteMaterial({map:tex, transparent:true, depthWrite:false, depthTest:false})); sp.scale.set(15,3.75,1); return sp;
+  }
+  // simple 3D force sim
+  function sim3D(){ const L=leaves(); if(!L.length) return;
+    for(let i=0;i<L.length;i++){ const a=L[i]; a._vx=a._vx||0; a._vy=a._vy||0; a._vz=a._vz||0;
+      for(let j=i+1;j<L.length;j++){ const b=L[j]; let dx=a._x3-b._x3, dy=a._y3-b._y3, dz=a._z3-b._z3; let d2=dx*dx+dy*dy+dz*dz||.01; let d=Math.sqrt(d2); const rep=380/d2; const fx=dx/d*rep, fy=dy/d*rep, fz=dz/d*rep; a._vx+=fx;a._vy+=fy;a._vz+=fz; b._vx-=fx;b._vy-=fy;b._vz-=fz; } }
+    for(const e of data.edges){ const a=byId[e.source], b=byId[e.target]; if(!a||!b||!isLeaf(a)||!isLeaf(b)) continue; if(e.kind==="ref") continue;
+      let dx=b._x3-a._x3, dy=b._y3-a._y3, dz=b._z3-a._z3, d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01; const f=(d-22)*0.02; const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f; a._vx+=fx;a._vy+=fy;a._vz+=fz; b._vx-=fx;b._vy-=fy;b._vz-=fz; }
+    for(const n of L){ n._vx+=-n._x3*0.004; n._vy+=-n._y3*0.004; n._vz+=-n._z3*0.004; n._vx*=.8;n._vy*=.8;n._vz*=.8; n._x3+=n._vx*.4;n._y3+=n._vy*.4;n._z3+=n._vz*.4; }
+  }
+  function updateCam(){ const s=T3.sph; const x=s.r*Math.sin(s.phi)*Math.cos(s.theta), y=s.r*Math.cos(s.phi), z=s.r*Math.sin(s.phi)*Math.sin(s.theta);
+    T3.camera.position.set(T3.target.x+x, T3.target.y+y, T3.target.z+z); T3.camera.lookAt(T3.target); }
+  function animate3D(){ if(!T3.on){ T3.raf=0; return; } T3.raf=requestAnimationFrame(animate3D);
+    sim3D();
+    for(const id in T3.nodeMeshes){ const n=byId[id]; if(!n) continue; const m=T3.nodeMeshes[id]; m.position.set(n._x3,n._y3,n._z3); const lab=T3.labelSprites[id]; if(lab) lab.position.set(n._x3, n._y3+(m.geometry.parameters.radius||3)+2.4, n._z3); }
+    // edges
+    if(T3.lineGeo){ const pos=T3.lineGeo.attributes.position.array; T3._segEdges.forEach((e,i)=>{ const a=byId[e.source], b=byId[e.target]; if(!a||!b)return; pos[i*6]=a._x3;pos[i*6+1]=a._y3;pos[i*6+2]=a._z3; pos[i*6+3]=b._x3;pos[i*6+4]=b._y3;pos[i*6+5]=b._z3; }); T3.lineGeo.attributes.position.needsUpdate=true; }
+    // particles
+    if(T3.particles){ const pos=T3.particles.geometry.attributes.position.array; T3.partData.forEach((d,i)=>{ const a=byId[d.e.source], b=byId[d.e.target]; if(!a||!b)return; d.t+=d.sp; if(d.t>1)d.t-=1; const tt=d.rev?1-d.t:d.t; pos[i*3]=a._x3+(b._x3-a._x3)*tt; pos[i*3+1]=a._y3+(b._y3-a._y3)*tt; pos[i*3+2]=a._z3+(b._z3-a._z3)*tt; }); T3.particles.geometry.attributes.position.needsUpdate=true; }
+    T3.camera.updateProjectionMatrix(); T3.renderer.render(T3.scene,T3.camera);
+  }
+  function resize3D(){ const el=$("#three3d"); const w=el.clientWidth||innerWidth, h=el.clientHeight||innerHeight; T3.size={w,h}; T3.renderer.setSize(w,h,false); T3.camera.aspect=w/h; T3.camera.updateProjectionMatrix(); updateCam(); }
+  function setup3DControls(el){ let mode=0, px=0, py=0, moved=false;
+    el.addEventListener("pointerdown",(ev)=>{ mode=(ev.button===2||ev.button===1)?2:1; px=ev.clientX; py=ev.clientY; moved=false; el.classList.add("grabbing"); el.setPointerCapture(ev.pointerId); });
+    el.addEventListener("pointermove",(ev)=>{ if(!mode) return; const dx=ev.clientX-px, dy=ev.clientY-py; px=ev.clientX; py=ev.clientY; if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
+      if(mode===1){ T3.sph.theta-=dx*0.006; T3.sph.phi=Math.max(0.15,Math.min(3.0,T3.sph.phi-dy*0.006)); }
+      else { const TH=window.THREE; const right=new TH.Vector3().subVectors(T3.camera.position,T3.target).cross(T3.camera.up).normalize(); const up=T3.camera.up.clone().normalize(); const k=T3.sph.r*0.0016; T3.target.addScaledVector(right,-dx*k); T3.target.addScaledVector(up,dy*k); }
+      updateCam(); });
+    el.addEventListener("pointerup",(ev)=>{ el.classList.remove("grabbing"); const wasMode=mode; mode=0; if(!moved && wasMode===1) pick3D(ev); });
+    el.addEventListener("wheel",(ev)=>{ ev.preventDefault(); T3.sph.r=Math.max(30,Math.min(900,T3.sph.r*(ev.deltaY<0?0.9:1.11))); updateCam(); },{passive:false});
+    el.addEventListener("contextmenu",(ev)=>ev.preventDefault());
+  }
+  function pick3D(ev){ const TH=window.THREE; const el=$("#three3d"); const rect=el.getBoundingClientRect();
+    const mouse=new TH.Vector2(((ev.clientX-rect.left)/rect.width)*2-1, -((ev.clientY-rect.top)/rect.height)*2+1);
+    const rc=new TH.Raycaster(); rc.setFromCamera(mouse,T3.camera);
+    const hits=rc.intersectObjects(Object.values(T3.nodeMeshes)); if(hits.length){ const id=hits[0].object._id; select(id); const n=byId[id]; if(n){ T3.target.set(n._x3,n._y3,n._z3); updateCam(); } } }
+  $("#threeBtn").onclick=toggle3D;
 
   (function(){ const ml=$("#modeLegend2"); let h=""; for(const k in KIND) h+=`<span class="sl"><span class="sd" style="background:${KIND[k].color}"></span>${KIND[k].label}</span>`; ml.innerHTML=h; })();
 
