@@ -128,6 +128,9 @@
   .menu .mi .md { display:block; font-size:10.5px; color:var(--text-dim); font-weight:450; margin-top:1px; }
   .menu .mdiv { height:1px; background:var(--border); margin:4px 2px; }
   .menu .mcap { font-size:9.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--text-mute); padding:5px 10px 3px; }
+  .menu.right { left:auto; right:0; transform-origin:top right; }
+  .menu .menu-row { width:100%; justify-content:flex-start; gap:9px; padding:8px 10px; border-radius:9px; font-weight:550; }
+  .menu .menu-row:hover { background:var(--accent-soft); transform:none; box-shadow:none; }
 
   /* ---------- Graph ---------- */
   main { flex:1 1 auto; position:relative; overflow:hidden; }
@@ -497,7 +500,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v16 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v17 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -512,14 +515,23 @@
     <button class="btn" id="tableBtn" title="テーブル / 一覧・階層編集"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>テーブル</button>
     <button class="btn" id="ganttBtn" title="更改 / EOL ロードマップ"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3M7 13h6M7 16h9"/></svg>更改</button>
     <button class="btn" id="threeBtn" title="3D表示（Three.js）"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/></svg>3D</button>
+    <div class="sep"></div>
     <button class="btn icon" id="historyBtn" title="変更履歴 / 元に戻す"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg></button>
     <button class="btn icon" id="relayoutBtn" title="再整列 (R)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
-    <button class="btn icon" id="exportBtn" title="JSONエクスポート"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
-    <button class="btn icon" id="importBtn" title="JSON読込"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
-    <button class="btn icon" id="mdBtn" title="台帳(Markdown)出力"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M16 9v6M16 15l-1.5-2M16 15l1.5-2"/></svg></button>
-    <button class="btn icon" id="svgBtn" title="SVG出力（アニメーション付き）"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 16l4-5 3 3 4-6 5 8"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg></button>
-    <button class="btn icon" id="themeBtn" title="テーマ切替"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg></button>
-    <button class="btn icon" id="helpBtn" title="使い方 (?)"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.7-2 2-2 3.5"/><circle cx="12" cy="17" r="0.5"/></svg></button>
+    <div class="menu-wrap">
+      <button class="btn icon" id="moreBtn" title="その他（出力・読込・設定）"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></button>
+      <div class="menu right" id="moreMenu">
+        <div class="mcap">出力</div>
+        <button class="btn menu-row" id="exportBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>JSON エクスポート</button>
+        <button class="btn menu-row" id="mdBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M16 9v6M16 15l-1.5-2M16 15l1.5-2"/></svg>台帳（Markdown）</button>
+        <button class="btn menu-row" id="svgBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M4 16l4-5 3 3 4-6 5 8"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>SVG出力（アニメ付）</button>
+        <div class="mdiv"></div>
+        <button class="btn menu-row" id="importBtn"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg>JSON 読込</button>
+        <div class="mdiv"></div>
+        <button class="btn menu-row" id="themeBtn"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>テーマ切替</button>
+        <button class="btn menu-row" id="helpBtn"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.7-2 2-2 3.5"/><circle cx="12" cy="17" r="0.5"/></svg>使い方（?）</button>
+      </div>
+    </div>
     <input type="file" id="fileInput" accept="application/json,.json">
   </header>
 
@@ -655,11 +667,11 @@
         </div></details>
 
         <details class="isec" open><summary>管理体制</summary><div class="isec-body">
-          <div class="fld"><label>オーナー / 責任者</label><input id="fOwner" type="text" placeholder="例: 情シス部 山田 / 営業企画部"></div>
-          <div class="fld"><label>管理部署</label><input id="fDept" type="text" placeholder="例: 情報システム部 基幹Gr"></div>
-          <div class="fld"><label>運用保守（担当・ベンダー）</label><input id="fOps" type="text" placeholder="例: 運用課 / ○○社 保守契約"></div>
-          <div class="fld" id="fldVendor"><label>ベンダー / 提供元</label><input id="fVendor" type="text" placeholder="例: 自社開発, Salesforce社"></div>
-          <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
+          <div class="fld"><label>オーナー / 責任者</label><input id="fOwner" type="text" list="dl-owner" placeholder="例: 情シス部 山田 / 営業企画部"></div>
+          <div class="fld"><label>管理部署</label><input id="fDept" type="text" list="dl-dept" placeholder="例: 情報システム部 基幹Gr"></div>
+          <div class="fld"><label>運用保守（担当・ベンダー）</label><input id="fOps" type="text" list="dl-ops" placeholder="例: 運用課 / ○○社 保守契約"></div>
+          <div class="fld" id="fldVendor"><label>ベンダー / 提供元</label><input id="fVendor" type="text" list="dl-vendor" placeholder="例: 自社開発, Salesforce社"></div>
+          <div class="fld" id="fldEnv"><label>環境 / ホスティング</label><input id="fEnv" type="text" list="dl-env" placeholder="例: 本番 / AWS Tokyo, オンプレ"></div>
           <div class="fld"><label>最終棚卸し / 確認日</label>
             <div style="display:flex;gap:8px;align-items:center"><input id="fReviewed" type="date" style="flex:1"><button class="btn" id="reviewNow" style="white-space:nowrap;padding:8px 10px">今日で確認</button></div>
           </div>
@@ -670,11 +682,11 @@
         </div></details>
 
         <details class="isec"><summary>技術・データ詳細</summary><div class="isec-body">
-          <div class="fld" id="fldEngine"><label>DBエンジン</label><input id="fEngine" type="text" placeholder="例: PostgreSQL 16, Oracle 19c, BigQuery"></div>
-          <div class="fld" id="fldSchema"><label>スキーマ / データセット</label><input id="fSchema" type="text" placeholder="例: sales, public, mart"></div>
-          <div class="fld" id="fldKind"><label>基盤の種別</label><input id="fKind" type="text" placeholder="例: ETL, iPaaS, Reverse-ETL, MA"></div>
+          <div class="fld" id="fldEngine"><label>DBエンジン</label><input id="fEngine" type="text" list="dl-engine" placeholder="例: PostgreSQL 16, Oracle 19c, BigQuery"></div>
+          <div class="fld" id="fldSchema"><label>スキーマ / データセット</label><input id="fSchema" type="text" list="dl-schema" placeholder="例: sales, public, mart"></div>
+          <div class="fld" id="fldKind"><label>基盤の種別</label><input id="fKind" type="text" list="dl-kind" placeholder="例: ETL, iPaaS, Reverse-ETL, MA"></div>
           <div class="fld" id="fldSchedule"><label>実行タイミング</label><input id="fSchedule" type="text" placeholder="例: 毎日 02:00, 5分毎, リアルタイム"></div>
-          <div class="fld"><label>技術 / 接続情報</label><input id="fTech" type="text" placeholder="例: REST API, JDBC, gRPC"></div>
+          <div class="fld"><label>技術 / 接続情報</label><input id="fTech" type="text" list="dl-tech" placeholder="例: REST API, JDBC, gRPC"></div>
           <div class="fld"><label>タグ（カンマ区切り）</label><input id="fTags" type="text" placeholder="例: 基幹, 顧客, PII"><div class="tagbox" id="tagbox"></div></div>
         </div></details>
 
@@ -720,8 +732,8 @@
           <option value="cdc">CDC（変更検知）</option><option value="upsert">UPSERT</option><option value="realtime">リアルタイム</option>
         </select></div>
         <div class="fld" id="eldSched" style="display:flex;gap:8px">
-          <div style="flex:1"><label>連携間隔</label><input id="eInterval" type="text" placeholder="例: 日次 / 5分毎 / 随時"></div>
-          <div style="flex:1"><label>実行時間帯</label><input id="eWindow" type="text" placeholder="例: 02:00-04:00 / 営業時間内"></div>
+          <div style="flex:1"><label>連携間隔</label><input id="eInterval" type="text" list="dl-interval" placeholder="例: 日次 / 5分毎 / 随時"></div>
+          <div style="flex:1"><label>実行時間帯</label><input id="eWindow" type="text" list="dl-window" placeholder="例: 02:00-04:00 / 営業時間内"></div>
         </div>
         <div class="fld" id="eldVol" style="display:flex;gap:8px">
           <div style="flex:1.4"><label>連携データ量</label><input id="eVolume" type="text" placeholder="例: 約12万件/日, 500MB"></div>
@@ -815,6 +827,10 @@
 </div>
 
 <div class="ctxmenu" id="ctxMenu"></div>
+<datalist id="dl-owner"></datalist><datalist id="dl-dept"></datalist><datalist id="dl-ops"></datalist>
+<datalist id="dl-vendor"></datalist><datalist id="dl-env"></datalist><datalist id="dl-engine"></datalist>
+<datalist id="dl-tech"></datalist><datalist id="dl-schema"></datalist><datalist id="dl-kind"></datalist>
+<datalist id="dl-interval"></datalist><datalist id="dl-window"></datalist>
 <div class="tooltip" id="tooltip"></div>
 <div class="toast" id="toast"></div>
 
@@ -1415,7 +1431,7 @@
     $("#fStatus").value=n.status||""; $("#fCrit").value=n.criticality||""; $("#fHealth").value=n.health||"";
     $("#fEnv").value=n.env||""; $("#fVendor").value=n.vendor||""; $("#fIntro").value=n.introduced||""; $("#fRenewal").value=n.renewal||"";
     $("#fDept").value=n.dept||""; $("#fOps").value=n.ops||""; $("#fReviewed").value=n.lastReviewed||"";
-    toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderDocs(n); renderIncidents(n); renderConns(n);
+    toggleFields(n.type); populateParent(n); renderTags(n); renderCols(n); renderDocs(n); renderIncidents(n); renderConns(n); populateDatalists();
   }
   const CHILD_OF={ system:"database", database:"table", platform:"job" };
   function toggleFields(type){
@@ -1468,6 +1484,25 @@
     if(outs.length){ const h=document.createElement("div"); h.style.cssText="font-size:10px;font-weight:700;color:var(--text-mute);margin:7px 0 3px;letter-spacing:.4px"; h.textContent=n.type==="job"?"▶ 出力（ロード先）":"▶ 出力"; list.appendChild(h); outs.forEach(e=>rowFor(e,"out")); }
   }
   function esc(s){ return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+  // 入力の構造化: 既存値＋定番候補をサジェスト（表記ゆれ防止）
+  const DL_DEFAULTS={
+    "dl-env":["本番","検証(ステージング)","開発","SaaS (本番)","オンプレ / 自社DC","AWS Tokyo","GCP","Azure"],
+    "dl-engine":["PostgreSQL 16","MySQL 8","Oracle 19c","SQL Server","BigQuery","Snowflake","Redshift","Salesforce","MongoDB","Shopify"],
+    "dl-kind":["ETL","ELT","iPaaS","Reverse-ETL","MA","CDC","データ連携基盤"],
+    "dl-interval":["リアルタイム","1分毎","5分毎","15分毎","1時間毎","日次","週次","月次","随時"],
+    "dl-window":["終日","営業時間内","夜間","02:00-04:00","06:00-07:00"],
+    "dl-schema":["public","sales","mart","staging","dwh","sObject"],
+    "dl-tech":["REST API","GraphQL","JDBC","gRPC","SFTP","Kafka","Python / SQL","Bulk API"],
+  };
+  const DL_FIELD={ "dl-owner":"owner","dl-dept":"dept","dl-ops":"ops","dl-vendor":"vendor","dl-env":"env","dl-engine":"engine","dl-tech":"tech","dl-schema":"schema","dl-kind":"kind" };
+  function populateDatalists(){
+    for(const id in DL_FIELD){ const f=DL_FIELD[id]; const set=new Set(DL_DEFAULTS[id]||[]);
+      for(const n of data.nodes){ const v=String(n[f]||"").trim(); if(v) set.add(v); }
+      const el=document.getElementById(id); if(el) el.innerHTML=[...set].map(v=>`<option value="${esc(v)}">`).join(""); }
+    for(const [id,f] of [["dl-interval","interval"],["dl-window","window"]]){ const set=new Set(DL_DEFAULTS[id]||[]);
+      for(const e of data.edges){ const v=String(e[f]||"").trim(); if(v) set.add(v); }
+      const el=document.getElementById(id); if(el) el.innerHTML=[...set].map(v=>`<option value="${esc(v)}">`).join(""); }
+  }
 
   function bindField(sel,apply){ $(sel).addEventListener("input",()=>{ const n=byId[selectedId]; if(!n) return; apply(n,$(sel).value); save(); }); }
   bindField("#fName",(n,v)=>{ n.label=v; $("#insTitle").textContent=v; softRefresh(); });
@@ -1645,7 +1680,7 @@
     $("#eInterval").value=e.interval||""; $("#eWindow").value=e.window||""; $("#eVolume").value=e.volume||""; $("#eScale").value=e.scale||"";
     const ref = e.kind==="ref";
     $("#eldMode").classList.toggle("hide",ref); $("#eldSched").classList.toggle("hide",ref); $("#eldVol").classList.toggle("hide",ref); $("#eldCond").classList.toggle("hide",ref); $("#eldKey").classList.toggle("hide",ref); $("#eldTrans").classList.toggle("hide",ref); $("#eldMaps").classList.toggle("hide",ref);
-    renderEdgeFlow(e); renderMappings(e); renderEdgeDocs(e); renderEndpoints(e);
+    renderEdgeFlow(e); renderMappings(e); renderEdgeDocs(e); renderEndpoints(e); populateDatalists();
   }
   // データ連携の項目マッピング / 加工
   function renderMappings(e){
@@ -1883,8 +1918,11 @@
     });
   })();
   function closeAddMenu(){ addMenu.classList.remove("open"); }
-  $("#addBtn").onclick=(ev)=>{ ev.stopPropagation(); addMenu.classList.toggle("open"); };
-  document.addEventListener("click",(ev)=>{ if(!ev.target.closest(".menu-wrap")) closeAddMenu(); });
+  $("#addBtn").onclick=(ev)=>{ ev.stopPropagation(); $("#moreMenu").classList.remove("open"); addMenu.classList.toggle("open"); };
+  const moreMenu=$("#moreMenu");
+  $("#moreBtn").onclick=(ev)=>{ ev.stopPropagation(); closeAddMenu(); moreMenu.classList.toggle("open"); };
+  moreMenu.addEventListener("click",()=>moreMenu.classList.remove("open")); // 項目クリックで閉じる
+  document.addEventListener("click",(ev)=>{ if(!ev.target.closest(".menu-wrap")){ closeAddMenu(); moreMenu.classList.remove("open"); } });
 
   function addNode(type){
     snapshot("ノードを追加");
