@@ -243,6 +243,14 @@
   .attn-item .ai-t { font-size:12.5px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .attn-item .ai-s { font-size:10.5px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .attn-item .ai-sev { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:20px; color:#fff; flex:none; }
+  .hist-item { display:flex; align-items:center; gap:10px; padding:9px 11px; background:var(--panel-2); border:1px solid transparent; border-radius:9px; margin-bottom:6px; }
+  .hist-item .hi-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
+  .hist-item .hi-body { flex:1; min-width:0; }
+  .hist-item .hi-l { font-size:12.5px; font-weight:650; }
+  .hist-item .hi-t { font-size:10.5px; color:var(--text-mute); }
+  .hist-item .hi-restore { flex:none; font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); border:none; padding:5px 10px; border-radius:7px; cursor:pointer; }
+  .hist-item .hi-restore:hover { filter:brightness(1.05); }
+  .hist-hint { font-size:11px; color:var(--text-mute); margin-bottom:10px; }
   .empty-note { font-size:12px; color:var(--text-mute); padding:10px 2px; }
 
   /* incident / column editors */
@@ -470,7 +478,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v12 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v13 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -484,6 +492,7 @@
     <button class="btn" id="overviewBtn" title="概要 / 要対応"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>概要</button>
     <button class="btn" id="tableBtn" title="テーブル / 一覧・階層編集"><svg class="ui-ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>テーブル</button>
     <button class="btn" id="threeBtn" title="3D表示（Three.js）"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/></svg>3D</button>
+    <button class="btn icon" id="historyBtn" title="変更履歴 / 元に戻す"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg></button>
     <button class="btn icon" id="relayoutBtn" title="再整列 (R)"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></button>
     <button class="btn icon" id="exportBtn" title="JSONエクスポート"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
     <button class="btn icon" id="importBtn" title="JSON読込"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></button>
@@ -568,6 +577,12 @@
       <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>システム概要
         <button class="close" id="ovClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="ob" id="ovBody"></div>
+    </div>
+
+    <div class="overview" id="historyPanel">
+      <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>変更履歴
+        <button class="close" id="histClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ob" id="histBody"></div>
     </div>
 
     <aside id="inspector">
@@ -971,15 +986,21 @@
   }
   function serialize(){ return JSON.stringify({ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges }); }
   function save(){ try{ localStorage.setItem(STORE_KEY, serialize()); }catch(e){} }
-  // ---- Undo（構造変更の直前スナップショット）----
-  const undoStack=[];
-  function snapshot(){ try{ undoStack.push(serialize()); if(undoStack.length>40) undoStack.shift(); }catch(e){} }
+  // ---- 変更履歴（各変更の直前状態を記録し、任意地点へ復元）----
+  const history=[];   // {label, ts, state}  state = 変更直前のスナップショット
+  function nowStr(){ try{ return new Date().toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }catch(e){ return ""; } }
+  function snapshot(label){ try{ history.push({label:label||"変更", ts:nowStr(), state:serialize()}); if(history.length>80) history.shift(); if($("#historyPanel")&&$("#historyPanel").classList.contains("open")) renderHistory(); }catch(e){} }
+  function applyState(s){ data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null; ins.classList.remove("open"); edgeIns.classList.remove("open"); save(); render(); }
   function undo(){
-    if(!undoStack.length){ toast("元に戻す履歴がありません"); return; }
-    const s=undoStack.pop();
-    data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null;
-    ins.classList.remove("open"); edgeIns.classList.remove("open");
-    save(); render(); toast("元に戻しました（残り "+undoStack.length+"）");
+    if(!history.length){ toast("元に戻す履歴がありません"); return; }
+    const h=history.pop(); applyState(h.state);
+    toast("元に戻しました: "+h.label+"（残り "+history.length+"）"); if($("#historyPanel").classList.contains("open")) renderHistory();
+  }
+  function restoreTo(i){ if(i<0||i>=history.length) return; const target=history[i];
+    // 現在状態を履歴に積んでから復元（復元自体も取り消せる）
+    history.push({label:"復元操作の前", ts:nowStr(), state:serialize()});
+    applyState(target.state);
+    toast("この地点に復元しました: "+target.label); renderHistory();
   }
 
   // ---------------- Derived ----------------
@@ -1322,7 +1343,7 @@
   }
   function addChild(){
     const parent=byId[selectedId]; if(!parent) return; const ct=CHILD_OF[parent.type]; if(!ct) return;
-    snapshot();
+    snapshot("子要素を追加");
     const b=groupBoxes[parent.id]; const cx=b?b.x+b.w/2:parent.x||0, cy=b?b.y+b.h/2:parent.y||0;
     const n={ id:"n"+Date.now()+Math.floor(Math.random()*99), type:ct, label:TYPE[ct].chip+"（新規）",
       desc:"", owner:"", tech:"", tags:[], parent:parent.id, x:cx+(Math.random()-.5)*40, y:cy+(Math.random()-.5)*40, vx:0, vy:0 };
@@ -1372,8 +1393,8 @@
   bindField("#fSchema",(n,v)=>n.schema=v);
   bindField("#fSchedule",(n,v)=>n.schedule=v);
   bindField("#fTags",(n,v)=>{ n.tags=v.split(",").map(s=>s.trim()).filter(Boolean); renderTags(n); });
-  $("#fParent").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; snapshot(); n.parent=$("#fParent").value||null; save(); render(); reheat(.4); openInspector(n.id); });
-  $("#fType").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; snapshot(); n.type=$("#fType").value; if(!TYPE[n.type].parent) n.parent=null; save(); render(); reheat(.4); openInspector(n.id); });
+  $("#fParent").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; snapshot("所属変更"); n.parent=$("#fParent").value||null; save(); render(); reheat(.4); openInspector(n.id); });
+  $("#fType").addEventListener("change",()=>{ const n=byId[selectedId]; if(!n) return; snapshot("種別変更"); n.type=$("#fType").value; if(!TYPE[n.type].parent) n.parent=null; save(); render(); reheat(.4); openInspector(n.id); });
   function softRefresh(){ render(); }
   bindField("#fEnv",(n,v)=>n.env=v);
   bindField("#fVendor",(n,v)=>n.vendor=v);
@@ -1468,7 +1489,7 @@
   $("#delBtn").onclick=()=>{ if(!selectedId) return; const n=byId[selectedId];
     const kids=data.nodes.filter(x=>x.parent===selectedId).length;
     if(!confirm(kids?`「${n.label}」と配下 ${kids} 件・接続を削除しますか?`:`「${n.label}」と接続を削除しますか?`)) return;
-    snapshot();
+    snapshot("ノードを削除");
     const rm=new Set([selectedId]); let changed=true;
     while(changed){ changed=false; for(const x of data.nodes){ if(x.parent&&rm.has(x.parent)&&!rm.has(x.id)){ rm.add(x.id); changed=true; } } }
     data.edges=data.edges.filter(e=>!rm.has(e.source)&&!rm.has(e.target));
@@ -1550,7 +1571,7 @@
   $("#eMode").addEventListener("change",()=>{ const e=edgeById[selectedEdge]; if(!e)return; e.mode=$("#eMode").value||null; save(); render(); openEdgeInspector(e.id); });
   $("#eiClose").onclick=()=>{ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); };
   $("#eDelBtn").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; if(!confirm("このデータ連携を削除しますか?")) return;
-    snapshot(); data.edges=data.edges.filter(x=>x.id!==e.id); selectedEdge=null; edgeIns.classList.remove("open"); save(); render(); toast("連携を削除しました"); };
+    snapshot("連携を削除"); data.edges=data.edges.filter(x=>x.id!==e.id); selectedEdge=null; edgeIns.classList.remove("open"); save(); render(); toast("連携を削除しました"); };
   $("#eFocusBtn").onclick=()=>{ const e=edgeById[selectedEdge]; if(!e)return; const a=byId[e.source],b=byId[e.target]; if(a&&b){ const mid={id:e.id}; const r=svg.getBoundingClientRect(); const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2; view.x=r.width/2-cx*view.k; view.y=r.height/2-cy*view.k; applyViewport(); } };
 
   // ---------------- Tooltip ----------------
@@ -1662,7 +1683,7 @@
   function nextIfId(){ let max=0; for(const e of data.edges){ const m=/IF0*(\d+)/i.exec(e.ifId||""); if(m) max=Math.max(max,parseInt(m[1])); } return "IF"+String(max+1).padStart(5,"0"); }
   function createEdge(s,t){
     if(data.edges.some(e=>e.source===s&&e.target===t)){ toast("既に接続されています"); return; }
-    snapshot();
+    snapshot("接続を作成");
     const label=prompt("データの流れ・接続内容","連携") ?? "";
     let kind="write"; const su=byId[s], tu=byId[t];
     if(su&&tu&&(su.type==="connector"||tu.type==="connector")) kind="sync";
@@ -1739,7 +1760,7 @@
   document.addEventListener("click",(ev)=>{ if(!ev.target.closest(".menu-wrap")) closeAddMenu(); });
 
   function addNode(type){
-    snapshot();
+    snapshot("ノードを追加");
     const r=svg.getBoundingClientRect(), c=toWorld(r.left+r.width/2,r.top+r.height/2);
     const need=TYPE[type].parent; let parent=null;
     if(need){ const sel=byId[selectedId];
@@ -1770,7 +1791,7 @@
     a.href=URL.createObjectURL(blob); a.download="system-graph.json"; a.click(); URL.revokeObjectURL(a.href); toast("JSON をエクスポートしました"); };
   $("#importBtn").onclick=()=>$("#fileInput").click();
   $("#fileInput").addEventListener("change",(ev)=>{ const f=ev.target.files[0]; if(!f) return; const rd=new FileReader();
-    rd.onload=()=>{ try{ snapshot(); data=normalize(JSON.parse(rd.result)); selectedId=null; selectedEdge=null; edgeIns.classList.remove("open"); ins.classList.remove("open"); save(); render(); zoomFit(); toast("読み込みました（"+data.nodes.length+" ノード）"); }catch(e){ toast("JSON の読み込みに失敗しました"); } };
+    rd.onload=()=>{ try{ snapshot("JSON読込"); data=normalize(JSON.parse(rd.result)); selectedId=null; selectedEdge=null; edgeIns.classList.remove("open"); ins.classList.remove("open"); save(); render(); zoomFit(); toast("読み込みました（"+data.nodes.length+" ノード）"); }catch(e){ toast("JSON の読み込みに失敗しました"); } };
     rd.readAsText(f); ev.target.value=""; });
 
   // ---------------- Markdown 台帳 export ----------------
@@ -1905,9 +1926,26 @@ ${ser.serializeToString(gNod)}
 
   // ---------------- Overview drawer ----------------
   const overview=$("#overview");
-  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
+  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { closeHistory(); buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
   $("#ovClose").onclick=closeOverview;
   function closeOverview(){ overview.classList.remove("open"); $("#overviewBtn").classList.remove("active"); }
+
+  // ---------------- 変更履歴パネル ----------------
+  const historyPanel=$("#historyPanel");
+  $("#historyBtn").onclick=()=>{ if(historyPanel.classList.contains("open")) closeHistory(); else { closeOverview(); renderHistory(); historyPanel.classList.add("open"); $("#historyBtn").classList.add("active"); } };
+  $("#histClose").onclick=closeHistory;
+  function closeHistory(){ historyPanel.classList.remove("open"); $("#historyBtn").classList.remove("active"); }
+  function renderHistory(){
+    const body=$("#histBody"); if(!body) return;
+    let h='<div class="hist-hint">各操作の直前状態を記録しています。「復元」で任意の地点に戻せます（<b>Ctrl+Z</b>で直前を取消）。</div>';
+    if(!history.length){ body.innerHTML=h+'<div class="empty-note">まだ変更はありません。</div>'; return; }
+    h+='<div class="attn">';
+    for(let i=history.length-1;i>=0;i--){ const e=history[i];
+      h+=`<div class="hist-item"><span class="hi-dot"></span><div class="hi-body"><div class="hi-l">${esc(e.label)}</div><div class="hi-t">${esc(e.ts)}</div></div><button class="hi-restore" data-i="${i}">この地点に復元</button></div>`;
+    }
+    h+='</div>'; body.innerHTML=h;
+    body.querySelectorAll(".hi-restore").forEach(b=> b.onclick=()=> restoreTo(parseInt(b.getAttribute("data-i"))) );
+  }
   function buildOverview(){
     const body=$("#ovBody"); const c={}; for(const n of data.nodes) c[n.type]=(c[n.type]||0)+1;
     const sysList=data.nodes.filter(n=>n.type==="system");
@@ -1988,7 +2026,7 @@ ${ser.serializeToString(gNod)}
     if(ev.key==="?"){ helpModal.classList.toggle("open"); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
     if(ev.key==="Delete"&&selectedEdge) $("#eDelBtn").click();
-    if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
+    if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else if(historyPanel.classList.contains("open")) closeHistory(); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
     if(ev.key==="l"||ev.key==="L") setLinkMode(!linkMode);
     if(ev.key==="f"||ev.key==="F") zoomFit();
     if(ev.key==="r"||ev.key==="R") $("#relayoutBtn").click();
@@ -2006,7 +2044,7 @@ ${ser.serializeToString(gNod)}
   helpModal.addEventListener("click",(e)=>{ if(e.target===helpModal) helpModal.classList.remove("open"); });
 
   // ---------------- Empty state ----------------
-  $("#esLoadSample").onclick=()=>{ snapshot(); data=normalize(JSON.parse(JSON.stringify(SEED))); selectedId=null; selectedEdge=null; save(); render(); zoomFit(); toast("サンプルを読み込みました"); };
+  $("#esLoadSample").onclick=()=>{ snapshot("サンプル読込"); data=normalize(JSON.parse(JSON.stringify(SEED))); selectedId=null; selectedEdge=null; save(); render(); zoomFit(); toast("サンプルを読み込みました"); };
 
   // ---------------- Table / Report view ----------------
   const tableView=$("#tableView"); let tvTab="tree", tvSort={col:null,dir:1}, tvFilters={};
@@ -2125,7 +2163,7 @@ ${ser.serializeToString(gNod)}
     const id=el.dataset.id, f=el.dataset.field; if(!id||!f) return;
     const obj = el.dataset.edge==="1"? edgeById[id] : byId[id]; if(!obj) return;
     let v=el.value; if((f==="parent"||f==="status"||f==="criticality"||f==="mode"||f==="kind"||f==="scale")&&v==="") v=null;
-    if(isChange && (f==="parent"||f==="type"||f==="kind")) snapshot();
+    if(isChange && (f==="parent"||f==="type"||f==="kind")) snapshot("表で編集");
     obj[f]=v;
     if(f==="type" && v && !TYPE[v].parent) obj.parent=null;
     save();
@@ -2138,26 +2176,30 @@ ${ser.serializeToString(gNod)}
     else if(act==="egoto"){ closeTable(); selectEdge(id); const e2=edgeById[id],a=byId[e2.source],b=byId[e2.target]; if(a&&b){ const r=svg.getBoundingClientRect(); view.x=r.width/2-(a.x+b.x)/2*view.k; view.y=r.height/2-(a.y+b.y)/2*view.k; applyViewport(); } }
     else if(act==="addchild"){ selectedId=id; addChild(); buildTable(); }
     else if(act==="del"){ const n=byId[id]; const kids=data.nodes.filter(x=>x.parent===id).length; if(!confirm(kids?`「${n.label}」と配下 ${kids} 件・接続を削除しますか?`:`「${n.label}」と接続を削除しますか?`)) return;
-      snapshot(); const rm=new Set([id]); let ch=true; while(ch){ ch=false; for(const x of data.nodes){ if(x.parent&&rm.has(x.parent)&&!rm.has(x.id)){ rm.add(x.id); ch=true; } } }
+      snapshot("削除"); const rm=new Set([id]); let ch=true; while(ch){ ch=false; for(const x of data.nodes){ if(x.parent&&rm.has(x.parent)&&!rm.has(x.id)){ rm.add(x.id); ch=true; } } }
       data.edges=data.edges.filter(x=>!rm.has(x.source)&&!rm.has(x.target)); data.nodes=data.nodes.filter(x=>!rm.has(x.id));
       if(selectedId===id) selectedId=null; save(); render(); buildTable(); toast("削除しました"); }
-    else if(act==="edel"){ if(!confirm("このデータ連携を削除しますか?")) return; snapshot(); data.edges=data.edges.filter(x=>x.id!==id); save(); render(); buildTable(); toast("連携を削除しました"); }
+    else if(act==="edel"){ if(!confirm("このデータ連携を削除しますか?")) return; snapshot("連携を削除"); data.edges=data.edges.filter(x=>x.id!==id); save(); render(); buildTable(); toast("連携を削除しました"); }
   });
 
   function loop(){ physics(); if(alpha>=0.004) positionAll(); animateFlow(); if(alpha>=0.004) renderMinimap(); requestAnimationFrame(loop); }
 
   // ==================== 3D view (Three.js) ====================
-  const T3 = { on:false, inited:false, renderer:null, scene:null, camera:null, root:null,
-    nodeMeshes:{}, labelSprites:{}, lineGeo:null, lineObj:null, particles:null, partData:[],
-    sph:{r:150, theta:0.9, phi:1.15}, target:null, raf:0, size:{w:0,h:0} };
+  const T3 = { on:false, inited:false, renderer:null, scene:null, camera:null, root:null, hullGroup:null,
+    nodeMeshes:{}, labelSprites:{}, lineGeo:null, lineObj:null, particles:null, partData:[], hulls:[],
+    sph:{r:150, theta:0.9, phi:1.15}, vel:{theta:0,phi:0,zoom:0}, target:null, raf:0, rim:null, rMin:40, rMax:900, hover:null };
   function cssHex(v){ if(typeof v==="string"&&v.trim().startsWith("var(")){ const n=v.trim().slice(4,-1).trim(); return getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#8899aa"; } return v; }
+  function isDark3(){ const t=document.documentElement.getAttribute("data-theme"); if(t==="dark")return true; if(t==="light")return false; return (typeof matchMedia!=="undefined")&&matchMedia("(prefers-color-scheme: dark)").matches; }
   const W3=0.075; // world → three units
   function toggle3D(){ if(T3.on) exit3D(); else enter3D(); }
   function enter3D(){
     if(!window.THREE){ toast("3Dライブラリを読み込めませんでした（オンライン環境で再読込してください）"); return; }
     T3.on=true; document.body.classList.add("mode-3d"); $("#three3d").classList.add("on"); $("#threeBtn").classList.add("active");
     if(!T3.inited) init3D();
-    build3D(); resize3D(); if(!T3.raf) animate3D();
+    build3D(); resize3D();
+    for(let i=0;i<180;i++) sim3D();   // 事前に安定させてからフィット
+    fitCamera();
+    if(!T3.raf) animate3D();
   }
   function exit3D(){ T3.on=false; document.body.classList.remove("mode-3d"); $("#three3d").classList.remove("on"); $("#threeBtn").classList.remove("active");
     if(T3.raf){ cancelAnimationFrame(T3.raf); T3.raf=0; } }
@@ -2166,38 +2208,66 @@ ${ser.serializeToString(gNod)}
     T3.renderer=new TH.WebGLRenderer({antialias:true, alpha:true}); T3.renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
     el.appendChild(T3.renderer.domElement);
     T3.scene=new TH.Scene();
-    T3.camera=new TH.PerspectiveCamera(55,1,0.1,4000);
+    T3.camera=new TH.PerspectiveCamera(52,1,0.1,6000);
     T3.target=new TH.Vector3(0,0,0);
-    T3.scene.add(new TH.AmbientLight(0xffffff,0.75));
-    const dl=new TH.DirectionalLight(0xffffff,0.9); dl.position.set(1,1.4,1); T3.scene.add(dl);
-    const dl2=new TH.DirectionalLight(0x88aaff,0.35); dl2.position.set(-1,-0.6,-0.8); T3.scene.add(dl2);
+    T3.scene.add(new TH.AmbientLight(0xffffff,0.32));
+    T3.scene.add(new TH.HemisphereLight(0x9fb4ff,0x202433,0.55));
+    const key=new TH.DirectionalLight(0xffffff,0.85); key.position.set(60,90,80); T3.scene.add(key);
+    T3.rim=new TH.DirectionalLight(0x8fb0ff,0.9); T3.scene.add(T3.rim);
     T3.root=new TH.Group(); T3.scene.add(T3.root);
     setup3DControls(el);
     addEventListener("resize",()=>{ if(T3.on) resize3D(); });
     T3.inited=true;
   }
   function nodeThreePos(n){ if(n._x3==null){ n._x3=(n.x||0)*W3; n._y3=-(n.y||0)*W3; n._z3=(Math.random()-.5)*40; } }
+  function roundRect3(ctx,x,y,w,h,r){ r=Math.min(r,h/2,w/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function makeLabel3D(text, big){ const TH=window.THREE; const dark=isDark3();
+    const fontSize=big?32:26, pad=big?15:11, dpr=Math.min(devicePixelRatio||1,2)*2;
+    const font=`600 ${fontSize}px Inter,"Hiragino Sans",sans-serif`;
+    const meas=document.createElement("canvas").getContext("2d"); meas.font=font;
+    const w=Math.ceil(meas.measureText(text||"").width)+pad*2, h=fontSize+pad*2;
+    const cv=document.createElement("canvas"); cv.width=Math.ceil(w*dpr); cv.height=Math.ceil(h*dpr);
+    const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+    ctx.fillStyle=dark?"rgba(12,16,26,.74)":"rgba(255,255,255,.9)"; roundRect3(ctx,.5,.5,w-1,h-1,h/2); ctx.fill();
+    ctx.strokeStyle=dark?"rgba(150,170,210,.28)":"rgba(20,30,60,.14)"; ctx.lineWidth=1; roundRect3(ctx,.5,.5,w-1,h-1,h/2); ctx.stroke();
+    ctx.font=font; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillStyle=dark?"#e6eaf2":"#1c2233"; ctx.fillText(text||"",w/2,h/2+1);
+    const tex=new TH.CanvasTexture(cv); tex.minFilter=TH.LinearFilter; try{ tex.anisotropy=T3.renderer.capabilities.getMaxAnisotropy(); }catch(e){}
+    const sp=new TH.Sprite(new TH.SpriteMaterial({map:tex, transparent:true, depthTest:false})); sp.renderOrder=10;
+    const worldH=big?6.2:4.3; sp._bw=worldH*(w/h); sp._bh=worldH; sp.scale.set(sp._bw,sp._bh,1); return sp;
+  }
   function build3D(){
     const TH=window.THREE; recompute();
-    // clear
     while(T3.root.children.length) T3.root.remove(T3.root.children[0]);
-    T3.nodeMeshes={}; T3.labelSprites={}; T3.partData=[];
+    T3.nodeMeshes={}; T3.labelSprites={}; T3.partData=[]; T3.hulls=[];
+    // group hulls first (描画は最背面)
+    T3.hullGroup=new TH.Group(); T3.root.add(T3.hullGroup);
     const L=leaves();
     for(const n of L){ nodeThreePos(n);
       const r=Math.max(2.2, radius(n)*W3*1.15);
-      const geo=new TH.SphereGeometry(r,24,18);
+      const geo=new TH.SphereGeometry(r,26,20);
       const col=new TH.Color(cssHex(nodeColor(n)));
-      const mat=new TH.MeshStandardMaterial({color:col, roughness:.42, metalness:.15, emissive:col.clone().multiplyScalar(.18)});
-      const m=new TH.Mesh(geo,mat); m._id=n.id; T3.root.add(m); T3.nodeMeshes[n.id]=m;
-      const lab=makeLabel3D(n.label, cssHex("var(--text)")); lab._r=r; T3.root.add(lab); T3.labelSprites[n.id]=lab;
+      const mat=new TH.MeshStandardMaterial({color:col, roughness:.35, metalness:.05, emissive:col.clone().multiplyScalar(.16)});
+      const m=new TH.Mesh(geo,mat); m._id=n.id; m._baseEm=.16; T3.root.add(m); T3.nodeMeshes[n.id]=m;
+      const lab=makeLabel3D(n.label,false); T3.root.add(lab); T3.labelSprites[n.id]=lab;
     }
-    // edges as line segments
+    // group hulls (system / platform)
+    for(const c of containers()){ const t=TYPE[c.type]; if(t.depth!==0) continue;
+      const ids=descendantLeaves(c.id).map(x=>x.id).filter(id=>T3.nodeMeshes[id]); if(!ids.length) continue;
+      const col=new TH.Color(cssHex(containerColor(c))); const geo=new TH.SphereGeometry(1,24,18);
+      const g=new TH.Group();
+      g.add(new TH.Mesh(geo,new TH.MeshBasicMaterial({color:col,transparent:true,opacity:.10,side:TH.BackSide,depthWrite:false,fog:false})));
+      g.add(new TH.Mesh(geo,new TH.MeshBasicMaterial({color:col,transparent:true,opacity:.045,depthWrite:false})));
+      g.renderOrder=-1; T3.hullGroup.add(g);
+      const gl=makeLabel3D(c.label,true); gl.material.opacity=.85; T3.hullGroup.add(gl);
+      T3.hulls.push({g,gl,ids});
+    }
+    // edges
     const segEdges=data.edges.filter(e=>byId[e.source]&&byId[e.target]&&isLeaf(byId[e.source])&&isLeaf(byId[e.target]));
     const positions=new Float32Array(segEdges.length*6), colors=new Float32Array(segEdges.length*6);
     T3._segEdges=segEdges;
     segEdges.forEach((e,i)=>{ const c=new TH.Color(e.kind==="ref"?cssHex("var(--edge)"):kindColor(e)); for(const off of [0,3]){ colors[i*6+off]=c.r; colors[i*6+off+1]=c.g; colors[i*6+off+2]=c.b; } });
     const lg=new TH.BufferGeometry(); lg.setAttribute("position",new TH.BufferAttribute(positions,3)); lg.setAttribute("color",new TH.BufferAttribute(colors,3));
-    T3.lineGeo=lg; T3.lineObj=new TH.LineSegments(lg,new TH.LineBasicMaterial({vertexColors:true, transparent:true, opacity:.55})); T3.root.add(T3.lineObj);
+    T3.lineGeo=lg; T3.lineObj=new TH.LineSegments(lg,new TH.LineBasicMaterial({vertexColors:true, transparent:true, opacity:.38})); T3.root.add(T3.lineObj);
     // particles
     const pd=[]; for(const e of segEdges){ if(e.kind==="ref") continue; const col=new TH.Color(kindColor(e)); const N=3; const sp=(e.mode==="realtime"?0.010:e.mode==="cdc"?0.008:e.mode==="full"?0.004:0.006);
       for(let i=0;i<N;i++) pd.push({e, t:i/N, sp, col, rev:false});
@@ -2206,50 +2276,70 @@ ${ser.serializeToString(gNod)}
     const pp=new Float32Array(pd.length*3), pc=new Float32Array(pd.length*3);
     pd.forEach((d,i)=>{ pc[i*3]=d.col.r; pc[i*3+1]=d.col.g; pc[i*3+2]=d.col.b; });
     const pg=new TH.BufferGeometry(); pg.setAttribute("position",new TH.BufferAttribute(pp,3)); pg.setAttribute("color",new TH.BufferAttribute(pc,3));
-    const pmat=new TH.PointsMaterial({size:3.4, vertexColors:true, transparent:true, opacity:.95, sizeAttenuation:true, depthWrite:false});
+    const pmat=new TH.PointsMaterial({size:3.6, vertexColors:true, transparent:true, opacity:.95, sizeAttenuation:true, depthWrite:false, fog:true});
     T3.particles=new TH.Points(pg,pmat); T3.root.add(T3.particles);
   }
-  function makeLabel3D(text, color){ const TH=window.THREE;
-    const c=document.createElement("canvas"); c.width=256; c.height=64; const ctx=c.getContext("2d");
-    ctx.font="600 26px Inter, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.lineWidth=6; ctx.strokeStyle="rgba(0,0,0,.6)"; ctx.strokeText(text||"",128,34); ctx.fillStyle=color; ctx.fillText(text||"",128,34);
-    const tex=new TH.CanvasTexture(c); tex.minFilter=TH.LinearFilter;
-    const sp=new TH.Sprite(new TH.SpriteMaterial({map:tex, transparent:true, depthWrite:false, depthTest:false})); sp.scale.set(15,3.75,1); return sp;
-  }
-  // simple 3D force sim
   function sim3D(){ const L=leaves(); if(!L.length) return;
     for(let i=0;i<L.length;i++){ const a=L[i]; a._vx=a._vx||0; a._vy=a._vy||0; a._vz=a._vz||0;
-      for(let j=i+1;j<L.length;j++){ const b=L[j]; let dx=a._x3-b._x3, dy=a._y3-b._y3, dz=a._z3-b._z3; let d2=dx*dx+dy*dy+dz*dz||.01; let d=Math.sqrt(d2); const rep=380/d2; const fx=dx/d*rep, fy=dy/d*rep, fz=dz/d*rep; a._vx+=fx;a._vy+=fy;a._vz+=fz; b._vx-=fx;b._vy-=fy;b._vz-=fz; } }
-    for(const e of data.edges){ const a=byId[e.source], b=byId[e.target]; if(!a||!b||!isLeaf(a)||!isLeaf(b)) continue; if(e.kind==="ref") continue;
-      let dx=b._x3-a._x3, dy=b._y3-a._y3, dz=b._z3-a._z3, d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01; const f=(d-22)*0.02; const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f; a._vx+=fx;a._vy+=fy;a._vz+=fz; b._vx-=fx;b._vy-=fy;b._vz-=fz; }
-    for(const n of L){ n._vx+=-n._x3*0.004; n._vy+=-n._y3*0.004; n._vz+=-n._z3*0.004; n._vx*=.8;n._vy*=.8;n._vz*=.8; n._x3+=n._vx*.4;n._y3+=n._vy*.4;n._z3+=n._vz*.4; }
+      for(let j=i+1;j<L.length;j++){ const b=L[j]; let dx=a._x3-b._x3, dy=a._y3-b._y3, dz=a._z3-b._z3; let d2=dx*dx+dy*dy+dz*dz||.01; let d=Math.sqrt(d2); const rep=420/d2; const fx=dx/d*rep, fy=dy/d*rep, fz=dz/d*rep; a._vx+=fx;a._vy+=fy;a._vz+=fz; b._vx-=fx;b._vy-=fy;b._vz-=fz; } }
+    // 同一グループ(top ancestor)は引き寄せて塊に
+    const cen={}; for(const n of L){ const s=topAncestor(n); (cen[s]||(cen[s]={x:0,y:0,z:0,c:0})); cen[s].x+=n._x3;cen[s].y+=n._y3;cen[s].z+=n._z3;cen[s].c++; }
+    for(const k in cen){ cen[k].x/=cen[k].c;cen[k].y/=cen[k].c;cen[k].z/=cen[k].c; }
+    for(const e of data.edges){ const a=byId[e.source], b=byId[e.target]; if(!a||!b||!isLeaf(a)||!isLeaf(b)||e.kind==="ref") continue;
+      let dx=b._x3-a._x3, dy=b._y3-a._y3, dz=b._z3-a._z3, d=Math.sqrt(dx*dx+dy*dy+dz*dz)||.01; const f=(d-24)*0.02; const fx=dx/d*f,fy=dy/d*f,fz=dz/d*f; a._vx+=fx;a._vy+=fy;a._vz+=fz; b._vx-=fx;b._vy-=fy;b._vz-=fz; }
+    for(const n of L){ const s=cen[topAncestor(n)]; if(s){ n._vx+=(s.x-n._x3)*0.012; n._vy+=(s.y-n._y3)*0.012; n._vz+=(s.z-n._z3)*0.012; }
+      n._vx+=-n._x3*0.003; n._vy+=-n._y3*0.003; n._vz+=-n._z3*0.003; n._vx*=.8;n._vy*=.8;n._vz*=.8; n._x3+=n._vx*.4;n._y3+=n._vy*.4;n._z3+=n._vz*.4; }
+  }
+  function fitCamera(){ const TH=window.THREE; const ids=Object.keys(T3.nodeMeshes); if(!ids.length) return;
+    const box=new TH.Box3(); for(const id of ids){ const n=byId[id]; if(n) box.expandByPoint(new TH.Vector3(n._x3,n._y3,n._z3)); }
+    const bs=box.getBoundingSphere(new TH.Sphere()); const rad=bs.radius||60;
+    const fovV=TH.MathUtils.degToRad(T3.camera.fov), fovH=2*Math.atan(Math.tan(fovV/2)*(T3.camera.aspect||1));
+    const dist=(rad*1.35)/Math.sin(Math.min(fovV,fovH)/2)||150;
+    T3.target.copy(bs.center); T3.sph.r=dist; T3.sph.theta=Math.PI/5; T3.sph.phi=Math.PI/2.4; T3.vel={theta:0,phi:0,zoom:0};
+    T3.rMin=dist*0.28; T3.rMax=dist*3.2;
+    T3.camera.near=Math.max(0.1,dist/120); T3.camera.far=dist+rad*8; T3.camera.updateProjectionMatrix();
+    T3.scene.fog=new TH.Fog(new TH.Color(cssHex("var(--bg)")).getHex(), dist*0.6, dist+rad*3.2);
+    updateCam();
   }
   function updateCam(){ const s=T3.sph; const x=s.r*Math.sin(s.phi)*Math.cos(s.theta), y=s.r*Math.cos(s.phi), z=s.r*Math.sin(s.phi)*Math.sin(s.theta);
-    T3.camera.position.set(T3.target.x+x, T3.target.y+y, T3.target.z+z); T3.camera.lookAt(T3.target); }
+    T3.camera.position.set(T3.target.x+x, T3.target.y+y, T3.target.z+z); T3.camera.lookAt(T3.target);
+    if(T3.rim){ T3.rim.position.copy(T3.camera.position).sub(T3.target).multiplyScalar(-1); T3.rim.position.y+=40; } }
+  function tickCam(){ const s=T3.sph,v=T3.vel; s.theta+=v.theta; s.phi=Math.max(0.08,Math.min(Math.PI-0.08,s.phi+v.phi)); s.r=Math.max(T3.rMin,Math.min(T3.rMax,s.r*(1+v.zoom))); v.theta*=0.9; v.phi*=0.9; v.zoom*=0.82; updateCam(); }
   function animate3D(){ if(!T3.on){ T3.raf=0; return; } T3.raf=requestAnimationFrame(animate3D);
-    sim3D();
-    for(const id in T3.nodeMeshes){ const n=byId[id]; if(!n) continue; const m=T3.nodeMeshes[id]; m.position.set(n._x3,n._y3,n._z3); const lab=T3.labelSprites[id]; if(lab) lab.position.set(n._x3, n._y3+(m.geometry.parameters.radius||3)+2.4, n._z3); }
-    // edges
+    sim3D(); tickCam();
+    const dist=T3.sph.r, fadeStart=dist*0.95, fadeEnd=dist*1.75;
+    for(const id in T3.nodeMeshes){ const n=byId[id]; if(!n) continue; const m=T3.nodeMeshes[id]; m.position.set(n._x3,n._y3,n._z3);
+      const lab=T3.labelSprites[id]; if(lab){ const r=m.geometry.parameters.radius||3; lab.position.set(n._x3, n._y3+r+2.6, n._z3);
+        const d=T3.camera.position.distanceTo(m.position); let a=1-Math.max(0,Math.min(1,(d-fadeStart)/(fadeEnd-fadeStart)));
+        if(id===T3.hover||id===selectedId) a=1; lab.material.opacity=a*0.96; lab.visible=a>0.05;
+        const sc=(id===T3.hover||id===selectedId)?1.18:1; lab.scale.set(lab._bw*sc, lab._bh*sc, 1);
+        const em=(id===selectedId)?.5:(id===T3.hover?.32:m._baseEm); m.material.emissive.copy(m.material.color).multiplyScalar(em);
+      } }
+    // hulls
+    for(const H of T3.hulls){ const box=new window.THREE.Box3(); let any=false; for(const id of H.ids){ const n=byId[id]; if(n){ box.expandByPoint(new window.THREE.Vector3(n._x3,n._y3,n._z3)); any=true; } }
+      H.g.visible=any; H.gl.visible=any; if(!any) continue; const c=box.getCenter(new window.THREE.Vector3()); const half=box.getSize(new window.THREE.Vector3()).multiplyScalar(0.5).addScalar(7);
+      H.g.position.copy(c); H.g.scale.set(Math.max(half.x,4),Math.max(half.y,4),Math.max(half.z,4)); H.gl.position.set(c.x, c.y+Math.max(half.y,4)+3.5, c.z); }
     if(T3.lineGeo){ const pos=T3.lineGeo.attributes.position.array; T3._segEdges.forEach((e,i)=>{ const a=byId[e.source], b=byId[e.target]; if(!a||!b)return; pos[i*6]=a._x3;pos[i*6+1]=a._y3;pos[i*6+2]=a._z3; pos[i*6+3]=b._x3;pos[i*6+4]=b._y3;pos[i*6+5]=b._z3; }); T3.lineGeo.attributes.position.needsUpdate=true; }
-    // particles
     if(T3.particles){ const pos=T3.particles.geometry.attributes.position.array; T3.partData.forEach((d,i)=>{ const a=byId[d.e.source], b=byId[d.e.target]; if(!a||!b)return; d.t+=d.sp; if(d.t>1)d.t-=1; const tt=d.rev?1-d.t:d.t; pos[i*3]=a._x3+(b._x3-a._x3)*tt; pos[i*3+1]=a._y3+(b._y3-a._y3)*tt; pos[i*3+2]=a._z3+(b._z3-a._z3)*tt; }); T3.particles.geometry.attributes.position.needsUpdate=true; }
-    T3.camera.updateProjectionMatrix(); T3.renderer.render(T3.scene,T3.camera);
+    T3.renderer.render(T3.scene,T3.camera);
   }
-  function resize3D(){ const el=$("#three3d"); const w=el.clientWidth||innerWidth, h=el.clientHeight||innerHeight; T3.size={w,h}; T3.renderer.setSize(w,h,false); T3.camera.aspect=w/h; T3.camera.updateProjectionMatrix(); updateCam(); }
+  function resize3D(){ const el=$("#three3d"); const w=el.clientWidth||innerWidth, h=el.clientHeight||innerHeight; T3.renderer.setSize(w,h,false); T3.camera.aspect=w/h; T3.camera.updateProjectionMatrix(); updateCam(); }
   function setup3DControls(el){ let mode=0, px=0, py=0, moved=false;
-    el.addEventListener("pointerdown",(ev)=>{ mode=(ev.button===2||ev.button===1)?2:1; px=ev.clientX; py=ev.clientY; moved=false; el.classList.add("grabbing"); el.setPointerCapture(ev.pointerId); });
-    el.addEventListener("pointermove",(ev)=>{ if(!mode) return; const dx=ev.clientX-px, dy=ev.clientY-py; px=ev.clientX; py=ev.clientY; if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
-      if(mode===1){ T3.sph.theta-=dx*0.006; T3.sph.phi=Math.max(0.15,Math.min(3.0,T3.sph.phi-dy*0.006)); }
-      else { const TH=window.THREE; const right=new TH.Vector3().subVectors(T3.camera.position,T3.target).cross(T3.camera.up).normalize(); const up=T3.camera.up.clone().normalize(); const k=T3.sph.r*0.0016; T3.target.addScaledVector(right,-dx*k); T3.target.addScaledVector(up,dy*k); }
-      updateCam(); });
+    el.addEventListener("pointerdown",(ev)=>{ mode=(ev.button===2||ev.button===1)?2:1; px=ev.clientX; py=ev.clientY; moved=false; el.classList.add("grabbing"); try{ el.setPointerCapture(ev.pointerId); }catch(e){} });
+    el.addEventListener("pointermove",(ev)=>{
+      if(!mode){ hoverPick3D(ev); return; }
+      const dx=ev.clientX-px, dy=ev.clientY-py; px=ev.clientX; py=ev.clientY; if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
+      if(mode===1){ T3.vel.theta-=dx*0.0022; T3.vel.phi-=dy*0.0022; }
+      else { const TH=window.THREE; const right=new TH.Vector3().subVectors(T3.camera.position,T3.target).cross(T3.camera.up).normalize(); const up=T3.camera.up.clone().normalize(); const k=T3.sph.r*0.0016; T3.target.addScaledVector(right,-dx*k); T3.target.addScaledVector(up,dy*k); updateCam(); } });
     el.addEventListener("pointerup",(ev)=>{ el.classList.remove("grabbing"); const wasMode=mode; mode=0; if(!moved && wasMode===1) pick3D(ev); });
-    el.addEventListener("wheel",(ev)=>{ ev.preventDefault(); T3.sph.r=Math.max(30,Math.min(900,T3.sph.r*(ev.deltaY<0?0.9:1.11))); updateCam(); },{passive:false});
+    el.addEventListener("wheel",(ev)=>{ ev.preventDefault(); T3.vel.zoom+=ev.deltaY*0.00045; },{passive:false});
     el.addEventListener("contextmenu",(ev)=>ev.preventDefault());
   }
-  function pick3D(ev){ const TH=window.THREE; const el=$("#three3d"); const rect=el.getBoundingClientRect();
+  function rayHit3D(ev){ const TH=window.THREE; const el=$("#three3d"); const rect=el.getBoundingClientRect();
     const mouse=new TH.Vector2(((ev.clientX-rect.left)/rect.width)*2-1, -((ev.clientY-rect.top)/rect.height)*2+1);
-    const rc=new TH.Raycaster(); rc.setFromCamera(mouse,T3.camera);
-    const hits=rc.intersectObjects(Object.values(T3.nodeMeshes)); if(hits.length){ const id=hits[0].object._id; select(id); const n=byId[id]; if(n){ T3.target.set(n._x3,n._y3,n._z3); updateCam(); } } }
+    const rc=new TH.Raycaster(); rc.setFromCamera(mouse,T3.camera); const hits=rc.intersectObjects(Object.values(T3.nodeMeshes)); return hits.length?hits[0].object._id:null; }
+  function hoverPick3D(ev){ const id=rayHit3D(ev); if(id!==T3.hover){ T3.hover=id; $("#three3d").style.cursor=id?"pointer":"grab"; } }
+  function pick3D(ev){ const id=rayHit3D(ev); if(id){ select(id); const n=byId[id]; if(n){ T3.target.set(n._x3,n._y3,n._z3); updateCam(); } } }
   $("#threeBtn").onclick=toggle3D;
 
   (function(){ const ml=$("#modeLegend2"); let h=""; for(const k in KIND) h+=`<span class="sl"><span class="sd" style="background:${KIND[k].color}"></span>${KIND[k].label}</span>`; ml.innerHTML=h; })();
