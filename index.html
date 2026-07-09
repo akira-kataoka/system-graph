@@ -540,7 +540,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v22 · 2026-07-09</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v23 · 2026-07-09</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -863,6 +863,7 @@
       <button data-tab="tree" class="on">システム階層</button>
       <button data-tab="flat">全ノード一覧</button>
       <button data-tab="edges">データ連携</button>
+      <button data-tab="cols">カラム</button>
       <button data-tab="maps">項目マッピング</button>
     </div>
     <div class="tv-search"><svg class="ui-ic" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="tvSearch" placeholder="絞り込み…" autocomplete="off"></div>
@@ -2565,7 +2566,7 @@ ${ser.serializeToString(gNod)}
     const q2=(v)=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
     const lines=[cols.map(c=>q2(c.label)).join(",")]; for(const o of arr) lines.push(cols.map(c=>q2(tvColVal(o,c.k))).join(","));
     const blob=new Blob([String.fromCharCode(0xFEFF)+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}); const a=document.createElement("a");
-    const fname=tvTab==="edges"?"data-integrations":tvTab==="maps"?"field-mappings":"system-inventory";
+    const fname=tvTab==="edges"?"data-integrations":tvTab==="maps"?"field-mappings":tvTab==="cols"?"column-inventory":"system-inventory";
     a.href=URL.createObjectURL(blob); a.download=fname+".csv"; a.click(); URL.revokeObjectURL(a.href);
     toast("CSVを出力しました（"+arr.length+"行）");
   };
@@ -2624,12 +2625,34 @@ ${ser.serializeToString(gNod)}
       `<td><div class="rowact"><button data-act="egoto" data-id="${r.edgeId}" title="連携をグラフで表示"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></button></div></td></tr>`;
   }
   function KINDCOL(r){ for(const e of data.edges){ if(e.id===r.edgeId) return (KIND[e.kind]||{}).color||"var(--text-mute)"; } return "var(--text-mute)"; }
-  // dispatch by current tab (nodes / edges / maps)
-  function tvCols(){ return tvTab==="edges"?EDGE_COLS : tvTab==="maps"?MAP_COLS : NODE_COLS; }
-  function tvArr(){ return tvTab==="edges"?data.edges.slice() : tvTab==="maps"?mapRows() : data.nodes.slice(); }
-  function tvColVal(o,k){ return tvTab==="edges"?edgeColVal(o,k) : tvTab==="maps"?mapColVal(o,k) : nodeColVal(o,k); }
-  function tvMatches(o,q){ return tvTab==="edges"?edgeMatchesQ(o,q) : tvTab==="maps"?mapMatchesQ(o,q) : passF(o,q); }
-  function tvRowHTML(o){ return tvTab==="edges"?edgeRowHTML(o) : tvTab==="maps"?mapRowHTML(o) : nodeRowHTML(o,0); }
+  // ---- カラム一覧（全テーブルのカラム定義を横断で検索/並び替え/絞り込み） ----
+  const COL_COLS=[ {k:"name",label:"カラム名"},{k:"type",label:"型"},{k:"pk",label:"PK"},{k:"table",label:"テーブル"},{k:"db",label:"DB"},{k:"system",label:"システム"} ];
+  function systemLabelOf(n){ let cur=n, guard=0; while(cur && cur.type!=="system" && guard++<8){ cur=cur.parent?byId[cur.parent]:null; } return cur&&cur.type==="system"?cur.label:""; }
+  function colRows(){ const rows=[];
+    for(const n of data.nodes){ if(n.type!=="table"||!Array.isArray(n.columns)) continue;
+      const db=n.parent&&byId[n.parent]?byId[n.parent].label:"", sys=systemLabelOf(n);
+      for(let i=0;i<n.columns.length;i++){ const c=n.columns[i]||{};
+        rows.push({ _id:n.id+"#"+i, tableId:n.id, name:c.name||"", type:c.type||"", pk:c.pk?"●":"", table:n.label, db, system:sys, tags:(n.tags||[]).join(" ") }); } }
+    return rows; }
+  function colColVal(r,k){ return r[k]||""; }
+  function colMatchesQ(r,q){ return (r.name+" "+r.type+" "+r.table+" "+r.db+" "+r.system+" "+r.tags).toLowerCase().includes(q); }
+  function colRowHTML(r){ const dot=`<span class="tv-dot" style="background:${TYPE.table.color}"></span>`;
+    const code=(t)=>`<code style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;background:var(--panel-2);padding:1px 6px;border-radius:5px;color:var(--text)">${esc(t||"—")}</code>`;
+    return `<tr data-node="${r.tableId}">`+
+      `<td style="font-weight:600">${esc(r.name||"—")}</td>`+
+      `<td>${r.type?code(r.type):'<span style="color:var(--text-mute)">—</span>'}</td>`+
+      `<td>${r.pk?'<span class="typechip" style="background:var(--accent)">PK</span>':'<span style="color:var(--text-mute)">—</span>'}</td>`+
+      `<td><span class="tv-name">${dot}${esc(r.table)}</span></td>`+
+      `<td style="color:var(--text-dim)">${esc(r.db||"—")}</td>`+
+      `<td style="color:var(--text-dim)">${esc(r.system||"—")}</td>`+
+      `<td><div class="rowact"><button data-act="goto" data-id="${r.tableId}" title="テーブルをグラフで表示"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg></button></div></td></tr>`;
+  }
+  // dispatch by current tab (nodes / edges / maps / cols)
+  function tvCols(){ return tvTab==="edges"?EDGE_COLS : tvTab==="maps"?MAP_COLS : tvTab==="cols"?COL_COLS : NODE_COLS; }
+  function tvArr(){ return tvTab==="edges"?data.edges.slice() : tvTab==="maps"?mapRows() : tvTab==="cols"?colRows() : data.nodes.slice(); }
+  function tvColVal(o,k){ return tvTab==="edges"?edgeColVal(o,k) : tvTab==="maps"?mapColVal(o,k) : tvTab==="cols"?colColVal(o,k) : nodeColVal(o,k); }
+  function tvMatches(o,q){ return tvTab==="edges"?edgeMatchesQ(o,q) : tvTab==="maps"?mapMatchesQ(o,q) : tvTab==="cols"?colMatchesQ(o,q) : passF(o,q); }
+  function tvRowHTML(o){ return tvTab==="edges"?edgeRowHTML(o) : tvTab==="maps"?mapRowHTML(o) : tvTab==="cols"?colRowHTML(o) : nodeRowHTML(o,0); }
   function buildHead(cols){
     return `<thead><tr>`+cols.map(c=>`<th data-s="${c.k}">${c.label}<span class="arw" data-arw="${c.k}"></span></th>`).join("")+`<th class="nosort">操作</th></tr>`+
       `<tr class="filterrow">`+cols.map(c=>`<th><input class="colf" data-f="${c.k}" placeholder="絞込" value="${esc(tvFilters[c.k]||"")}"></th>`).join("")+`<th></th></tr></thead>`;
@@ -2693,6 +2716,7 @@ ${ser.serializeToString(gNod)}
     const bar=$("#tvAddbar");
     if(tvTab==="edges"){ bar.innerHTML='<span class="lbl">データ連携（線）の追加はグラフ上の「リンク」から。ここでは抽出条件などを直接編集できます。</span>'; return; }
     if(tvTab==="maps"){ const n=mapRows().length; bar.innerHTML='<span class="lbl">項目マッピング（元項目 → 先項目・加工ルール）を全社横断で一覧・検索・CSV出力。登録は各データ連携の「項目マッピング」欄から。<b style="color:var(--text)">'+n+' 件</b></span>'; return; }
+    if(tvTab==="cols"){ const n=colRows().length; bar.innerHTML='<span class="lbl">全テーブルのカラム定義を横断で表示。見出しクリックで並び替え、各列の絞込・上部検索でフィルタ。行の🔍でテーブルへ。登録・編集は各テーブルの「カラム定義」から。<b style="color:var(--text)">'+n+' カラム</b></span>'; return; }
     const types=["system","database","table","platform","job","connector","external"];
     bar.innerHTML='<span class="lbl">追加：</span>'+types.map(t=>`<button class="btn" data-addtype="${t}"><span style="width:9px;height:9px;border-radius:50%;background:${TYPE[t].color};display:inline-block;margin-right:5px"></span>${TYPE[t].chip}</button>`).join("");
     bar.querySelectorAll("[data-addtype]").forEach(b=>b.onclick=()=>{ addNode(b.getAttribute("data-addtype")); buildTable(); });
