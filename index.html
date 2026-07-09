@@ -260,6 +260,16 @@
   .hist-item .hi-restore { flex:none; font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); border:none; padding:5px 10px; border-radius:7px; cursor:pointer; }
   .hist-item .hi-restore:hover { filter:brightness(1.05); }
   .hist-hint { font-size:11px; color:var(--text-mute); margin-bottom:10px; }
+  .pathchain { display:flex; flex-direction:column; gap:0; }
+  .pc-node { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:650; padding:7px 10px; background:var(--panel-2); border:1px solid var(--border); border-radius:9px; }
+  .pc-node .cdot { width:9px; height:9px; border-radius:3px; flex:none; }
+  .pc-edge { margin:3px 0 3px 14px; padding:6px 10px; border-left:2px dashed var(--border-strong); }
+  .pc-chips { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+  .pc-k { font-size:9.5px; font-weight:700; color:#fff; padding:2px 7px; border-radius:20px; }
+  .pc-if { font-size:9.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); padding:2px 7px; border-radius:20px; }
+  .pc-m { font-size:9.5px; font-weight:600; color:var(--text-dim); background:var(--panel-2); padding:2px 7px; border-radius:20px; }
+  .pc-cond { font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); margin-top:4px; white-space:pre-wrap; word-break:break-word; }
+  .pc-tr { font-size:10.5px; color:var(--text-dim); margin-top:2px; }
   .empty-note { font-size:12px; color:var(--text-mute); padding:10px 2px; }
 
   /* incident / column editors */
@@ -487,7 +497,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v15 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v16 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -593,6 +603,12 @@
       <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>変更履歴
         <button class="close" id="histClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="ob" id="histBody"></div>
+    </div>
+
+    <div class="overview" id="pathPanel">
+      <div class="oh"><svg class="ui-ic" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M6 3v6a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v3"/><circle cx="6" cy="3" r="0" /><path d="M3 3h6M3 18h6"/></svg>経路探索 <span id="pathTitle" style="font-size:12px;color:var(--text-dim);font-weight:500"></span>
+        <button class="close" id="pathClose"><svg class="ui-ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="ob" id="pathBody"></div>
     </div>
 
     <aside id="inspector">
@@ -986,6 +1002,7 @@
   let selectedId = null, hoverId = null;
   let selectedEdge = null, hoverEdgeId = null;
   let linkMode = false, linkSource = null, linkPressNode = null, linkPressXY = null, linkDrag = false;
+  let pathMode = false, pathSource = null;
   const hidden = new Set();
   const view = { x:0, y:0, k:1 };
   let groupBoxes = {};
@@ -1016,7 +1033,8 @@
   const history=[];   // undoスタック {label, ts, state}  state = 変更直前のスナップショット
   const redoStack=[]; // やり直しスタック
   function nowStr(){ try{ return new Date().toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }catch(e){ return ""; } }
-  function snapshot(label){ try{ history.push({label:label||"変更", ts:nowStr(), state:serialize()}); if(history.length>80) history.shift(); redoStack.length=0; if($("#historyPanel")&&$("#historyPanel").classList.contains("open")) renderHistory(); }catch(e){} }
+  let editorName=""; try{ editorName=localStorage.getItem("systemGraph.editor")||""; }catch(e){}
+  function snapshot(label){ try{ history.push({label:label||"変更", ts:nowStr(), by:editorName, state:serialize()}); if(history.length>80) history.shift(); redoStack.length=0; if($("#historyPanel")&&$("#historyPanel").classList.contains("open")) renderHistory(); }catch(e){} }
   function applyState(s){ data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null; ins.classList.remove("open"); edgeIns.classList.remove("open"); save(); render(); }
   function undo(){
     if(!history.length){ toast("元に戻す履歴がありません"); return; }
@@ -1054,6 +1072,18 @@
   function pathOf(n){ const arr=[]; let c=n, guard=0; while(c && guard++<6){ arr.unshift(c); c=c.parent?byId[c.parent]:null; } return arr; }
   function ancestorIds(n){ const s=[]; let c=n, g=0; while(c && c.parent && byId[c.parent] && g++<6){ c=byId[c.parent]; s.push(c.id); } return s; }
   function descendantLeaves(cid){ return leaves().filter(n=>ancestorIds(n).includes(cid)); }
+  // ---- リスクスコア（重要度×更改接近×障害×ヘルス×依存被数, 合計100点目安） ----
+  function computeRisk(sys){ recompute(); const reasons=[]; let score=0;
+    const cw={critical:35,high:25,mid:15,low:8}; const cv=cw[sys.criticality]||8; score+=cv; if(sys.criticality==="critical"||sys.criticality==="high") reasons.push("重要度"+({critical:"最重要",high:"高"})[sys.criticality]);
+    const du=daysUntil(sys.renewal); if(du!=null){ let r=0; if(du<0){r=25;reasons.push("更改超過");} else if(du<=90){r=20;reasons.push("更改90日内");} else if(du<=180){r=12;reasons.push("更改180日内");} else if(du<=365){r=6;} score+=r; }
+    const inc=openIncidents(sys); if(inc.length){ const sev=inc.reduce((s,i)=>s+((SEVERITY[i.severity]||{}).rank||1),0); score+=Math.min(sev*4,20); reasons.push("未解決"+inc.length+"件"); }
+    if(sys.health==="down"){ score+=10; reasons.push("障害中"); } else if(sys.health==="warn"){ score+=5; }
+    // 依存被数（このシステムの配下テーブルから外へ流れる下流依存の数＝SPOF指標）
+    const desc=new Set(descendantLeaves(sys.id).map(x=>x.id)); let dep=new Set();
+    const q=[...desc]; while(q.length){ const cur=q.shift(); for(const e of data.edges){ if(e.kind==="ref")continue; if(e.source===cur && !desc.has(e.target) && !dep.has(e.target)){ dep.add(e.target); q.push(e.target); } } }
+    if(dep.size){ score+=Math.min(dep.size*2,10); if(dep.size>=3) reasons.push("下流依存"+dep.size); }
+    return { n:sys, score:Math.min(100,Math.round(score)), reasons };
+  }
   // ---- データ検証（リント） ----
   function validate(){ const issues=[]; recompute();
     for(const n of data.nodes){ const need=TYPE[n.type].parent; if(need && (!n.parent||!byId[n.parent])) issues.push({level:"warn", text:`${TYPE[n.type].chip}「${n.label}」の所属（親）が未設定`, id:n.id}); }
@@ -1365,7 +1395,7 @@
 
   // ---------------- Inspector ----------------
   const ins=$("#inspector");
-  function select(id){ impactSet=null; selectedEdge=null; edgeIns.classList.remove("open"); selectedId=id; updateHighlight(); renderMinimap(); if(id) openInspector(id); else ins.classList.remove("open"); }
+  function select(id){ impactSet=null; selectedEdge=null; pathMode=false; edgeIns.classList.remove("open"); selectedId=id; updateHighlight(); renderMinimap(); if(id) openInspector(id); else ins.classList.remove("open"); }
   function openInspector(id){
     const n=byId[id]; if(!n) return; ins.classList.add("open"); const t=TYPE[n.type];
     const bi=$("#insIcon"); bi.innerHTML=""; bi.style.background=t.color; iconG(t.icon,21,bi,"#fff");
@@ -1547,6 +1577,39 @@
     for(let h=0;h<(hops||2);h++){ const next=[]; for(const cur of frontier){ for(const e of data.edges){ if(e.source===cur&&!set.has(e.target)){set.add(e.target);next.push(e.target);} if(e.target===cur&&!set.has(e.source)){set.add(e.source);next.push(e.source);} } } frontier=next; }
     impactSet=set; selectedId=id; selectedEdge=null; updateHighlight(); renderMinimap();
     toast("フォーカス表示: 近傍のみ（Escで解除）"); }
+  // 経路探索（A→B の依存経路 + 加工チェーン）
+  function startPath(n){ setLinkMode(false); select(null); pathMode=true; pathSource=n.id; markPathSource(); toast("経路の始点: "+n.label+" → 終点ノードをクリック"); }
+  function markPathSource(){ for(const g of gNodes.children) g.classList.toggle("selected", g._node.id===pathSource); }
+  function findPaths(a,b){ const adj={}; for(const e of data.edges){ if(e.kind==="ref")continue; (adj[e.source]||(adj[e.source]=[])).push({to:e.target,e}); if(e.kind==="sync") (adj[e.target]||(adj[e.target]=[])).push({to:e.source,e}); }
+    const paths=[], MAXD=14, MAXP=60, onp=new Set();
+    (function dfs(u,acc){ if(paths.length>=MAXP) return; if(u===b){ if(acc.length) paths.push(acc.slice()); return; } if(acc.length>=MAXD) return; onp.add(u); for(const {to,e} of (adj[u]||[])){ if(onp.has(to)) continue; acc.push(e); dfs(to,acc); acc.pop(); if(paths.length>=MAXP)break; } onp.delete(u); })(a,[]);
+    return paths; }
+  function computePaths(a,b){ if(a===b){ toast("始点と終点が同じです"); return; }
+    const paths=findPaths(a,b);
+    if(!paths.length){ toast("経路が見つかりませんでした（"+(byId[a]?byId[a].label:"?")+" → "+(byId[b]?byId[b].label:"?")+"）"); pathSource=null; updateHighlight(); return; }
+    const set=new Set([a,b]); for(const p of paths) for(const e of p){ set.add(e.source); set.add(e.target); }
+    impactSet=set; selectedId=a; selectedEdge=null; updateHighlight(); renderMinimap(); pathSource=null;
+    renderPaths(paths,a,b); }
+  const pathPanel=$("#pathPanel");
+  function closePath(){ if(pathPanel) pathPanel.classList.remove("open"); }
+  $("#pathClose").onclick=()=>{ closePath(); pathMode=false; pathSource=null; impactSet=null; updateHighlight(); };
+  function renderPaths(paths,a,b){ if(!pathPanel) return; const body=$("#pathBody");
+    $("#pathTitle").textContent=(byId[a]?byId[a].label:"?")+" → "+(byId[b]?byId[b].label:"?");
+    let h=`<div class="hist-hint">${paths.length} 経路（データが加工されて届くまでの連鎖）。行クリックで該当ノードへ。</div>`;
+    paths.sort((p,q)=>p.length-q.length).slice(0,20).forEach((p,k)=>{
+      const seq=[a]; let cur=a; for(const e of p){ const nx=(e.source===cur?e.target:e.source); seq.push(nx); cur=nx; }
+      h+=`<div class="osec" style="margin:12px 0 6px">経路 ${k+1} · ${p.length}ホップ</div><div class="pathchain">`;
+      for(let i=0;i<p.length;i++){ const e=p[i], from=byId[seq[i]], to=byId[seq[i+1]];
+        h+=`<div class="pc-node" data-id="${from.id}"><span class="cdot" style="background:${TYPE[from.type].color}"></span>${esc(from.label)}</div>`;
+        const kc=kindColor(e), md=e.mode&&MODE[e.mode];
+        h+=`<div class="pc-edge"><div class="pc-chips"><span class="pc-k" style="background:${kc}">${(KIND[e.kind]||{}).label||""}</span>${e.ifId?`<span class="pc-if">${esc(e.ifId)}</span>`:""}${md?`<span class="pc-m">${md.label}</span>`:""}</div>${e.condition?`<div class="pc-cond">${esc(e.condition)}</div>`:""}${e.transform?`<div class="pc-tr">変換: ${esc(e.transform)}</div>`:""}</div>`;
+        if(i===p.length-1) h+=`<div class="pc-node" data-id="${to.id}"><span class="cdot" style="background:${TYPE[to.type].color}"></span>${esc(to.label)}</div>`;
+      }
+      h+=`</div>`;
+    });
+    body.innerHTML=h; closeOverview(); closeHistory(); pathPanel.classList.add("open");
+    body.querySelectorAll(".pc-node").forEach(el=>{ el.style.cursor="pointer"; el.onclick=()=>{ const n=byId[el.getAttribute("data-id")]; if(n){ select(n.id); centerOn(n); } }; });
+  }
 
   $("#insClose").onclick=()=>select(null);
   $("#delBtn").onclick=()=>{ if(!selectedId) return; const n=byId[selectedId];
@@ -1715,6 +1778,7 @@
   }
   function markPins(){ for(const g of gNodes.children) g.classList.toggle("pinned", !!g._node.pinned); }
   function nodeClick(n){
+    if(pathMode){ if(!pathSource){ pathSource=n.id; markPathSource(); toast("始点: "+n.label+" → 終点をクリック"); } else { computePaths(pathSource,n.id); pathMode=false; } return; }
     if(linkMode){
       if(!linkSource){ linkSource=n.id; toast("元: "+n.label+" → 対象をクリック（またはドラッグして離す）"); markSource(); }
       else if(linkSource===n.id){ if(!linkDrag) toast("同じノードです"); }
@@ -1989,25 +2053,42 @@ ${ser.serializeToString(gNod)}
 
   // ---------------- Overview drawer ----------------
   const overview=$("#overview");
-  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { closeHistory(); buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
+  $("#overviewBtn").onclick=()=>{ if(overview.classList.contains("open")) closeOverview(); else { closeHistory(); closePath(); buildOverview(); overview.classList.add("open"); $("#overviewBtn").classList.add("active"); } };
   $("#ovClose").onclick=closeOverview;
   function closeOverview(){ overview.classList.remove("open"); $("#overviewBtn").classList.remove("active"); }
 
   // ---------------- 変更履歴パネル ----------------
   const historyPanel=$("#historyPanel");
-  $("#historyBtn").onclick=()=>{ if(historyPanel.classList.contains("open")) closeHistory(); else { closeOverview(); renderHistory(); historyPanel.classList.add("open"); $("#historyBtn").classList.add("active"); } };
+  $("#historyBtn").onclick=()=>{ if(historyPanel.classList.contains("open")) closeHistory(); else { closeOverview(); closePath(); renderHistory(); historyPanel.classList.add("open"); $("#historyBtn").classList.add("active"); } };
   $("#histClose").onclick=closeHistory;
   function closeHistory(){ historyPanel.classList.remove("open"); $("#historyBtn").classList.remove("active"); }
   function renderHistory(){
     const body=$("#histBody"); if(!body) return;
-    let h='<div class="hist-hint">各操作の直前状態を記録しています。「復元」で任意の地点に戻せます（<b>Ctrl+Z</b>で直前を取消）。</div>';
-    if(!history.length){ body.innerHTML=h+'<div class="empty-note">まだ変更はありません。</div>'; return; }
+    let h='<div class="hist-hint">各操作の直前状態を記録しています。「復元」で任意の地点に戻せます（<b>Ctrl+Z</b>取消 / <b>Ctrl+Y</b>やり直し）。</div>';
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap"><span style="font-size:11.5px;color:var(--text-dim)">編集者: <b id="hEditor" style="color:var(--text);cursor:pointer;text-decoration:underline dotted">${esc(editorName||"未設定")}</b></span><span class="spacer"></span><button class="btn" id="hCsv" style="padding:5px 9px;font-size:11px"><svg class="ui-ic" viewBox="0 0 24 24" style="width:13px;height:13px"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>監査ログCSV</button><button class="btn" id="hMd" style="padding:5px 9px;font-size:11px">Markdown</button></div>`;
+    if(!history.length){ body.innerHTML=h+'<div class="empty-note">まだ変更はありません。</div>'; wireHistoryHead(); return; }
     h+='<div class="attn">';
     for(let i=history.length-1;i>=0;i--){ const e=history[i];
-      h+=`<div class="hist-item"><span class="hi-dot"></span><div class="hi-body"><div class="hi-l">${esc(e.label)}</div><div class="hi-t">${esc(e.ts)}</div></div><button class="hi-restore" data-i="${i}">この地点に復元</button></div>`;
+      h+=`<div class="hist-item"><span class="hi-dot"></span><div class="hi-body"><div class="hi-l">${esc(e.label)}</div><div class="hi-t">${esc(e.ts)}${e.by?" · "+esc(e.by):""}</div></div><button class="hi-restore" data-i="${i}">この地点に復元</button></div>`;
     }
     h+='</div>'; body.innerHTML=h;
     body.querySelectorAll(".hi-restore").forEach(b=> b.onclick=()=> restoreTo(parseInt(b.getAttribute("data-i"))) );
+    wireHistoryHead();
+  }
+  function wireHistoryHead(){
+    const ed=$("#hEditor"); if(ed) ed.onclick=()=>{ const v=prompt("編集者名（監査ログに記録されます）", editorName); if(v!=null){ editorName=v.trim(); try{ localStorage.setItem("systemGraph.editor",editorName); }catch(e){} renderHistory(); } };
+    const csv=$("#hCsv"); if(csv) csv.onclick=()=>exportAudit("csv");
+    const md=$("#hMd"); if(md) md.onclick=()=>exportAudit("md");
+  }
+  function exportAudit(fmt){
+    if(!history.length){ toast("履歴がありません"); return; }
+    const rows=history.map((e,i)=>({no:i+1, ts:e.ts, by:e.by||"", action:e.label}));
+    let content, name, type;
+    if(fmt==="csv"){ const q=(v)=>{ v=String(v==null?"":v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+      content=String.fromCharCode(0xFEFF)+["No,日時,編集者,操作"].concat(rows.map(r=>[r.no,r.ts,r.by,r.action].map(q).join(","))).join("\r\n"); name="audit-log.csv"; type="text/csv;charset=utf-8"; }
+    else { content=["# 変更履歴 / 監査ログ","","| No | 日時 | 編集者 | 操作 |","|---|---|---|---|"].concat(rows.map(r=>`| ${r.no} | ${r.ts} | ${r.by} | ${String(r.action).replace(/\|/g,"\\|")} |`)).join("\n"); name="audit-log.md"; type="text/markdown"; }
+    const blob=new Blob([content],{type}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href);
+    toast("監査ログを出力しました（"+rows.length+"件）");
   }
   function buildOverview(){
     const body=$("#ovBody"); const c={}; for(const n of data.nodes) c[n.type]=(c[n.type]||0)+1;
@@ -2058,10 +2139,20 @@ ${ser.serializeToString(gNod)}
       <div class="osec">データ連携の種別</div>
       <div class="statuslegend">${klg||'<span class="sl">未登録</span>'}</div>
       ${depTop.length?`<div class="osec">管理部署別（登録数）</div><div class="attn">${depTop.map(([d,cnt])=>`<div class="attn-item" style="border-left-color:var(--accent);cursor:default"><div class="ai-body"><div class="ai-t">${esc(d)}</div></div><span class="badgeN">${cnt}</span></div>`).join("")}</div>`:""}
+      <div class="osec">リスクスコア（システム上位）</div>
+      <div class="attn" id="riskList"></div>
       <div class="osec">要対応（障害・更改）<span style="color:var(--text-mute);font-weight:600">　${attn.length}件</span></div>
       <div class="attn" id="attnList"></div>
       <div class="osec">データ検証 <span id="lintCount" style="color:var(--text-mute);font-weight:600"></span></div>
       <div class="attn" id="lintList"></div>`;
+
+    const rl=$("#riskList"); const risks=data.nodes.filter(n=>n.type==="system").map(n=>computeRisk(n)).sort((a,b)=>b.score-a.score).slice(0,8);
+    if(!risks.length){ rl.innerHTML='<div class="empty-note">システムが登録されていません</div>'; }
+    else risks.forEach(r=>{ const col=r.score>=70?"#ef4444":r.score>=45?"#f59e0b":"#22c55e";
+      const d=document.createElement("div"); d.className="attn-item"; d.style.borderLeftColor=col; d.style.cursor="pointer";
+      d.innerHTML=`<div class="ai-body"><div class="ai-t">${esc(r.n.label)}</div><div class="ai-s">${r.reasons.map(esc).join(" · ")||"—"}</div></div>`+
+        `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:none;width:78px"><span style="font-weight:750;font-size:13px;color:${col}">${r.score}</span><span style="display:block;height:5px;width:100%;border-radius:3px;background:var(--panel-2);overflow:hidden"><span style="display:block;height:100%;width:${r.score}%;background:${col}"></span></span></div>`;
+      d.onclick=()=>{ select(r.n.id); centerOn(r.n); }; rl.appendChild(d); });
 
     const al=$("#attnList");
     if(!attn.length){ al.innerHTML='<div class="empty-note">未解決の障害・直近の更改予定はありません</div>'; }
@@ -2104,7 +2195,7 @@ ${ser.serializeToString(gNod)}
     if(ev.key==="?"){ helpModal.classList.toggle("open"); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
     if(ev.key==="Delete"&&selectedEdge) $("#eDelBtn").click();
-    if(ev.key==="Escape"){ if(linkMode) setLinkMode(false); else if(historyPanel.classList.contains("open")) closeHistory(); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
+    if(ev.key==="Escape"){ if(pathMode||pathPanel.classList.contains("open")){ pathMode=false; pathSource=null; closePath(); impactSet=null; updateHighlight(); } else if(linkMode) setLinkMode(false); else if(historyPanel.classList.contains("open")) closeHistory(); else if(overview.classList.contains("open")) closeOverview(); else if(selectedEdge){ selectedEdge=null; edgeIns.classList.remove("open"); updateHighlight(); } else select(null); closeAddMenu(); hideTip(); }
     if(ev.key==="l"||ev.key==="L") setLinkMode(!linkMode);
     if(ev.key==="f"||ev.key==="F") zoomFit();
     if(ev.key==="r"||ev.key==="R") $("#relayoutBtn").click();
@@ -2494,6 +2585,7 @@ ${ser.serializeToString(gNod)}
     arr.push({label:"ここから接続", icon:IC_LINK, action:()=>startLinkFrom(n)});
     arr.push({label:"複製", icon:IC_DUP, k:"Ctrl+D", action:()=>duplicateNode(n)});
     arr.push({label:"フォーカス（近傍のみ）", icon:IC_FOCUS, action:()=>{ focusNeighbors(n.id,2); centerOn(n); }});
+    arr.push({label:"ここから経路探索", icon:IC_LINK, action:()=>startPath(n)});
     arr.push({label:"中央へ表示", icon:IC_FOCUS, action:()=>{ select(n.id); centerOn(n); }});
     arr.push({div:true});
     arr.push({label:"削除", danger:true, icon:IC_TRASH, k:"Del", action:()=>{ select(n.id); $("#delBtn").click(); }});
