@@ -150,6 +150,15 @@
   .flow circle { pointer-events:none; }
   .link-hit { stroke:transparent; stroke-width:16; fill:none; pointer-events:stroke; cursor:pointer; }
   #linkRubber { fill:none; stroke:var(--accent); stroke-width:2.4; stroke-dasharray:7 5; stroke-linecap:round; pointer-events:none; opacity:0; }
+  .ctxmenu { position:fixed; z-index:70; min-width:190px; background:var(--glass-solid); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--shadow), var(--inset-hl); padding:6px; display:none; flex-direction:column; gap:1px; animation:menuIn var(--dur-2) var(--ease-out); }
+  .ctxmenu.open { display:flex; }
+  .ctxmenu .ci { display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:12.5px; font-weight:550; color:var(--text); white-space:nowrap; }
+  .ctxmenu .ci:hover { background:var(--accent-soft); }
+  .ctxmenu .ci.danger { color:#e11d48; } :root[data-theme="dark"] .ctxmenu .ci.danger { color:#fda4af; }
+  .ctxmenu .ci svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:none; opacity:.85; }
+  .ctxmenu .ci .k { margin-left:auto; font-size:10px; color:var(--text-mute); font-weight:500; }
+  .ctxmenu .cdiv { height:1px; background:var(--border); margin:4px 3px; }
+  .ctxmenu .ccap { font-size:9.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text-mute); padding:5px 10px 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:220px; }
   .link.sel { stroke:var(--edge-hl); stroke-width:3; stroke-opacity:1; filter:drop-shadow(0 0 5px color-mix(in srgb, var(--edge-hl) 45%, transparent)); }
   .link.emph { stroke:var(--edge-hl); stroke-width:2.6; stroke-opacity:1; }
 
@@ -478,7 +487,7 @@
   <header>
     <div class="brand">
       <span class="logo"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="17" r="2.4"/><path d="M8 8l3 7M16 8l-3 7M8 7h8"/></svg></span>
-      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v13 · 2026-07-05</small>
+      System Graph <small>システム構成 / データリネージ</small><small style="margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--accent-soft);color:var(--accent);font-weight:700" title="ビルド版">v14 · 2026-07-05</small>
     </div>
     <div class="sep"></div>
     <div class="search"><svg class="ui-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="search" type="text" placeholder="検索…" autocomplete="off"></div>
@@ -749,7 +758,8 @@
         <div class="hrow"><b style="color:#3b82f6">■</b>読取（抽出）　<b style="color:#22c55e">■</b>書込（ロード）　<b style="color:#06b6d4">■</b>双方向同期（コネクタ）　<b style="color:#a855f7">■</b>参照。●の大きさ＝データ量</div>
       </div>
       <div class="help-sec"><h4>ショートカット</h4>
-        <div class="hrow"><kbd>L</kbd> リンク　<kbd>F</kbd> 全体表示　<kbd>R</kbd> 再整列　<kbd>Delete</kbd> 削除　<kbd>Ctrl+Z</kbd> 元に戻す　<kbd>Esc</kbd> 解除/閉じる　<kbd>?</kbd> ヘルプ</div>
+        <div class="hrow"><kbd>L</kbd> リンク　<kbd>F</kbd> 全体表示　<kbd>R</kbd> 再整列　<kbd>Delete</kbd> 削除　<kbd>Ctrl+D</kbd> 複製　<kbd>Esc</kbd> 解除/閉じる　<kbd>?</kbd> ヘルプ</div>
+        <div class="hrow"><kbd>Ctrl+Z</kbd> 元に戻す　<kbd>Ctrl+Y</kbd>／<kbd>Ctrl+Shift+Z</kbd> やり直し　<b>右クリック</b>：ノード/線/背景のメニュー（編集・複製・接続・フォーカス・削除）</div>
       </div>
     </div>
   </div>
@@ -773,6 +783,7 @@
   <div class="tv-addbar" id="tvAddbar"></div>
 </div>
 
+<div class="ctxmenu" id="ctxMenu"></div>
 <div class="tooltip" id="tooltip"></div>
 <div class="toast" id="toast"></div>
 
@@ -987,18 +998,23 @@
   function serialize(){ return JSON.stringify({ nodes:data.nodes.map(({vx,vy,fx,fy,...r})=>({...r,x:Math.round(r.x),y:Math.round(r.y)})), edges:data.edges }); }
   function save(){ try{ localStorage.setItem(STORE_KEY, serialize()); }catch(e){} }
   // ---- 変更履歴（各変更の直前状態を記録し、任意地点へ復元）----
-  const history=[];   // {label, ts, state}  state = 変更直前のスナップショット
+  const history=[];   // undoスタック {label, ts, state}  state = 変更直前のスナップショット
+  const redoStack=[]; // やり直しスタック
   function nowStr(){ try{ return new Date().toLocaleString("ja-JP",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}); }catch(e){ return ""; } }
-  function snapshot(label){ try{ history.push({label:label||"変更", ts:nowStr(), state:serialize()}); if(history.length>80) history.shift(); if($("#historyPanel")&&$("#historyPanel").classList.contains("open")) renderHistory(); }catch(e){} }
+  function snapshot(label){ try{ history.push({label:label||"変更", ts:nowStr(), state:serialize()}); if(history.length>80) history.shift(); redoStack.length=0; if($("#historyPanel")&&$("#historyPanel").classList.contains("open")) renderHistory(); }catch(e){} }
   function applyState(s){ data=normalize(JSON.parse(s)); selectedId=null; selectedEdge=null; impactSet=null; ins.classList.remove("open"); edgeIns.classList.remove("open"); save(); render(); }
   function undo(){
     if(!history.length){ toast("元に戻す履歴がありません"); return; }
-    const h=history.pop(); applyState(h.state);
+    const h=history.pop(); redoStack.push({label:h.label, ts:nowStr(), state:serialize()}); applyState(h.state);
     toast("元に戻しました: "+h.label+"（残り "+history.length+"）"); if($("#historyPanel").classList.contains("open")) renderHistory();
   }
+  function redo(){
+    if(!redoStack.length){ toast("やり直せる操作がありません"); return; }
+    const r=redoStack.pop(); history.push({label:r.label, ts:nowStr(), state:serialize()}); applyState(r.state);
+    toast("やり直しました: "+r.label); if($("#historyPanel").classList.contains("open")) renderHistory();
+  }
   function restoreTo(i){ if(i<0||i>=history.length) return; const target=history[i];
-    // 現在状態を履歴に積んでから復元（復元自体も取り消せる）
-    history.push({label:"復元操作の前", ts:nowStr(), state:serialize()});
+    history.push({label:"復元操作の前", ts:nowStr(), state:serialize()}); redoStack.length=0;
     applyState(target.state);
     toast("この地点に復元しました: "+target.label); renderHistory();
   }
@@ -1023,6 +1039,18 @@
   function pathOf(n){ const arr=[]; let c=n, guard=0; while(c && guard++<6){ arr.unshift(c); c=c.parent?byId[c.parent]:null; } return arr; }
   function ancestorIds(n){ const s=[]; let c=n, g=0; while(c && c.parent && byId[c.parent] && g++<6){ c=byId[c.parent]; s.push(c.id); } return s; }
   function descendantLeaves(cid){ return leaves().filter(n=>ancestorIds(n).includes(cid)); }
+  // ---- データ検証（リント） ----
+  function validate(){ const issues=[]; recompute();
+    for(const n of data.nodes){ const need=TYPE[n.type].parent; if(need && (!n.parent||!byId[n.parent])) issues.push({level:"warn", text:`${TYPE[n.type].chip}「${n.label}」の所属（親）が未設定`, id:n.id}); }
+    for(const n of data.nodes){ if(n.type==="system" && !String(n.owner||"").trim()) issues.push({level:"warn", text:`システム「${n.label}」のオーナー未設定`, id:n.id}); }
+    const deg={}; for(const e of data.edges){ deg[e.source]=(deg[e.source]||0)+1; deg[e.target]=(deg[e.target]||0)+1; }
+    for(const n of leaves()){ if(!deg[n.id]) issues.push({level:"info", text:`${TYPE[n.type].chip}「${n.label}」に接続がありません`, id:n.id}); }
+    const ifm={}; for(const e of data.edges){ if(e.ifId) (ifm[e.ifId]||(ifm[e.ifId]=[])).push(e); }
+    for(const k in ifm){ if(ifm[k].length>1) issues.push({level:"error", text:`連携ID「${k}」が重複（${ifm[k].length}件）`, edge:ifm[k][0].id}); }
+    for(const e of data.edges){ if(e.kind!=="ref" && !String(e.ifId||"").trim()){ const a=byId[e.source],b=byId[e.target]; issues.push({level:"warn", text:`連携（${a?a.label:"?"}→${b?b.label:"?"}）に連携ID未採番`, edge:e.id}); } }
+    for(const n of data.nodes){ if((n.status==="deprecated"||n.status==="retired") && data.edges.some(e=>e.source===n.id||e.target===n.id)) issues.push({level:"warn", text:`${(STATUS[n.status]||{}).label||""}の「${n.label}」に現役の接続あり`, id:n.id}); }
+    const rank={error:0,warn:1,info:2}; issues.sort((a,b)=>rank[a.level]-rank[b.level]); return issues;
+  }
   function openIncidents(n){ return (n.incidents||[]).filter(i=>i.status!=="closed"); }
   function maxSeverity(list){ let best=null; for(const i of list){ const s=SEVERITY[i.severity]; if(s&&(!best||s.rank>best.rank)) best=s; } return best; }
   function daysUntil(dateStr){ if(!dateStr) return null; const d=new Date(dateStr); if(isNaN(d)) return null; return Math.ceil((d-new Date())/86400000); }
@@ -1484,6 +1512,11 @@
   function runImpact(dir){ if(!selectedId) return; const seeds=seedsOf(selectedId); impactSet=impact(selectedId,dir);
     const affected=[...impactSet].filter(x=>!seeds.has(x)).length; updateHighlight();
     toast((dir==="down"?"下流の影響範囲":"上流の依存元")+`: ${affected} 件`+(affected?"":"（なし）")); }
+  function focusNeighbors(id, hops){ const n=byId[id]; if(!n) return; const seeds=isContainer(n)?seedsOf(id):new Set([id]);
+    const set=new Set(seeds); let frontier=[...seeds];
+    for(let h=0;h<(hops||2);h++){ const next=[]; for(const cur of frontier){ for(const e of data.edges){ if(e.source===cur&&!set.has(e.target)){set.add(e.target);next.push(e.target);} if(e.target===cur&&!set.has(e.source)){set.add(e.source);next.push(e.source);} } } frontier=next; }
+    impactSet=set; selectedId=id; selectedEdge=null; updateHighlight(); renderMinimap();
+    toast("フォーカス表示: 近傍のみ（Escで解除）"); }
 
   $("#insClose").onclick=()=>select(null);
   $("#delBtn").onclick=()=>{ if(!selectedId) return; const n=byId[selectedId];
@@ -1996,15 +2029,26 @@ ${ser.serializeToString(gNod)}
       <div class="statuslegend">${klg||'<span class="sl">未登録</span>'}</div>
       ${depTop.length?`<div class="osec">管理部署別（登録数）</div><div class="attn">${depTop.map(([d,cnt])=>`<div class="attn-item" style="border-left-color:var(--accent);cursor:default"><div class="ai-body"><div class="ai-t">${esc(d)}</div></div><span class="badgeN">${cnt}</span></div>`).join("")}</div>`:""}
       <div class="osec">要対応（障害・更改）<span style="color:var(--text-mute);font-weight:600">　${attn.length}件</span></div>
-      <div class="attn" id="attnList"></div>`;
+      <div class="attn" id="attnList"></div>
+      <div class="osec">データ検証 <span id="lintCount" style="color:var(--text-mute);font-weight:600"></span></div>
+      <div class="attn" id="lintList"></div>`;
 
     const al=$("#attnList");
-    if(!attn.length){ al.innerHTML='<div class="empty-note">未解決の障害・直近の更改予定はありません 🎉</div>'.replace("🎉",""); }
+    if(!attn.length){ al.innerHTML='<div class="empty-note">未解決の障害・直近の更改予定はありません</div>'; }
     else attn.slice(0,30).forEach(a=>{
       const path=pathOf(a.n).map(p=>p.label).join(" › ");
       const d=document.createElement("div"); d.className="attn-item"; d.style.borderLeftColor=a.color;
       d.innerHTML=`<span class="ai-ic" style="background:${a.color}"></span><div class="ai-body"><div class="ai-t">${esc(a.n.label)}</div><div class="ai-s">${esc(path)} · ${esc(a.text)}</div></div><span class="ai-sev" style="background:${a.color}">${esc(a.sevLabel)}</span>`;
       d.onclick=()=>{ select(a.n.id); centerOn(a.n); }; al.appendChild(d);
+    });
+    const issues=validate(); const lc={error:"#ef4444",warn:"#f59e0b",info:"#3b82f6"}; const ll=$("#lintList");
+    $("#lintCount").textContent="　"+issues.length+"件"+(issues.length?"（要確認）":"");
+    if(!issues.length){ ll.innerHTML='<div class="empty-note">問題は見つかりませんでした</div>'; }
+    else issues.slice(0,40).forEach(it=>{ const col=lc[it.level];
+      const d=document.createElement("div"); d.className="attn-item"; d.style.borderLeftColor=col;
+      d.innerHTML=`<span class="ai-ic" style="background:${col}"></span><div class="ai-body"><div class="ai-s" style="color:var(--text)">${esc(it.text)}</div></div>`;
+      d.onclick=()=>{ if(it.edge){ selectEdge(it.edge); const e=edgeById[it.edge],a=byId[e.source],b=byId[e.target]; if(a&&b){ const r=svg.getBoundingClientRect(); view.x=r.width/2-(a.x+b.x)/2*view.k; view.y=r.height/2-(a.y+b.y)/2*view.k; applyViewport(); } } else if(it.id){ const n=byId[it.id]; if(n){ select(it.id); centerOn(n); } } };
+      ll.appendChild(d);
     });
   }
 
@@ -2018,11 +2062,14 @@ ${ser.serializeToString(gNod)}
 
   // ---------------- Keyboard ----------------
   window.addEventListener("keydown",(ev)=>{
-    if((ev.ctrlKey||ev.metaKey) && (ev.key==="z"||ev.key==="Z")){ ev.preventDefault(); undo(); return; }
+    if(ev.key==="Escape") closeCtx();
+    if((ev.ctrlKey||ev.metaKey) && (ev.key==="z"||ev.key==="Z")){ ev.preventDefault(); if(ev.shiftKey) redo(); else undo(); return; }
+    if((ev.ctrlKey||ev.metaKey) && (ev.key==="y"||ev.key==="Y")){ ev.preventDefault(); redo(); return; }
+    if((ev.ctrlKey||ev.metaKey) && (ev.key==="d"||ev.key==="D")){ ev.preventDefault(); if(selectedId&&byId[selectedId]) duplicateNode(byId[selectedId]); return; }
     if(ev.key==="Escape" && T3.on){ exit3D(); return; }
     if(ev.key==="Escape" && helpModal.classList.contains("open")){ helpModal.classList.remove("open"); return; }
     if(ev.key==="Escape" && tableView.classList.contains("open")){ closeTable(); return; }
-    if(ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
+    if(ev.target && ev.target.matches && ev.target.matches("input,textarea,select")){ if(ev.key==="Escape") ev.target.blur(); return; }
     if(ev.key==="?"){ helpModal.classList.toggle("open"); return; }
     if(ev.key==="Delete"&&selectedId) $("#delBtn").click();
     if(ev.key==="Delete"&&selectedEdge) $("#eDelBtn").click();
@@ -2341,6 +2388,67 @@ ${ser.serializeToString(gNod)}
   function hoverPick3D(ev){ const id=rayHit3D(ev); if(id!==T3.hover){ T3.hover=id; $("#three3d").style.cursor=id?"pointer":"grab"; } }
   function pick3D(ev){ const id=rayHit3D(ev); if(id){ select(id); const n=byId[id]; if(n){ T3.target.set(n._x3,n._y3,n._z3); updateCam(); } } }
   $("#threeBtn").onclick=toggle3D;
+
+  // ==================== 右クリック コンテキストメニュー ====================
+  const ctxMenu=$("#ctxMenu");
+  function closeCtx(){ ctxMenu.classList.remove("open"); }
+  const IC_EDIT='<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
+  const IC_PLUS='<path d="M12 5v14M5 12h14"/>';
+  const IC_LINK='<path d="M10 14a4 4 0 0 0 6 .5l3-3a4 4 0 0 0-6-6l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-6-.5l-3 3a4 4 0 0 0 6 6l1.5-1.5"/>';
+  const IC_DUP='<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>';
+  const IC_FOCUS='<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>';
+  const IC_TRASH='<path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/>';
+  const IC_FIT='<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>';
+  const IC_REFRESH='<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>';
+  const IC_GRID='<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>';
+  function showCtx(cx,cy,items){
+    ctxMenu.innerHTML=items.map(it=> it.div?'<div class="cdiv"></div>' : it.cap?`<div class="ccap">${esc(it.cap)}</div>` :
+      `<div class="ci${it.danger?" danger":""}"><svg viewBox="0 0 24 24">${it.icon||""}</svg>${esc(it.label)}${it.k?`<span class="k">${it.k}</span>`:""}</div>`).join("");
+    ctxMenu.classList.add("open");
+    const w=ctxMenu.offsetWidth||190, h=ctxMenu.offsetHeight||10; let x=cx,y=cy; if(x+w>innerWidth-6)x=innerWidth-w-6; if(y+h>innerHeight-6)y=innerHeight-h-6;
+    ctxMenu.style.left=Math.max(6,x)+"px"; ctxMenu.style.top=Math.max(6,y)+"px";
+    const acts=items.filter(it=>!it.div&&!it.cap);
+    ctxMenu.querySelectorAll(".ci").forEach((el,i)=>{ el.onclick=()=>{ closeCtx(); const it=acts[i]; if(it&&it.action) it.action(); }; });
+  }
+  function startLinkFrom(n){ setLinkMode(true); linkSource=n.id; markSource(); toast("元: "+n.label+" → 対象をクリック/ドラッグ"); }
+  function duplicateNode(n){ snapshot("複製"); const {vx,vy,fx,fy,...rest}=n; const copy=JSON.parse(JSON.stringify(rest));
+    copy.id="dup"+Date.now()+Math.floor(Math.random()*999); copy.label=(n.label||TYPE[n.type].chip)+" (コピー)";
+    copy.x=(n.x||0)+44; copy.y=(n.y||0)+30; copy.vx=0; copy.vy=0; copy.pinned=false;
+    data.nodes.push(copy); save(); render(); reheat(.35); select(copy.id); centerOn(copy); toast(TYPE[n.type].chip+"を複製しました"); }
+  function nodeCtx(n){ const arr=[ {cap:n.label},
+      {label:"編集 / 開く", icon:IC_EDIT, action:()=>{ select(n.id); centerOn(n); }} ];
+    if(CHILD_OF[n.type]) arr.push({label:TYPE[CHILD_OF[n.type]].chip+"を追加", icon:IC_PLUS, action:()=>{ selectedId=n.id; addChild(); }});
+    arr.push({label:"ここから接続", icon:IC_LINK, action:()=>startLinkFrom(n)});
+    arr.push({label:"複製", icon:IC_DUP, k:"Ctrl+D", action:()=>duplicateNode(n)});
+    arr.push({label:"フォーカス（近傍のみ）", icon:IC_FOCUS, action:()=>{ focusNeighbors(n.id,2); centerOn(n); }});
+    arr.push({label:"中央へ表示", icon:IC_FOCUS, action:()=>{ select(n.id); centerOn(n); }});
+    arr.push({div:true});
+    arr.push({label:"削除", danger:true, icon:IC_TRASH, k:"Del", action:()=>{ select(n.id); $("#delBtn").click(); }});
+    return arr; }
+  function edgeCtx(e){ const a=byId[e.source],b=byId[e.target]; return [
+      {cap:(e.ifId?e.ifId+" ":"")+(a?a.label:"?")+" → "+(b?b.label:"?")},
+      {label:"編集（抽出条件など）", icon:IC_EDIT, action:()=>selectEdge(e.id)},
+      {label:"下流の影響範囲", icon:IC_FOCUS, action:()=>{ select(a?a.id:e.source); runImpact("down"); }},
+      {div:true},
+      {label:"連携を削除", danger:true, icon:IC_TRASH, action:()=>{ selectEdge(e.id); $("#eDelBtn").click(); }} ]; }
+  function canvasCtx(){ return [
+      {cap:"キャンバス"},
+      {label:"ノードを追加", icon:IC_PLUS, action:()=>$("#addBtn").click()},
+      {label:"全体表示", icon:IC_FIT, k:"F", action:zoomFit},
+      {label:"再整列", icon:IC_REFRESH, k:"R", action:()=>$("#relayoutBtn").click()},
+      {div:true},
+      {label:"概要を開く", icon:IC_GRID, action:()=>$("#overviewBtn").click()} ]; }
+  svg.addEventListener("contextmenu",(ev)=>{ if(T3.on) return; ev.preventDefault(); if(linkMode){ setLinkMode(false); return; }
+    const nodeEl=ev.target.closest&&ev.target.closest(".node"); const edgeEl=ev.target.closest&&ev.target.closest(".link-hit"); const grpEl=ev.target.closest&&ev.target.closest(".grp");
+    let items;
+    if(nodeEl&&nodeEl._node) items=nodeCtx(nodeEl._node);
+    else if(edgeEl&&edgeEl._edge) items=edgeCtx(edgeEl._edge);
+    else if(grpEl&&grpEl._node) items=nodeCtx(grpEl._node);
+    else items=canvasCtx();
+    showCtx(ev.clientX,ev.clientY,items);
+  });
+  document.addEventListener("pointerdown",(e)=>{ if(!e.target.closest||!e.target.closest(".ctxmenu")) closeCtx(); });
+  addEventListener("wheel",closeCtx,{passive:true}); addEventListener("blur",closeCtx);
 
   (function(){ const ml=$("#modeLegend2"); let h=""; for(const k in KIND) h+=`<span class="sl"><span class="sd" style="background:${KIND[k].color}"></span>${KIND[k].label}</span>`; ml.innerHTML=h; })();
 
